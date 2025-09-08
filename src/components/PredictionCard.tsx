@@ -1,11 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Volume, TrendingUp, TrendingDown } from "lucide-react";
-import SemiGauge from "./SemiGauge";
+import SemicircleGauge from "./SemicircleGauge";
 import MarketDetailModal from "./MarketDetailModal";
 import { getMiniTrendData } from "@/lib/chartData";
 import Image from 'next/image';
@@ -33,6 +33,12 @@ export default function PredictionCard({
   const trendData = getMiniTrendData(question);
   const isPositiveTrend = trendData.length > 1 &&
     trendData[trendData.length - 1].value > trendData[0].value;
+
+  const [percentage, setPercentage] = React.useState(25);
+
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setPercentage(Number(e.target.value));
+  };
 
   const handleCardClick = () => {
     setShowDetailModal(true);
@@ -63,13 +69,13 @@ export default function PredictionCard({
               {question}
             </div>
             <div className="h-[48px] w-[80px]">
-              <SemiGauge value={72} max={100} orientation="up" />
-              {/*<TrendChart*/}
-              {/*  data={trendData}*/}
-              {/*  color={isPositiveTrend ? "#10b981" : "#ef4444"}*/}
-              {/*  height={40}*/}
-              {/*  isPositive={isPositiveTrend}*/}
-              {/*/>*/}
+              <SemicircleGauge
+                percentage={percentage}
+                label="Chance"
+                size={80}
+                strokeWidth={4}
+                progressColor="#AC4133"
+              />
             </div>
           </div>
 
@@ -77,14 +83,14 @@ export default function PredictionCard({
           <div className="grid grid-cols-2 gap-[9px] mb-[12px]">
             <Button
               variant="outline"
-              className="h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-green-100 hover:border-green-300 hover:text-green-900 font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              className="h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
               onClick={(e) => handleButtonClick(e, 'Yes')}
             >
               Yes
             </Button>
             <Button
               variant="outline"
-              className="h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-red-100 hover:border-red-300 hover:text-red-900 font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+              className="h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
               onClick={(e) => handleButtonClick(e, 'No')}
             >
               No
