@@ -8,9 +8,12 @@ import { Calendar, Volume, TrendingUp, TrendingDown } from "lucide-react";
 import SemicircleGauge from "./SemicircleGauge";
 import MarketDetailModal from "./MarketDetailModal";
 import { getMiniTrendData } from "@/lib/chartData";
+import PredictionTradingModal from "./PredictionTradingModal";
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 interface PredictionCardProps {
+  id?: string;
   question: string;
   chance: number;
   volume: string;
@@ -21,6 +24,7 @@ interface PredictionCardProps {
 }
 
 export default function PredictionCard({
+  id,
   question,
   chance,
   volume,
@@ -29,7 +33,10 @@ export default function PredictionCard({
   avatar,
   isLive = false
 }: PredictionCardProps) {
+  const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showTradingModal, setShowTradingModal] = useState(false);
+  const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes');
   const trendData = getMiniTrendData(question);
   const isPositiveTrend = trendData.length > 1 &&
     trendData[trendData.length - 1].value > trendData[0].value;
@@ -41,13 +48,17 @@ export default function PredictionCard({
   };
 
   const handleCardClick = () => {
-    setShowDetailModal(true);
+    if (id) {
+      router.push(`/details/${id}`);
+    } else {
+      setShowDetailModal(true);
+    }
   };
 
-  const handleButtonClick = (e: React.MouseEvent, action: string) => {
+  const handleButtonClick = (e: React.MouseEvent, action: 'yes' | 'no') => {
     e.stopPropagation();
-    // 处理 Yes/No 按钮点击
-    console.log(`Clicked ${action} for: ${question}`);
+    setSelectedOutcome(action);
+    setShowTradingModal(true);
   };
 
   return (
@@ -70,11 +81,11 @@ export default function PredictionCard({
             </div>
             <div className="h-[48px] w-[80px]">
               <SemicircleGauge
-                percentage={percentage}
+                percentage={chance}
                 label="Chance"
                 size={80}
                 strokeWidth={4}
-                progressColor="#AC4133"
+                progressColor={chance < 30 ? "#E75655" : chance < 50 ? "#FFC565" : '#31A15A'}
               />
             </div>
           </div>
@@ -84,14 +95,14 @@ export default function PredictionCard({
             <Button
               variant="outline"
               className="h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-              onClick={(e) => handleButtonClick(e, 'Yes')}
+              onClick={(e) => handleButtonClick(e, 'yes')}
             >
               Yes
             </Button>
             <Button
               variant="outline"
               className="h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-              onClick={(e) => handleButtonClick(e, 'No')}
+              onClick={(e) => handleButtonClick(e, 'no')}
             >
               No
             </Button>
@@ -123,6 +134,20 @@ export default function PredictionCard({
         category={category}
         avatar={avatar}
         isLive={isLive}
+      />
+
+      {/* Trading Modal */}
+      <PredictionTradingModal
+        isOpen={showTradingModal}
+        onClose={() => setShowTradingModal(false)}
+        prediction={{
+          question,
+          chance,
+          volume,
+          deadline,
+          id
+        }}
+        initialOutcome={selectedOutcome}
       />
     </>
   );

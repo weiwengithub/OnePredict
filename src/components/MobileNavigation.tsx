@@ -19,8 +19,11 @@ import {
   Trophy,
   User,
   Settings,
-  Bookmark
+  Bookmark,
+  Gift,
+  BarChart3
 } from "lucide-react";
+import Link from 'next/link';
 
 interface MobileNavigationProps {
   onCategoryChange?: (category: string) => void;
@@ -32,6 +35,13 @@ export default function MobileNavigation({
   activeCategory = "trending"
 }: MobileNavigationProps) {
   const [isOpen, setIsOpen] = useState(false);
+
+  // Main pages navigation
+  const mainPages = [
+    { id: "home", label: "Home", icon: Home, href: "/" },
+    { id: "leaderboard", label: "Leaderboard", icon: BarChart3, href: "/leaderboard" },
+    { id: "rewards", label: "Rewards", icon: Gift, href: "/rewards" }
+  ];
 
   const categories = [
     { id: "trending", label: "Trending", icon: TrendingUp },
@@ -66,6 +76,35 @@ export default function MobileNavigation({
               <SheetContent side="left" className="w-72 p-0">
                 <div className="p-6">
                   <h2 className="text-lg font-bold text-gray-900 mb-6">Bayes Market</h2>
+
+                  {/* Main Pages */}
+                  <div className="space-y-2 mb-6">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
+                      Navigation
+                    </h3>
+                    {mainPages.map((page) => {
+                      const Icon = page.icon;
+                      const isActive = activeCategory === page.id;
+
+                      return (
+                        <Link
+                          key={page.id}
+                          href={page.href}
+                          onClick={() => setIsOpen(false)}
+                          className={`
+                            w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-colors
+                            ${isActive
+                              ? "bg-gray-900 text-white"
+                              : "text-gray-700 hover:bg-gray-100"
+                            }
+                          `}
+                        >
+                          <Icon className="w-5 h-5" />
+                          <span className="font-medium">{page.label}</span>
+                        </Link>
+                      );
+                    })}
+                  </div>
 
                   {/* Categories */}
                   <div className="space-y-2">
@@ -144,28 +183,28 @@ export default function MobileNavigation({
         </div>
       </div>
 
-      {/* Mobile Bottom Navigation (Alternative) */}
+      {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="grid grid-cols-5 gap-1">
-          {categories.slice(0, 5).map((category) => {
-            const Icon = category.icon;
-            const isActive = activeCategory === category.id;
+        <div className="grid grid-cols-3 gap-1">
+          {mainPages.map((page) => {
+            const Icon = page.icon;
+            const isActive = activeCategory === page.id;
 
             return (
-              <button
-                key={category.id}
-                onClick={() => handleCategoryClick(category.id)}
+              <Link
+                key={page.id}
+                href={page.href}
                 className={`
-                  flex flex-col items-center justify-center py-2 px-1 transition-colors
+                  flex flex-col items-center justify-center py-3 px-1 transition-colors
                   ${isActive
                     ? "text-blue-600"
                     : "text-gray-500 hover:text-gray-700"
                   }
                 `}
               >
-                <Icon className="w-5 h-5 mb-1" />
-                <span className="text-xs font-medium">{category.label}</span>
-              </button>
+                <Icon className="w-6 h-6 mb-1" />
+                <span className="text-xs font-medium">{page.label}</span>
+              </Link>
             );
           })}
         </div>

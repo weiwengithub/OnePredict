@@ -29,6 +29,21 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+
+    /* OnePredict Light Theme Colors */
+    --op-background: 255 255 255;
+    --op-background-secondary: 248 250 252;
+    --op-surface: 255 255 255;
+    --op-surface-secondary: 241 245 249;
+    --op-border: 226 232 240;
+    --op-text: 15 23 42;
+    --op-text-secondary: 100 116 139;
+    --op-text-muted: 148 163 184;
+    --op-accent: 59 130 246;
+    --op-accent-hover: 37 99 235;
+    --op-success: 34 197 94;
+    --op-error: 239 68 68;
+    --op-warning: 245 158 11;
   }
 
   .dark {
@@ -56,6 +71,55 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+
+    /* OnePredict Dark Theme Colors */
+    --op-background: 5 26 61;
+    --op-background-secondary: 4 18 43;
+    --op-surface: 21 34 56;
+    --op-surface-secondary: 15 30 52;
+    --op-border: 255 255 255 / 0.1;
+    --op-text: 255 255 255;
+    --op-text-secondary: 255 255 255 / 0.7;
+    --op-text-muted: 255 255 255 / 0.5;
+    --op-accent: 70 125 255;
+    --op-accent-hover: 59 130 246;
+    --op-success: 34 197 94;
+    --op-error: 239 68 68;
+    --op-warning: 245 158 11;
+  }
+
+  .light {
+    /* OnePredict Light Theme Colors */
+    --op-background: 255 255 255;
+    --op-background-secondary: 248 250 252;
+    --op-surface: 255 255 255;
+    --op-surface-secondary: 241 245 249;
+    --op-border: 226 232 240;
+    --op-text: 15 23 42;
+    --op-text-secondary: 100 116 139;
+    --op-text-muted: 148 163 184;
+    --op-accent: 59 130 246;
+    --op-accent-hover: 37 99 235;
+    --op-success: 34 197 94;
+    --op-error: 239 68 68;
+    --op-warning: 245 158 11;
+  }
+}
+
+/* 主题切换动画 */
+@layer base {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *:before,
+  .theme-transition *:after {
+    transition: background-color 300ms ease-in-out,
+                border-color 300ms ease-in-out,
+                color 300ms ease-in-out,
+                fill 300ms ease-in-out,
+                stroke 300ms ease-in-out,
+                opacity 300ms ease-in-out,
+                box-shadow 300ms ease-in-out,
+                transform 300ms ease-in-out;
   }
 }
 
@@ -65,5 +129,51 @@
   }
   body {
     @apply bg-background text-foreground;
+  }
+}
+
+/* OnePredict 自定义主题类 */
+@layer utilities {
+  .bg-op-background {
+    background-color: rgb(var(--op-background));
+  }
+  .bg-op-background-secondary {
+    background-color: rgb(var(--op-background-secondary));
+  }
+  .bg-op-surface {
+    background-color: rgb(var(--op-surface));
+  }
+  .bg-op-surface-secondary {
+    background-color: rgb(var(--op-surface-secondary));
+  }
+  .border-op-border {
+    border-color: rgb(var(--op-border));
+  }
+  .text-op-text {
+    color: rgb(var(--op-text));
+  }
+  .text-op-text-secondary {
+    color: rgb(var(--op-text-secondary));
+  }
+  .text-op-text-muted {
+    color: rgb(var(--op-text-muted));
+  }
+  .bg-op-accent {
+    background-color: rgb(var(--op-accent));
+  }
+  .bg-op-accent-hover {
+    background-color: rgb(var(--op-accent-hover));
+  }
+  .text-op-accent {
+    color: rgb(var(--op-accent));
+  }
+  .bg-op-success {
+    background-color: rgb(var(--op-success));
+  }
+  .bg-op-error {
+    background-color: rgb(var(--op-error));
+  }
+  .bg-op-warning {
+    background-color: rgb(var(--op-warning));
   }
 }

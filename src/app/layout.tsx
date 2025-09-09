@@ -5,6 +5,7 @@ import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import ClientBody from "./ClientBody";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -83,7 +84,9 @@ export default function RootLayout({
         <link rel="preload" href="/icon.svg" as="image" type="image/svg+xml" />
       </head>
       <body className={inter.className}>
-        <ClientBody>{children}</ClientBody>
+        <ThemeProvider>
+          <ClientBody>{children}</ClientBody>
+        </ThemeProvider>
 
         {/* Service Worker Registration */}
         <script

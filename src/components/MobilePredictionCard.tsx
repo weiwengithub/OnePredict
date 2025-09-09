@@ -7,9 +7,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Volume, TrendingUp, TrendingDown, MoreVertical } from "lucide-react";
 import TrendChart from "./TrendChart";
 import MarketDetailModal from "./MarketDetailModal";
+import PredictionTradingModal from "./PredictionTradingModal";
 import { getMiniTrendData } from "@/lib/chartData";
+import { useRouter } from 'next/navigation';
 
 interface MobilePredictionCardProps {
+  id?: string;
   question: string;
   chance: number;
   volume: string;
@@ -20,6 +23,7 @@ interface MobilePredictionCardProps {
 }
 
 export default function MobilePredictionCard({
+  id,
   question,
   chance,
   volume,
@@ -28,22 +32,30 @@ export default function MobilePredictionCard({
   avatar,
   isLive = false
 }: MobilePredictionCardProps) {
+  const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [showTradingModal, setShowTradingModal] = useState(false);
+  const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes');
   const trendData = getMiniTrendData(question);
   const isPositiveTrend = trendData.length > 1 &&
     trendData[trendData.length - 1].value > trendData[0].value;
 
   const handleCardClick = () => {
-    setShowDetailModal(true);
+    if (id) {
+      router.push(`/details/${id}`);
+    } else {
+      setShowDetailModal(true);
+    }
   };
 
-  const handleButtonClick = (e: React.MouseEvent, action: string) => {
+  const handleButtonClick = (e: React.MouseEvent, action: 'yes' | 'no') => {
     e.stopPropagation();
     // Handle button tap with haptic feedback simulation
     if (navigator.vibrate) {
       navigator.vibrate(50);
     }
-    console.log(`Clicked ${action} for: ${question}`);
+    setSelectedOutcome(action);
+    setShowTradingModal(true);
   };
 
   return (
@@ -128,14 +140,14 @@ export default function MobilePredictionCard({
             <Button
               variant="outline"
               className="bg-green-50 border-green-200 text-green-800 hover:bg-green-100 font-semibold py-3 text-sm min-h-[44px] touch-manipulation active:scale-95 transition-transform"
-              onClick={(e) => handleButtonClick(e, 'Yes')}
+              onClick={(e) => handleButtonClick(e, 'yes')}
             >
               Yes
             </Button>
             <Button
               variant="outline"
               className="bg-red-50 border-red-200 text-red-800 hover:bg-red-100 font-semibold py-3 text-sm min-h-[44px] touch-manipulation active:scale-95 transition-transform"
-              onClick={(e) => handleButtonClick(e, 'No')}
+              onClick={(e) => handleButtonClick(e, 'no')}
             >
               No
             </Button>
@@ -166,6 +178,20 @@ export default function MobilePredictionCard({
         category={category}
         avatar={avatar}
         isLive={isLive}
+      />
+
+      {/* Trading Modal */}
+      <PredictionTradingModal
+        isOpen={showTradingModal}
+        onClose={() => setShowTradingModal(false)}
+        prediction={{
+          question,
+          chance,
+          volume,
+          deadline,
+          id
+        }}
+        initialOutcome={selectedOutcome}
       />
     </>
   );
