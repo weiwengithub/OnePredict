@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Calendar, Volume, TrendingUp, TrendingDown, MoreVertical } from "lucide-react";
 import TrendChart from "./TrendChart";
 import MarketDetailModal from "./MarketDetailModal";
-import PredictionTradingModal from "./PredictionTradingModal";
+import { PredictionTradingModal } from "./predictionTrading";
 import { getMiniTrendData } from "@/lib/chartData";
 import { useRouter } from 'next/navigation';
 
@@ -185,6 +185,7 @@ export default function MobilePredictionCard({
         isOpen={showTradingModal}
         onClose={() => setShowTradingModal(false)}
         prediction={{
+          avatar,
           question,
           chance,
           volume,

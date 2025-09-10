@@ -1,15 +1,32 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import MobileNavigation from "@/components/MobileNavigation";
 import Link from 'next/link';
 import { ArrowLeft, Clock, Users, TrendingUp, Calendar, DollarSign, MessageCircle, Share2, ChevronDown, BarChart3, Activity } from 'lucide-react';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import TradingForm from "@/components/predictionTrading/TradingForm";
+import TermsAgreement from "@/components/predictionTrading/TermsAgreement";
+import HomeIcon from "@/assets/icons/home.svg";
+import EditIcon from "@/assets/icons/edit.svg";
+import Edit1Icon from "@/assets/icons/edit_1.svg";
+import NoteIcon from "@/assets/icons/note.svg";
+import ExportIcon from "@/assets/icons/export.svg";
+import ExchangeIcon from "@/assets/icons/exchange.svg";
+import SettingIcon from "@/assets/icons/setting.svg";
+import RefreshIcon from "@/assets/icons/refresh.svg";
+import ArrowDownIcon from "@/assets/icons/arrow-down.svg";
+import ArrowLeftIcon from "@/assets/icons/arrow-left.svg";
+import ArrowRightIcon from "@/assets/icons/arrow-right.svg";
+import OutcomeProposed from "@/assets/icons/outcomeProposed.svg";
+import DisputeWindow from "@/assets/icons/disputeWindow.svg";
+import FinalOutcome from "@/assets/icons/finalOutcome.svg";
+import WechatIcon from "@/assets/icons/wechat.svg";
+import Image from "next/image";
 
 interface PredictionDetail {
   id: string;
@@ -35,8 +52,17 @@ interface PredictionDetailsClientProps {
 
 export default function PredictionDetailsClient({ id }: PredictionDetailsClientProps) {
   const [isMobile, setIsMobile] = useState(false);
-  const [userVote, setUserVote] = useState<'yes' | 'no' | null>(null);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
+
+  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
+  const [userVote, setUserVote] = useState<'yes' | 'no'>('yes');
+  const [amount, setAmount] = useState<number>(0);
+  const [balance] = useState<number>(0);
+
+  const handleTrade = () => {
+    // 这里将来会实现实际的交易逻辑
+    console.log('Trade:', { tradeType, userVote, amount, prediction });
+  };
 
   // Detect mobile viewport
   useEffect(() => {
@@ -155,8 +181,11 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
     }, '');
   };
 
+  const [pageSize, setPageSize] = useState(10);
+  const [pageNo, setPageNo] = useState(1);
+
   return (
-    <div className="min-h-screen bg-[#0a1525] pb-20 md:pb-0">
+    <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-20 md:pb-0">
       {/* Desktop Header */}
       <Header currentPage="details" />
 
@@ -167,71 +196,66 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
       />
 
       {/* Main Content */}
-      <main className="max-w-[1200px] mx-auto px-6 md:px-8 pt-20 md:pt-32">
-        {/* Back Button */}
-        <div className="mb-6">
-          <Link href="/">
-            <Button variant="ghost" className="text-white/70 hover:text-white hover:bg-white/10 p-2">
-              <ArrowLeft className="w-5 h-5 mr-2" />
-              Back to Market
-            </Button>
-          </Link>
-        </div>
+      <main className="max-w-[1312px] mx-auto pt-[114px] flex gap-[64px]">
+        <div className="flex-1">
+          {/* Back Button */}
+          <div className="flex items-center">
+            <Link href="/">
+              <div className="flex items-center text-white/40 hover:text-white">
+                <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">Home</span>
+              </div>
+            </Link>
+            <ArrowRightIcon className="mx-[16px]" />
+            <div className="h-[18px] leading-[18px] text-[14px] text-white">Trade</div>
+          </div>
 
-        {/* Main Card */}
-        <div className="bg-[#152238] rounded-2xl border border-white/10 overflow-hidden">
           {/* Header */}
-          <div className="p-6 border-b border-white/10">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="w-10 h-10">
-                  <AvatarImage src={prediction.avatar} alt="Prediction" />
-                  <AvatarFallback className="bg-blue-600 text-white">?</AvatarFallback>
-                </Avatar>
-                <div>
-                  <Badge className={getCategoryColor(prediction.category)}>
-                    {prediction.category}
-                  </Badge>
-                  {prediction.isLive && (
-                    <Badge className="ml-2 bg-red-500/20 text-red-400 border-red-400/30">
-                      LIVE
-                    </Badge>
-                  )}
+          <div className="mt-[24px]">
+            <div className="flex gap-3">
+              <Avatar className="w-[100px] h-[100px] rounded-[12px]">
+                <AvatarImage src={prediction.avatar} alt="Prediction" />
+                <AvatarFallback className="bg-blue-600 text-white">?</AvatarFallback>
+              </Avatar>
+              <div className="ml-[24px] flex flex-col gap-[12px]">
+                <div className="h-[24px] leading-[24px] text-[24px] text-white font-bold">{prediction.question}</div>
+                <div className="flex items-center gap-1 h-[24px] text-white/60">
+                  <span>Volume:</span>
+                  <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
+                  <span>9430.17  Traders:147</span>
+                  <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
+                  <span>Jan 1, 2026 7:59 AM</span>
+                </div>
+                <div className="flex gap-[12px]">
+                  <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[16px] font-bold px-[12px] text-white"><EditIcon className="text-[12px]" />Say something</div>
+                  <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[12px] font-bold px-[12px] text-white"><NoteIcon /></div>
+                  <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[12px] font-bold px-[12px] text-white"><ExportIcon /></div>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="ghost" size="sm" className="text-white/60 hover:text-white hover:bg-white/10">
-                  <Share2 className="w-4 h-4" />
-                </Button>
-              </div>
             </div>
-
-            <h1 className="text-2xl md:text-3xl font-bold text-white mb-2">{prediction.question}</h1>
-            <p className="text-white/60 text-sm">Closing in {prediction.deadline}</p>
           </div>
 
           {/* Chart Section */}
-          <div className="p-6">
+          <div className="mt-[40px]">
             {/* Chart Controls */}
-            <div className="flex items-center justify-between mb-6">
-              <div className="flex items-center gap-2">
-                <BarChart3 className="w-5 h-5 text-white/60" />
-                <span className="text-white font-semibold">Price History</span>
-              </div>
-              <div className="flex items-center gap-1 bg-white/5 rounded-lg p-1">
+            <div className="flex items-center justify-between mb-[40px]">
+              <div className="flex gap-[8px]">
                 {timeframes.map((tf) => (
                   <button
                     key={tf}
                     onClick={() => setSelectedTimeframe(tf)}
-                    className={`px-3 py-1 text-sm rounded-md transition-colors ${
+                    className={`h-[36px] px-[24px] text-[16px] rounded-[40px] transition-colors ${
                       selectedTimeframe === tf
-                        ? 'bg-blue-600 text-white'
-                        : 'text-white/60 hover:text-white hover:bg-white/10'
+                        ? 'bg-black/20 text-white'
+                        : 'text-white/60 hover:text-white hover:bg-black/20'
                     }`}
                   >
                     {tf}
                   </button>
                 ))}
+              </div>
+              <div className="flex gap-[8px]">
+                <div className="p-[12px] text-white text-[12px] cursor-pointer"><ExchangeIcon /></div>
+                <div className="p-[12px] text-white text-[12px] cursor-pointer"><SettingIcon /></div>
               </div>
             </div>
 
@@ -281,67 +305,157 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Yes/No Buttons */}
-            <div className="grid grid-cols-2 gap-4 mb-6">
-              <Button
-                size="lg"
-                className={`h-16 ${userVote === 'yes' ? 'bg-green-600 hover:bg-green-700' : 'bg-green-500 hover:bg-green-600'} text-white font-bold text-lg`}
-                onClick={() => handleVote('yes')}
-              >
-                <div className="flex flex-col items-center">
-                  <span>YES {prediction.chance.toFixed(1)}¢</span>
-                  <span className="text-xs opacity-80">{prediction.yesVotes.toLocaleString()} shares</span>
-                </div>
-              </Button>
-
-              <Button
-                size="lg"
-                className={`h-16 ${userVote === 'no' ? 'bg-red-600 hover:bg-red-700' : 'bg-red-500 hover:bg-red-600'} text-white font-bold text-lg`}
-                onClick={() => handleVote('no')}
-              >
-                <div className="flex flex-col items-center">
-                  <span>NO {(100 - prediction.chance).toFixed(1)}¢</span>
-                  <span className="text-xs opacity-80">{prediction.noVotes.toLocaleString()} shares</span>
-                </div>
-              </Button>
+          {/* Yes/No Buttons */}
+          <div className="mt-[48px] border border-white/40 rounded-[24px] overflow-hidden">
+            <div className="h-[60px] bg-white/40 flex text-[16px] text-white">
+              <div className="flex-1 flex items-center px-[24px]">
+                <span>Options</span>
+              </div>
+              <div className="flex-1 flex items-center justify-center px-[24px]">
+                <span>Chance</span>
+                <RefreshIcon className="ml-[4px]" />
+              </div>
+              <div className="flex-1 flex items-center justify-end px-[24px]">
+                <span>Current Price</span>
+              </div>
             </div>
-
-            {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-lg font-bold text-white">{prediction.volume}</div>
-                <div className="text-xs text-white/60">Volume</div>
+            <div className="h-[96px] flex text-[18px] text-white font-bold">
+              <div className="flex-1 flex items-center px-[24px]">
+                <Image src="/images/icon/icon-yes.png" alt="" width={36} height={36} />
+                <span className="ml-[12px]">Yes</span>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-lg font-bold text-white">{prediction.totalVotes.toLocaleString()}</div>
-                <div className="text-xs text-white/60">Traders</div>
+              <div className="flex-1 flex items-center justify-center px-[24px]">
+                <span>62.87%</span>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-lg font-bold text-white">$2.3M</div>
-                <div className="text-xs text-white/60">Liquidity</div>
+              <div className="flex-1 flex items-center justify-end px-[24px]">
+                <Button
+                  className={`h-[48px] w-[162px] ${userVote === 'yes' ? 'bg-[#29C04E] hover:bg-[#29C04E] text-white' : 'bg-[#34503B] hover:bg-[#29C04E] text-[#089C2B] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
+                  onClick={() => handleVote('yes')}
+                >
+                  Buy 0.56
+                </Button>
               </div>
-              <div className="bg-white/5 rounded-lg p-3">
-                <div className="text-lg font-bold text-white">0.2%</div>
-                <div className="text-xs text-white/60">Fee</div>
+            </div>
+            <div className="h-[96px] flex text-[18px] text-white font-bold border-t border-white/40">
+              <div className="flex-1 flex items-center px-[24px]">
+                <Image src="/images/icon/icon-no.png" alt="" width={36} height={36} />
+                <span className="ml-[12px]">No</span>
+              </div>
+              <div className="flex-1 flex items-center justify-center px-[24px]">
+                <span>62.87%</span>
+              </div>
+              <div className="flex-1 flex items-center justify-end px-[24px]">
+                <Button
+                  className={`h-[48px] w-[162px] ${userVote === 'no' ? 'bg-[#F95D5D] hover:bg-[#F95D5D] text-white' : 'bg-[rgba(249,93,93,0.5)] hover:bg-[#F95D5D] text-[#E04646] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
+                  onClick={() => handleVote('no')}
+                >
+                  Buy 0.44
+                </Button>
               </div>
             </div>
           </div>
 
-          {/* Description Section */}
-          <div className="p-6 border-t border-white/10">
-            <h3 className="text-lg font-semibold text-white mb-3">About this market</h3>
-            <p className="text-white/70 leading-relaxed mb-4">{prediction.description}</p>
-
-            {/* Tags */}
-            <div className="flex flex-wrap gap-2">
-              {prediction.tags.map((tag, index) => (
-                <Badge key={index} variant="outline" className="text-white/60 border-white/20">
-                  #{tag}
-                </Badge>
-              ))}
+          {/* Rules */}
+          <div className="mt-[48px]">
+            <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">Rules</h3>
+            <div className="border border-white/40 rounded-[24px] overflow-hidden p-[24px] pb-[12px]">
+              <p className="leading-[24px] text-[16px] text-white">This market resolves to “Yes” if, at any point between 00:00 UTC on January 1, 2025 and 23:59:59 UTC on December 31, 2025, the price of Ethereum (ETH) on the Binance ETH/USDT spot market strictly exceeds its previous all-time high of $4,868.00 USD.</p>
+              <p className="mt-[20px] leading-[24px] text-[16px] text-white">Intraday highs count — the moment ETH trades above $4,868.00 on Binance, the market resolves “Yes.”</p>
+              <div className="mt-[24px] h-[24px] flex items-center justify-center text-white text-[48px]">
+                <ArrowDownIcon />
+              </div>
             </div>
           </div>
+
+          <div className="mt-[24px] border border-white/40 rounded-[24px] overflow-hidden px-[28px] py-[24px]">
+            <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
+              <OutcomeProposed className="text-[14px]" />
+              <span className="inline-block ml-[8px]">Outcome proposed</span>
+            </div>
+            <div className="my-[-3px] ml-[7px] h-[30px] border-l border-white/60"></div>
+            <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
+              <DisputeWindow className="text-[14px]" />
+              <span className="inline-block ml-[8px]">Dispute window</span>
+            </div>
+            <div className="my-[-3px] ml-[7px] h-[30px] border-l border-white/60"></div>
+            <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
+              <FinalOutcome className="text-[14px]" />
+              <span className="inline-block ml-[8px]">Final outcome</span>
+            </div>
+          </div>
+
+          {/* Rules */}
+          <div className="mt-[48px]">
+            <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">Trades</h3>
+            <div className="border border-white/40 rounded-[24px] overflow-hidden  px-[28px] py-[37px] space-y-[16px]">
+              <div className="flex items-center gap-[12px] text-[16px] text-white">
+                <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
+                <div>Nicheng</div>
+                <div className="opacity-60">Buy</div>
+                <div className="h-[16px] leading-[16px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] px-[4px] rounded-[4px]">37.15 Yes</div>
+                <div className="opacity-60">at</div>
+                <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
+                <div>0.75</div>
+              </div>
+              <div className="flex items-center gap-[12px] text-[16px] text-white">
+                <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
+                <div>NichengNicheng</div>
+                <div className="opacity-60">Sell</div>
+                <div className="h-[16px] leading-[16px] bg-[rgba(249,93,93,0.5)] text-[#F95D5D] px-[4px] rounded-[4px]">37.15 Yes</div>
+                <div className="opacity-60">at</div>
+                <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
+                <div>0.75</div>
+              </div>
+              <div className="h-[32px] flex items-center justify-between">
+                <div className="w-[98px] leading-[32px] text-white text-[16px]">Page 1 of 15</div>
+                <div className="flex gap-[8px]">
+                  <span className="size-[32px] rounded-[8px] border border-white/40 text-white/40 text-[12px] flex items-center justify-center cursor-pointer hover:bg-white/20 hover:text-white hover:border-transparent"><ArrowLeftIcon /></span>
+                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 1 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>1</span>
+                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 2 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>2</span>
+                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 3 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>3</span>
+                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 4 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>4</span>
+                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 5 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>5</span>
+                  <span className="size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent">...</span>
+                  <span className="size-[32px] rounded-[8px] border border-white/40 text-white/40 text-[12px] flex items-center justify-center cursor-pointer hover:bg-white/20 hover:text-white hover:border-transparent"><ArrowRightIcon /></span>
+                </div>
+                <div className="h-[32px] w-[98px] border border-white/40 rounded-[8px] flex items-center justify-center cursor-pointer text-[16px] text-white/40 hover:text-white">10/page <ArrowDownIcon className="text-[12px]" /></div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-[36px] h-[24px] leading-[24px] text-white text-[18px] font-bold">Opinions (0)</div>
+
+          <div className="mt-[45px] bg-white/40 rounded-[12px] px-[24px] py-[14px]">
+            <div className="flex items-center justify-between">
+              <div className="size-[32px] bg-[#D9D9D9] rounded-full"></div>
+              <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white/60 px-[12px]">Say something</div>
+              <Edit1Icon className="text-white/60 text-[24px] cursor-pointer hover:text-white" />
+            </div>
+          </div>
+
+          <div className="mt-[48px]">
+            <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>
+            <div className="mt-[12x] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">Nothing yet</div>
+          </div>
+        </div>
+        <div className="w-[368px] sticky top-[80px] z-50">
+          {/* 使用可复用的交易表单组件 */}
+          <TradingForm
+            tradeType={tradeType}
+            onTradeTypeChange={setTradeType}
+            outcome={userVote}
+            onOutcomeChange={setUserVote}
+            amount={amount}
+            onAmountChange={setAmount}
+            balance={balance}
+            onTrade={handleTrade}
+            prediction={prediction}
+          />
+
+          {/* 使用可复用的服务条款组件 */}
+          <TermsAgreement />
         </div>
       </main>
 

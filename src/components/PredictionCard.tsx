@@ -8,7 +8,7 @@ import { Calendar, Volume, TrendingUp, TrendingDown } from "lucide-react";
 import SemicircleGauge from "./SemicircleGauge";
 import MarketDetailModal from "./MarketDetailModal";
 import { getMiniTrendData } from "@/lib/chartData";
-import PredictionTradingModal from "./PredictionTradingModal";
+import { PredictionTradingModal } from "./predictionTrading";
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 
@@ -64,9 +64,7 @@ export default function PredictionCard({
   return (
     <>
       <Card
-        className="bg-[#010A2C] border border-[#26282E] hover:shadow-lg rounded-[16px] transition-all duration-300 hover:border-[#467DFF] group cursor-pointer"
-        onClick={handleCardClick}
-      >
+        className="bg-[#010A2C] border border-[#26282E] hover:shadow-lg rounded-[16px] transition-all duration-300 hover:border-[#467DFF] group">
         <CardContent className="p-[24px]">
           {/* Header with avatar and question */}
           <div className="flex items-start space-x-[19px] mb-[20px]">
@@ -76,7 +74,10 @@ export default function PredictionCard({
                 {category.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <div className="flex-1 min-w-0 h-[96px] leading-[24px] text-white text-[20px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:4] [-webkit-box-orient:vertical]">
+            <div
+              className="flex-1 min-w-0 h-[96px] leading-[24px] text-white text-[20px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:4] [-webkit-box-orient:vertical] cursor-pointer"
+              onClick={handleCardClick}
+            >
               {question}
             </div>
             <div className="h-[48px] w-[80px]">
@@ -141,6 +142,7 @@ export default function PredictionCard({
         isOpen={showTradingModal}
         onClose={() => setShowTradingModal(false)}
         prediction={{
+          avatar,
           question,
           chance,
           volume,
