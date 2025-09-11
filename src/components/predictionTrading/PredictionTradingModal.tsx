@@ -62,14 +62,14 @@ export default function PredictionTradingModal({
       }`}>
         {/* 弹窗头部 */}
         <div className="flex items-center justify-between pt-[24px] pl-[12px] pr-[24px]">
-          <div className="flex items-center">
+          <div className="flex-1 flex items-center overflow-hidden">
             <Avatar className="w-[24px] h-[24px] rounded-[8px] transition-all">
               <AvatarImage src={prediction.avatar} alt="avatar" />
               <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-gray-700 font-semibold">
                 {prediction.question.charAt(0).toUpperCase()}
               </AvatarFallback>
             </Avatar>
-            <h2 className="h-[24px] leading-[24px] text-[20px] font-bold text-white px-[12px]">
+            <h2 className="truncate h-[24px] leading-[24px] text-[20px] font-bold text-white px-[12px]">
               {prediction.question}
             </h2>
           </div>

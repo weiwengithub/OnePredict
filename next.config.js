@@ -1,8 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',
-  distDir: 'out',
+  // 只在生产构建时使用静态导出
+  ...(process.env.NODE_ENV === 'production' && {
+    output: 'export',
+    distDir: 'out',
+  }),
   allowedDevOrigins: ["*.preview.same-app.com"],
+
+  // 开发环境API代理配置
+  async rewrites() {
+    if (process.env.NODE_ENV === 'development') {
+      return [
+        {
+          source: '/api/:path*',
+          destination: `${process.env.PROXY_TARGET || 'https://poly-admin.deltax.online/api'}/:path*`,
+        },
+      ];
+    }
+    return [];
+  },
   images: {
     unoptimized: true,
     domains: [

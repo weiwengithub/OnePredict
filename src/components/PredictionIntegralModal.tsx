@@ -130,7 +130,7 @@ export default function PredictionIntegralModal({
               <>
                 {positionList.length > 0 ? (
                   positionList.map((position) => (
-                    <div className="mt-[24px]"></div>
+                    <div key={position} className="mt-[24px]"></div>
                   ))
                 ) : (
                   <>
@@ -145,8 +145,8 @@ export default function PredictionIntegralModal({
             {currentTab === 'trades' && (
               <>
                 {tradeList.length > 0 ? (
-                  tradeList.map((position) => (
-                    <div className="mt-[24px]"></div>
+                  tradeList.map((trade) => (
+                    <div key={trade} className="mt-[24px]"></div>
                   ))
                 ) : (
                   <div>
@@ -162,8 +162,8 @@ export default function PredictionIntegralModal({
               <>
                 {transactionList.length > 0 ? (
                   <>
-                    {transactionList.map((position) => (
-                      <div className="mt-[24px] flex items-center bg-[#04122B] rounded-[16px] py-[20px]">
+                    {transactionList.map((transaction) => (
+                      <div key={transaction} className="mt-[24px] flex items-center bg-[#04122B] rounded-[16px] py-[20px]">
                         <div className="ml-[24px] size-[32px] flex-none">
                           <Image src="/images/icon/icon-token.png" alt="" width={32} height={32} />
                         </div>

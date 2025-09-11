@@ -18,6 +18,7 @@ import Footer from "@/components/Footer";
 import { FloatingThemeToggle } from "@/components/ThemeToggle";
 import Header from "@/components/Header";
 import Image from "next/image";
+import { apiService } from "@/lib/api";
 
 export default function Home() {
   const [showWelcome, setShowWelcome] = useState(true);
@@ -157,6 +158,14 @@ export default function Home() {
       isLive: true
     }
   ];
+  const getList = async () => {
+    const list = await apiService.getExtProjectList({})
+    console.log(list)
+  }
+
+  useEffect(() => {
+    getList();
+  })
 
   return (
     <div className="min-h-screen bg-[#051A3D] pb-20 md:pb-0">
