@@ -408,6 +408,7 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
                 <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
                 <div>0.75</div>
               </div>
+              {/*分页组件*/}
               <div className="h-[32px] flex items-center justify-between">
                 <div className="w-[98px] leading-[32px] text-white text-[16px]">Page 1 of 15</div>
                 <div className="flex gap-[8px]">

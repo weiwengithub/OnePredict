@@ -73,14 +73,7 @@ export default function PredictionTradingModal({
               {prediction.question}
             </h2>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onClose}
-            className="w-[24px] h-[24px] text-[#D2D1D1] hover:bg-white/10 rounded-full"
-          >
-            <CloseIcon className="w-[24px] h-[24px]" />
-          </Button>
+          <CloseIcon className="text-[24px] text-[#D2D1D1] hover:text-white cursor-pointer" onClick={onClose} />
         </div>
 
         {/* 使用可复用的交易表单组件 */}

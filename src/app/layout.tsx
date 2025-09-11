@@ -19,13 +19,13 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "Bayes Market - Prediction Platform",
+  title: "OnePredict - Prediction Platform",
   description: "The next-generation prediction market for exchanging beliefs and forecasting global events across finance, politics, crypto, entertainment and more.",
-  applicationName: "Bayes Market",
-  authors: [{ name: "Bayes Market Team" }],
-  keywords: ["prediction market", "forecasting", "trading", "finance", "politics", "crypto"],
-  creator: "Bayes Market",
-  publisher: "Bayes Market",
+  applicationName: "OnePredict",
+  authors: [{ name: "OnePredict Team" }],
+  keywords: ["OnePredict", "forecasting", "trading", "finance", "politics", "crypto"],
+  creator: "OnePredict",
+  publisher: "OnePredict",
   formatDetection: {
     telephone: false,
   },
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Bayes Market",
+    title: "OnePredict",
     startupImage: [
       {
         url: "/icons/startup-768x1024.png",
@@ -73,7 +73,7 @@ export default function RootLayout({
         <meta name="theme-color" content="#1f2937" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="Bayes Market" />
+        <meta name="apple-mobile-web-app-title" content="OnePredict" />
         <meta name="mobile-web-app-capable" content="yes" />
 
         {/* Additional Mobile Optimizations */}

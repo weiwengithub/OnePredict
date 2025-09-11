@@ -12,7 +12,6 @@ import PredictionCard from "@/components/PredictionCard";
 import MobilePredictionCard from "@/components/MobilePredictionCard";
 import MobileNavigation from "@/components/MobileNavigation";
 import BannerSlider from '@/components/BannerSlider';
-// import BannerCards from "@/components/BannerCards";
 import CategoryTabs from "@/components/CategoryTabs";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Footer from "@/components/Footer";

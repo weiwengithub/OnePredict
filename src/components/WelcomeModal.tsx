@@ -32,7 +32,7 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
               </div>
               <div className="space-y-1 font-semibold">
                 <h2 className="text-lg font-semibold tracking-tight text-gray-900 leading-9">
-                  Welcome to Bayes Market
+                  Welcome to OnePredict
                 </h2>
                 <p className="text-sm leading-normal text-gray-600">
                   Start Predicting. Start Earning.

@@ -1,6 +1,6 @@
 {
-  "name": "Bayes Market - Prediction Platform",
-  "short_name": "Bayes Market",
+  "name": "OnePredict - Prediction Platform",
+  "short_name": "OnePredict",
   "description": "The next-generation prediction market for exchanging beliefs and forecasting global events across finance, politics, crypto, entertainment and more.",
   "start_url": "/",
   "display": "standalone",

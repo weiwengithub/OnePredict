@@ -75,7 +75,7 @@ export default function MobileNavigation({
               </SheetTrigger>
               <SheetContent side="left" className="w-72 p-0">
                 <div className="p-6">
-                  <h2 className="text-lg font-bold text-gray-900 mb-6">Bayes Market</h2>
+                  <h2 className="text-lg font-bold text-gray-900 mb-6">OnePredict</h2>
 
                   {/* Main Pages */}
                   <div className="space-y-2 mb-6">
@@ -154,7 +154,7 @@ export default function MobileNavigation({
               </SheetContent>
             </Sheet>
 
-            <h1 className="text-lg font-bold text-gray-900">Bayes Market</h1>
+            <h1 className="text-lg font-bold text-gray-900">OnePredict</h1>
           </div>
 
           {/* Right: Balance and Notifications */}

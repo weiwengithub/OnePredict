@@ -88,7 +88,7 @@ export default function PWAInstallPrompt() {
 
             <div className="flex-1 min-w-0">
               <h3 className="text-sm font-semibold text-gray-900 mb-1">
-                Install Bayes Market
+                Install OnePredict
               </h3>
               <p className="text-xs text-gray-600 mb-3">
                 {isIOS

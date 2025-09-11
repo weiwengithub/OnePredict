@@ -27,7 +27,7 @@ export default function CategoryTabs() {
 
   return (
     <div className="flex justify-between items-center">
-      <div className="flex flex-wrap gap-[4px] mt-[40px] mb-[36px] border border-white/20 rounded-[8px] px-[4px] py-[2px]">
+      <div className="flex flex-wrap gap-[4px] mb-[36px] border border-white/20 rounded-[8px] px-[4px] py-[2px]">
         {categories.map((category) => {
           const Icon = category.icon;
           const isActive = activeCategory === category.id;
@@ -58,7 +58,7 @@ export default function CategoryTabs() {
           <span className="inline-block leading-[18px] text-white text-[14px]">Expire Time</span>
           <ArrowDownIcon />
         </div>
-        <div className="ml-[16px] h-[36px] border-l border-white/10 flex items-center text-white pl-[16pxs]">
+        <div className="ml-[16px] h-[36px] border-l border-white/10 flex items-center text-white pl-[16px]">
           <WatchIcon className="w-[16px] h-[16px]" />
           <span className="inline-block ml-[5px] leading-[18px] text-[14px] font-bold">Watchlist</span>
         </div>
