@@ -7,6 +7,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
+import SearchModal from "@/components/SearchModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import type { Language } from "@/contexts/LanguageContext";
 
@@ -16,6 +17,7 @@ interface HeaderProps {
 
 export default function Header({ currentPage }: HeaderProps) {
   const [showIntegralModal, setShowIntegralModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const pathname = usePathname();
@@ -136,11 +138,13 @@ export default function Header({ currentPage }: HeaderProps) {
               </div>
 
               {/* Search Button */}
-              <button className={`
-              flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20
-              hover:border-white rounded-[20px] cursor-pointer transition-all duration-200
-              hover:bg-white/5 hover:scale-105
-            `}>
+              <button
+                onClick={() => setShowSearchModal(true)}
+                className={`
+                flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20
+                hover:border-white rounded-[20px] cursor-pointer transition-all duration-200
+                hover:bg-white/5 hover:scale-105
+              `}>
                 <Image src="/images/icon/icon-search.png" alt="Search" width={16} height={16} />
               </button>
 
@@ -217,8 +221,8 @@ export default function Header({ currentPage }: HeaderProps) {
           <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
         )}
       </header>
-      {/* Trading Modal */}
 
+      {/* Trading Modal */}
       <PredictionIntegralModal
         isOpen={showIntegralModal}
         onClose={() => setShowIntegralModal(false)}
@@ -229,6 +233,12 @@ export default function Header({ currentPage }: HeaderProps) {
           deadline: 'string',
           id: ''
         }}
+      />
+
+      {/* Search Modal */}
+      <SearchModal
+        open={showSearchModal}
+        onOpenChange={setShowSearchModal}
       />
     </>
   );

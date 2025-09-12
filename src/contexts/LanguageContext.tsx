@@ -9,7 +9,7 @@ export type Language = 'en' | 'zh';
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: string, options?: any) => string;
+  t: (key: string, options?: Record<string, unknown>) => string;
   isReady: boolean;
 }
 
