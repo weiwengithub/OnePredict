@@ -58,6 +58,13 @@
     "volume": "交易量",
     "search": "搜索"
   },
+  "search": {
+    "placeholder": "搜索市场合约地址",
+    "trending": "热门",
+    "contractAddress": "搜索市场合约地址",
+    "noResults": "未找到结果",
+    "trySearching": "尝试搜索 \"{query}\""
+  },
   "predictions": {
     "questions": {
       "shanghaiMicroelectronics": "上海微電子是否會上市？",

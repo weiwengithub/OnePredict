@@ -58,6 +58,13 @@
     "volume": "Vol.",
     "search": "Search"
   },
+  "search": {
+    "placeholder": "Search Markets.contract address",
+    "trending": "Trending",
+    "contractAddress": "Search Markets.contract address",
+    "noResults": "No results found",
+    "trySearching": "Try searching for \"{query}\""
+  },
   "predictions": {
     "questions": {
       "shanghaiMicroelectronics": "Will Shanghai Microelectronics go public?",

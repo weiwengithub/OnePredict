@@ -141,7 +141,7 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
                   <Input
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search Markets.contract address"
+                    placeholder={t('search.placeholder')}
                     className="flex-1 bg-transparent border-0 text-white placeholder:text-white/50 focus:ring-0 focus:outline-none text-base font-medium"
                   />
                 </div>
@@ -154,7 +154,7 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
             <div className="w-6 h-6 rounded-full bg-gradient-to-r from-[#467DFF] to-[#B94398] flex items-center justify-center">
               <div className="w-3 h-3 bg-white rounded-full"></div>
             </div>
-            <h3 className="text-[#4E74B5] text-2xl font-bold">Trending</h3>
+            <h3 className="text-[#4E74B5] text-2xl font-bold">{t('search.trending')}</h3>
           </div>
         </div>
 
@@ -204,7 +204,7 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
           {filteredResults.length === 0 && searchQuery && (
             <div className="text-center py-12">
-              <div className="text-white/40 text-base mb-2">No results found</div>
+              <div className="text-white/40 text-base mb-2">{t('search.noResults')}</div>
               <div className="text-white/30 text-sm">Try searching for "{searchQuery}"</div>
             </div>
           )}
