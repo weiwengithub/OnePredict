@@ -1,0 +1,77 @@
+{
+  "header": {
+    "home": "Home",
+    "leaderboard": "Leaderboard",
+    "rewards": "Rewards",
+    "signin": "Sign in",
+    "language": "English"
+  },
+  "categories": {
+    "trending": "Trending",
+    "live": "Live",
+    "new": "New",
+    "politics": "Politics",
+    "economy": "Economy",
+    "crypto": "Crypto",
+    "entertainment": "Entertainment",
+    "society": "Society",
+    "sortBy": "Sort by",
+    "expireTime": "Expire Time",
+    "watchlist": "Watchlist"
+  },
+  "welcome": {
+    "title": "Welcome to OnePredict",
+    "subtitle": "Start Predicting. Start Earning.",
+    "features": {
+      "explore": {
+        "title": "Explore Questions",
+        "description": "Discover prediction topics you care about, like \"Will it rain on the Olympics opening day?\""
+      },
+      "deposit": {
+        "title": "Deposit USDC",
+        "description": "Fund your own wallet to start making predictions."
+      },
+      "trade": {
+        "title": "Trade",
+        "description": "Buy or sell outcomes based on your belief — prices reflect the crowd's probability estimate."
+      },
+      "earn": {
+        "title": "Earn",
+        "description": "If your prediction is correct, you win!"
+      }
+    },
+    "cta": "Claim 500 Points & Predict Now",
+    "terms": "By proceeding, you confirm you're at least 18 and accept our terms"
+  },
+  "footer": {
+    "marketplace": "Marketplace",
+    "market": "Market",
+    "faq": "FAQ",
+    "documentation": "Documentation",
+    "about": "About",
+    "exploreProjects": "Explore Projects",
+    "aboutUs": "About us",
+    "copyright": "OnePredict © 2025, All rights reserved"
+  },
+  "common": {
+    "loadMore": "Load more",
+    "volume": "Vol.",
+    "search": "Search"
+  },
+  "predictions": {
+    "questions": {
+      "shanghaiMicroelectronics": "Will Shanghai Microelectronics go public?",
+      "ethBreakAth": "Will ETH Break ATH in 2025?",
+      "keungToRelationship": "Will Keung To confirm a romantic relationship or scandal by 2025?",
+      "klarnaIpo": "Klarna IPO 2025?",
+      "usFedRateHike": "Will the US Federal Reserve raise interest rates at any time?",
+      "koreaHottestSummer": "Will Korea report that 2025 summer was the hottest?",
+      "koreanGovItaewon": "Will Korean government publish new official findings on the Itaewon tragedy?",
+      "cultItaewon": "A cult is discovered to have played a role in the Itaewon tragedy?",
+      "canadaPalestine": "Canada to officially recognize the State of Palestine by September?",
+      "australiaPalestine": "Australia to officially recognize the State of Palestine this year?",
+      "earthquake9": "9.0 magnitude earthquake anywhere this year?",
+      "bricsNewMember": "Will BRICS add a new member by December 31?"
+    }
+  }
+}

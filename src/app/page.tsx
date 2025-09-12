@@ -18,12 +18,14 @@ import Footer from "@/components/Footer";
 import { FloatingThemeToggle } from "@/components/ThemeToggle";
 import Header from "@/components/Header";
 import Image from "next/image";
-import { apiService } from "@/lib/api";
+import apiService from "@/lib/api/services";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Home() {
   const [showWelcome, setShowWelcome] = useState(true);
   const [activeCategory, setActiveCategory] = useState("trending");
   const [isMobile, setIsMobile] = useState(false);
+  const { t } = useLanguage();
 
   // Detect mobile viewport
   useEffect(() => {
@@ -209,7 +211,7 @@ export default function Home() {
 
         {/* Load More */}
         <div className="mt-[15px] flex items-center justify-center bg-[#010A2C] border border-[#26282E] text-center rounded-[16px] py-[9px]">
-          <span className="mr-[4px] text-[14px] text-white/60">Load more</span>
+          <span className="mr-[4px] text-[14px] text-white/60">{t('common.loadMore')}</span>
           <Image src="/images/icon/icon-refresh.png" alt="OnePredict" width={14} height={14} />
         </div>
       </main>

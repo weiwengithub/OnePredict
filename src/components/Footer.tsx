@@ -3,9 +3,11 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { Twitter, Github, Linkedin, Mail, ExternalLink } from 'lucide-react';
+import { useLanguage } from "@/contexts/LanguageContext";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
+  const { t } = useLanguage();
 
   return (
     <footer className="bg-[#04122B] border-t border-white/10 mt-[70px]">
@@ -22,36 +24,36 @@ export default function Footer() {
           <div className="lg:col-span-1 flex justify-center gap-[56px]">
             {/* Marketplace */}
             <div>
-              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">Marketplace</h3>
+              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">{t('footer.marketplace')}</h3>
               <div className="space-y-3">
                 <Link href="/" className="block text-white/70 hover:text-white text-sm transition-colors">
-                  Market
+                  {t('footer.market')}
                 </Link>
               </div>
             </div>
 
             {/* Help & Support */}
             <div>
-              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">FAQ</h3>
+              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">{t('footer.faq')}</h3>
               <div className="space-y-[14px]">
                 <Link href="/" className="block text-white/60 hover:text-white text-[14px] transition-colors">
-                  FAQ
+                  {t('footer.faq')}
                 </Link>
                 <Link href="/" className="block text-white/60 hover:text-white text-[14px] transition-colors">
-                  Documentation
+                  {t('footer.documentation')}
                 </Link>
               </div>
             </div>
 
             {/* About */}
             <div>
-              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">About</h3>
+              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">{t('footer.about')}</h3>
               <div className="space-y-3">
                 <Link href="/" className="block text-white/70 hover:text-white text-sm transition-colors">
-                  Explore Projects
+                  {t('footer.exploreProjects')}
                 </Link>
                 <Link href="/" className="block text-white/70 hover:text-white text-sm transition-colors">
-                  About us
+                  {t('footer.aboutUs')}
                 </Link>
               </div>
             </div>
@@ -93,7 +95,7 @@ export default function Footer() {
             </div>
             {/* Copyright */}
             <div className="mt-[16px] text-white text-[14px]">
-              OnePredict © 2025, All rights reserved
+              {t('footer.copyright')}
             </div>
           </div>
         </div>

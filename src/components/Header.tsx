@@ -7,6 +7,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
+import { useLanguage } from "@/contexts/LanguageContext";
+import type { Language } from "@/contexts/LanguageContext";
 
 interface HeaderProps {
   currentPage?: 'home' | 'leaderboard' | 'rewards' | 'details';
@@ -15,7 +17,9 @@ interface HeaderProps {
 export default function Header({ currentPage }: HeaderProps) {
   const [showIntegralModal, setShowIntegralModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
 
   // 根据当前路径自动检测页面
   const getCurrentPage = () => {
@@ -41,10 +45,22 @@ export default function Header({ currentPage }: HeaderProps) {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // 点击外部关闭语言下拉菜单
+  // useEffect(() => {
+  //   const handleClickOutside = (event: MouseEvent) => {
+  //     if (showLanguageDropdown) {
+  //       setShowLanguageDropdown(false);
+  //     }
+  //   };
+  //
+  //   document.addEventListener('mousedown', handleClickOutside);
+  //   return () => document.removeEventListener('mousedown', handleClickOutside);
+  // }, [showLanguageDropdown]);
+
   const navigationItems = [
-    { key: 'home', label: 'Home', href: '/' },
-    { key: 'leaderboard', label: 'Leaderboard', href: '/leaderboard' },
-    { key: 'rewards', label: 'Rewards', href: '/rewards' }
+    { key: 'home', label: t('header.home'), href: '/' },
+    { key: 'leaderboard', label: t('header.leaderboard'), href: '/leaderboard' },
+    { key: 'rewards', label: t('header.rewards'), href: '/rewards' }
   ];
 
   const handleButtonClick = (e: React.MouseEvent) => {
@@ -129,15 +145,51 @@ export default function Header({ currentPage }: HeaderProps) {
               </button>
 
               {/* Language Selector */}
-              <button className={`
-              ml-[8px] flex items-center h-[36px] border-[1px] border-solid border-white/20
-              hover:border-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
-              hover:bg-white/5
-            `}>
-                <Image src="/images/icon/icon-language.png" alt="Language" width={16} height={16} />
-                <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px] text-white/20">English</span>
-                <Image src="/images/icon/icon-arrows-down.png" alt="" width={8} height={4} />
-              </button>
+              <div className="relative ml-[8px]">
+                <button
+                  onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
+                  className={`
+                  flex items-center h-[36px] border-[1px] border-solid border-white/20
+                  hover:border-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
+                  hover:bg-white/5
+                `}>
+                  <Image src="/images/icon/icon-language.png" alt="Language" width={16} height={16} />
+                  <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px] text-white/20">
+                    {t('header.language')}
+                  </span>
+                  <Image src="/images/icon/icon-arrows-down.png" alt="" width={8} height={4} />
+                </button>
+
+                {/* Language Dropdown */}
+                {showLanguageDropdown && (
+                  <div className="absolute top-full mt-2 right-0 bg-[#04122B] border border-white/20 rounded-lg py-2 z-50 min-w-[120px]">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLanguage('en');
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left hover:bg-white/5 transition-colors ${
+                        language === 'en' ? 'text-white bg-white/10' : 'text-white/60'
+                      }`}
+                    >
+                      English
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setLanguage('zh');
+                        setShowLanguageDropdown(false);
+                      }}
+                      className={`w-full px-4 py-2 text-left hover:bg-white/5 transition-colors ${
+                        language === 'zh' ? 'text-white bg-white/10' : 'text-white/60'
+                      }`}
+                    >
+                      中文
+                    </button>
+                  </div>
+                )}
+              </div>
 
               {/* Theme Toggle */}
               <div className="ml-[8px]">
@@ -154,7 +206,7 @@ export default function Header({ currentPage }: HeaderProps) {
                 ${isScrolled ? 'scale-95' : 'scale-100'}
               `}
               >
-                Sign in
+                {t('header.signin')}
               </Button>
             </div>
           </div>

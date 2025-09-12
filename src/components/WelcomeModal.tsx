@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { useLanguage } from "@/contexts/LanguageContext";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -9,6 +10,8 @@ interface WelcomeModalProps {
 }
 
 export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) {
+  const { t } = useLanguage();
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-[920px] p-0 border-gray-200">
@@ -32,10 +35,10 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
               </div>
               <div className="space-y-1 font-semibold">
                 <h2 className="text-lg font-semibold tracking-tight text-gray-900 leading-9">
-                  Welcome to OnePredict
+                  {t('welcome.title')}
                 </h2>
                 <p className="text-sm leading-normal text-gray-600">
-                  Start Predicting. Start Earning.
+                  {t('welcome.subtitle')}
                 </p>
               </div>
             </div>
@@ -49,9 +52,9 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
                   height={14}
                 />
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold leading-normal">Explore Questions</h3>
+                  <h3 className="text-sm font-semibold leading-normal">{t('welcome.features.explore.title')}</h3>
                   <p className="text-sm leading-relaxed text-gray-600">
-                    Discover prediction topics you care about, like "Will it rain on the Olympics opening day?"
+                    {t('welcome.features.explore.description')}
                   </p>
                 </div>
               </div>
@@ -64,9 +67,9 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
                   height={14}
                 />
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold leading-normal">Deposit USDC</h3>
+                  <h3 className="text-sm font-semibold leading-normal">{t('welcome.features.deposit.title')}</h3>
                   <p className="text-sm leading-relaxed text-gray-600">
-                    Fund your own wallet to start making predictions.
+                    {t('welcome.features.deposit.description')}
                   </p>
                 </div>
               </div>
@@ -79,9 +82,9 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
                   height={14}
                 />
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold leading-normal">Trade</h3>
+                  <h3 className="text-sm font-semibold leading-normal">{t('welcome.features.trade.title')}</h3>
                   <p className="text-sm leading-relaxed text-gray-600">
-                    Buy or sell outcomes based on your belief — prices reflect the crowd's probability estimate.
+                    {t('welcome.features.trade.description')}
                   </p>
                 </div>
               </div>
@@ -94,9 +97,9 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
                   height={14}
                 />
                 <div className="space-y-2">
-                  <h3 className="text-sm font-semibold leading-normal">Earn</h3>
+                  <h3 className="text-sm font-semibold leading-normal">{t('welcome.features.earn.title')}</h3>
                   <p className="text-sm leading-relaxed text-gray-600">
-                    If your prediction is correct, you win!
+                    {t('welcome.features.earn.description')}
                   </p>
                 </div>
               </div>
@@ -107,10 +110,10 @@ export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) 
                 className="w-full bg-gray-900 hover:bg-gray-800 text-white font-medium text-xl p-4 h-auto rounded-xl"
                 onClick={() => onOpenChange(false)}
               >
-                Claim 500 Points & Predict Now
+                {t('welcome.cta')}
               </Button>
               <p className="text-center text-xs leading-normal text-gray-400 max-w-[290px] mx-auto">
-                By proceeding, you confirm you're at least 18 and{" "}
+                {t('welcome.terms')}{" "}
                 <a href="/pdf?file=terms-of-use" target="_blank" rel="noopener noreferrer" className="cursor-pointer hover:underline text-gray-300">
                   accept our terms
                 </a>

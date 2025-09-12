@@ -1,0 +1,77 @@
+{
+  "header": {
+    "home": "首页",
+    "leaderboard": "排行榜",
+    "rewards": "奖励",
+    "signin": "登录",
+    "language": "中文"
+  },
+  "categories": {
+    "trending": "热门",
+    "live": "直播",
+    "new": "最新",
+    "politics": "政治",
+    "economy": "经济",
+    "crypto": "加密货币",
+    "entertainment": "娱乐",
+    "society": "社会",
+    "sortBy": "排序方式",
+    "expireTime": "到期时间",
+    "watchlist": "关注列表"
+  },
+  "welcome": {
+    "title": "欢迎来到 OnePredict",
+    "subtitle": "开始预测，开始赚钱。",
+    "features": {
+      "explore": {
+        "title": "探索问题",
+        "description": "发现您关心的预测话题，比如『奥运会开幕式那天会下雨吗？』"
+      },
+      "deposit": {
+        "title": "存入 USDC",
+        "description": "为您的钱包充值以开始进行预测。"
+      },
+      "trade": {
+        "title": "交易",
+        "description": "根据您的信念买入或卖出结果——价格反映了群体的概率估计。"
+      },
+      "earn": {
+        "title": "赚取",
+        "description": "如果您的预测正确，您就赢了！"
+      }
+    },
+    "cta": "领取 500 积分并立即预测",
+    "terms": "继续操作即表示您确认已满 18 岁并接受我们的条款"
+  },
+  "footer": {
+    "marketplace": "市场",
+    "market": "市场",
+    "faq": "常见问题",
+    "documentation": "文档",
+    "about": "关于",
+    "exploreProjects": "探索项目",
+    "aboutUs": "关于我们",
+    "copyright": "OnePredict © 2025，保留所有权利"
+  },
+  "common": {
+    "loadMore": "加载更多",
+    "volume": "交易量",
+    "search": "搜索"
+  },
+  "predictions": {
+    "questions": {
+      "shanghaiMicroelectronics": "上海微電子是否會上市？",
+      "ethBreakAth": "ETH 在 2025 年会突破历史最高价吗？",
+      "keungToRelationship": "姜涛会在 2025 年确认恋爱关系或绯闻吗？",
+      "klarnaIpo": "Klarna 2025 年 IPO？",
+      "usFedRateHike": "美國聯邦儲備局會在任何時間升息嗎？",
+      "koreaHottestSummer": "韩国会报告 2025 年夏天是最热的吗？",
+      "koreanGovItaewon": "韩国政府会发布梨泰院惨案的新官方调查结果吗？",
+      "cultItaewon": "发现邪教在梨泰院惨案中发挥了作用？",
+      "canadaPalestine": "加拿大会在九月前正式承认巴勒斯坦国吗？",
+      "australiaPalestine": "澳大利亚今年会正式承认巴勒斯坦国吗？",
+      "earthquake9": "今年任何地方会发生 9.0 级地震吗？",
+      "bricsNewMember": "金砖国家会在 12 月 31 日前增加新成员吗？"
+    }
+  }
+}
