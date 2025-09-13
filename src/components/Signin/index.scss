@@ -1,0 +1,99 @@
+.signin-area {
+  position: relative;
+  display: inline-block;
+  .signin-btn {
+    background-color: rgba(0, 71, 196, 1);
+    height: 40px;
+    border-radius: 50px;
+    border: none;
+    color: #fff;
+    font-size: 16px;
+    padding: 0 24px;
+    cursor: pointer;
+    font-weight: 500;
+    font-family: 'DMSans-Light';
+    transition: background 0.2s;
+    &:hover {
+      background: #477CFC;
+    }
+  }
+  .trans-btn {
+    background: transparent;
+    border:1px solid rgba(255, 255, 255, 0.2);
+    &:hover {
+      background: transparent;
+    }
+  }
+  .signin-dropdown-menu {
+    position: absolute;
+    right: 0;
+    top: 40px;
+    min-width: 240px;
+    background: #18181a;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+    padding: 16px 0 0 0;
+    z-index: 100;
+    border: 1px solid rgba(128,137,150,0.15);
+    .dropdown-menu-title {
+      padding: 0 24px;
+      height: 44px;
+      display: flex;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .dropdown-menu-list {
+      padding: 0 0 8px 0;
+      .dropdown-menu-item {
+        padding: 0 24px;
+        height: 44px;
+        display: flex;
+        align-items: center;
+        color: #fff;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background 0.2s;
+        &:hover {
+          background: rgba(128,137,150,0.08);
+        }
+        .dropdown-menu-icon {
+          width: 20px;
+          height: 20px;
+          margin-right: 12px;
+          display: inline-block;
+        }
+      }
+    }
+    .dropdown-menu-divider {
+      height: 1px;
+      background: rgba(128,137,150,0.15);
+      margin: 0 0 0 0;
+      border: none;
+    }
+    .dropdown-menu-disconnect {
+      padding: 12px 24px 16px 24px;
+      color: #477CFC;
+      font-size: 16px;
+      font-weight: 500;
+      cursor: pointer;
+      .dropdown-menu-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 12px;
+        display: inline-block;
+        &.blue {
+          filter: brightness(1.5) saturate(2);
+        }
+      }
+      .blue {
+        color: rgba(71, 124, 252, 1);
+      }
+    }
+  }
+  @media (max-width: 1200px) {
+    .signin-dropdown-menu {
+      top: 30px;
+      min-width: 180px;
+    }
+  }
+}

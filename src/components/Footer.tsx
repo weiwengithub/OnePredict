@@ -4,6 +4,11 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Twitter, Github, Linkedin, Mail, ExternalLink } from 'lucide-react';
 import { useLanguage } from "@/contexts/LanguageContext";
+import FooterIcon1 from "@/assets/icons/footer-1.svg";
+import FooterIcon2 from "@/assets/icons/footer-2.svg";
+import FooterIcon3 from "@/assets/icons/footer-3.svg";
+import FooterIcon4 from "@/assets/icons/footer-4.svg";
+import FooterIcon5 from "@/assets/icons/footer-5.svg";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
@@ -22,41 +27,25 @@ export default function Footer() {
           </div>
 
           <div className="lg:col-span-1 flex justify-center gap-[56px]">
-            {/* Marketplace */}
-            <div>
-              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">{t('footer.marketplace')}</h3>
-              <div className="space-y-3">
-                <Link href="/" className="block text-white/70 hover:text-white text-sm transition-colors">
-                  {t('footer.market')}
-                </Link>
-              </div>
-            </div>
+            {/* Privacy */}
+            <Link href="/" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
+              {t('footer.privacy')}
+            </Link>
 
-            {/* Help & Support */}
-            <div>
-              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">{t('footer.faq')}</h3>
-              <div className="space-y-[14px]">
-                <Link href="/" className="block text-white/60 hover:text-white text-[14px] transition-colors">
-                  {t('footer.faq')}
-                </Link>
-                <Link href="/" className="block text-white/60 hover:text-white text-[14px] transition-colors">
-                  {t('footer.documentation')}
-                </Link>
-              </div>
-            </div>
+            {/* Terms of use */}
+            <Link href="/" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
+              {t('footer.termsOfUse')}
+            </Link>
 
-            {/* About */}
-            <div>
-              <h3 className="h-[21px] text-[16px] text-white font-bold mb-[34px]">{t('footer.about')}</h3>
-              <div className="space-y-3">
-                <Link href="/" className="block text-white/70 hover:text-white text-sm transition-colors">
-                  {t('footer.exploreProjects')}
-                </Link>
-                <Link href="/" className="block text-white/70 hover:text-white text-sm transition-colors">
-                  {t('footer.aboutUs')}
-                </Link>
-              </div>
-            </div>
+            {/* Learn */}
+            <Link href="/" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
+              {t('footer.learn')}
+            </Link>
+
+            {/* FAQ */}
+            <Link href="/" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
+              {t('footer.FAQ')}
+            </Link>
           </div>
 
           <div className="lg:col-span-1 flex flex-col items-center lg:items-end">
@@ -66,31 +55,37 @@ export default function Footer() {
                 href="https://twitter.com/onepredict"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center transition-colors"
+                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center text-[14px] text-white transition-colors"
               >
-                <Image src="/images/icon/icon-1.png" alt="OnePredict" width={15} height={14} />
+                <FooterIcon1 />
               </a>
               <a
                 href="https://github.com/onepredict"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center transition-colors"
+                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center text-[14px] text-white transition-colors"
               >
-                <Image src="/images/icon/icon-2.png" alt="OnePredict" width={14} height={9} />
+                <FooterIcon2 />
               </a>
               <a
                 href="https://linkedin.com/company/onepredict"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center transition-colors"
+                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center text-[14px] text-white transition-colors"
               >
-                <Image src="/images/icon/icon-3.png" alt="OnePredict" width={14} height={11} />
+                <FooterIcon3 />
               </a>
               <a
                 href="mailto:support@onepredict.com"
-                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center transition-colors"
+                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center text-[14px] text-white transition-colors"
               >
-                <Image src="/images/icon/icon-4.png" alt="OnePredict" width={14} height={13} />
+                <FooterIcon4 />
+              </a>
+              <a
+                href="mailto:support@onepredict.com"
+                className="w-[36px] h-[36px] border border-white/10 rounded-full flex items-center justify-center text-[14px] text-white transition-colors"
+              >
+                <FooterIcon5 />
               </a>
             </div>
             {/* Copyright */}

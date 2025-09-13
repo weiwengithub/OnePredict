@@ -44,14 +44,11 @@
     "terms": "By proceeding, you confirm you're at least 18 and accept our terms"
   },
   "footer": {
-    "marketplace": "Marketplace",
-    "market": "Market",
-    "faq": "FAQ",
-    "documentation": "Documentation",
-    "about": "About",
-    "exploreProjects": "Explore Projects",
-    "aboutUs": "About us",
-    "copyright": "OnePredict © 2025, All rights reserved"
+    "privacy": "Privacy",
+    "termsOfUse": "Terms of use",
+    "learn": "Learn",
+    "FAQ": "FAQ",
+    "copyright": "© OnePredict 2025. All Rights Reserved"
   },
   "common": {
     "loadMore": "Load more",

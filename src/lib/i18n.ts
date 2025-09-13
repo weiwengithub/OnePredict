@@ -35,4 +35,6 @@ i18n
     },
   });
 
+const t= i18n.t
+
 export default i18n;

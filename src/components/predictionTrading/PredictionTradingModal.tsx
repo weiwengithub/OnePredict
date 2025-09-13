@@ -32,11 +32,20 @@ export default function PredictionTradingModal({
   const [amount, setAmount] = useState<number>(0);
   const [balance] = useState<number>(0);
 
-  // 重置表单当弹窗打开时
   useEffect(() => {
     if (isOpen) {
+      // 重置表单
       setOutcome(initialOutcome);
       setAmount(0);
+      // 保存当前的overflow值
+      const originalOverflow = document.body.style.overflow;
+      // 禁止滚动
+      document.body.style.overflow = 'hidden';
+
+      // 清理函数：恢复滚动
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
     }
   }, [isOpen, initialOutcome]);
 

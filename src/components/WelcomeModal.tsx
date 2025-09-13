@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -11,6 +12,21 @@ interface WelcomeModalProps {
 
 export default function WelcomeModal({ open, onOpenChange }: WelcomeModalProps) {
   const { t } = useLanguage();
+
+  // 禁止背景滚动
+  useEffect(() => {
+    if (open) {
+      // 保存当前的overflow值
+      const originalOverflow = document.body.style.overflow;
+      // 禁止滚动
+      document.body.style.overflow = 'hidden';
+
+      // 清理函数：恢复滚动
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>

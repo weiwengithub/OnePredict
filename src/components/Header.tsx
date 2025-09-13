@@ -9,6 +9,11 @@ import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchModal from "@/components/SearchModal";
+import Signin from "@/components/Signin";
+import SearchIcon from "@/assets/icons/search.svg";
+import NetworkIcon from "@/assets/icons/network.svg";
+import SelectIcon from "@/assets/icons/select-icon.svg";
+import CheckedIcon from "@/assets/icons/checked.svg";
 
 interface HeaderProps {
   currentPage?: 'home' | 'leaderboard' | 'rewards' | 'details';
@@ -21,6 +26,7 @@ export default function Header({ currentPage }: HeaderProps) {
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const pathname = usePathname();
   const { language, setLanguage, t } = useLanguage();
+  const router = useRouter();
 
   // 根据当前路径自动检测页面
   const getCurrentPage = () => {
@@ -140,11 +146,11 @@ export default function Header({ currentPage }: HeaderProps) {
               <button
                 onClick={() => setShowSearchModal(true)}
                 className={`
-                flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20
-                hover:border-white rounded-[20px] cursor-pointer transition-all duration-200
+                flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20 text-white/20
+                hover:border-white hover:text-white rounded-[20px] cursor-pointer transition-all duration-200
                 hover:bg-white/5 hover:scale-105
               `}>
-                <Image src="/images/icon/icon-search.png" alt="Search" width={16} height={16} />
+                <SearchIcon />
               </button>
 
               {/* Language Selector */}
@@ -152,31 +158,32 @@ export default function Header({ currentPage }: HeaderProps) {
                 <button
                   onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                   className={`
-                  flex items-center h-[36px] border-[1px] border-solid border-white/20
-                  hover:border-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
+                  flex items-center h-[36px] border-[1px] border-solid border-white/20 text-white/20
+                  hover:border-white hover:text-white rounded-[20px] pl-[16px] pr-[12px] cursor-pointer transition-all duration-200
                   hover:bg-white/5
                 `}>
-                  <Image src="/images/icon/icon-language.png" alt="Language" width={16} height={16} />
-                  <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px] text-white/20">
+                  <NetworkIcon />
+                  <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px]">
                     {t('header.language')}
                   </span>
-                  <Image src="/images/icon/icon-arrows-down.png" alt="" width={8} height={4} />
+                  <SelectIcon className="text-[8px]" />
                 </button>
 
                 {/* Language Dropdown */}
                 {showLanguageDropdown && (
-                  <div className="absolute top-full mt-2 right-0 bg-[#04122B] border border-white/20 rounded-lg py-2 z-50 min-w-[120px]">
+                  <div className="absolute top-full mt-2 right-0 bg-[#04122B] border border-[#051A3D] rounded-[8px] px-[5px] py-[8px] space-y-[8px] z-50 min-w-[120px]">
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
                         setLanguage('en');
                         setShowLanguageDropdown(false);
                       }}
-                      className={`w-full px-4 py-2 text-left hover:bg-white/5 transition-colors ${
-                        language === 'en' ? 'text-white bg-white/10' : 'text-white/60'
+                      className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
+                        language === 'en' ? 'text-white' : 'text-white/50 hover:text-white'
                       }`}
                     >
-                      English
+                      <span>English</span>
+                      {language === 'en' && <CheckedIcon className="text-[12px]" />}
                     </button>
                     <button
                       onClick={(e) => {
@@ -184,11 +191,12 @@ export default function Header({ currentPage }: HeaderProps) {
                         setLanguage('zh');
                         setShowLanguageDropdown(false);
                       }}
-                      className={`w-full px-4 py-2 text-left hover:bg-white/5 transition-colors ${
-                        language === 'zh' ? 'text-white bg-white/10' : 'text-white/60'
+                      className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
+                        language === 'zh' ? 'text-white' : 'text-white/50 hover:text-white'
                       }`}
                     >
-                      中文
+                      <span>简体中文</span>
+                      {language === 'zh' && <CheckedIcon className="text-[12px]" />}
                     </button>
                   </div>
                 )}
@@ -200,17 +208,19 @@ export default function Header({ currentPage }: HeaderProps) {
               </div>
 
               {/* Sign In Button */}
-              <Button
-                variant="ghost"
-                className={`
-                ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-white hover:bg-[#467DFF]
-                hover:text-white rounded-[20px] font-medium transition-all duration-200
-                hover:shadow-lg hover:shadow-[#467DFF]/25 hover:scale-105
-                ${isScrolled ? 'scale-95' : 'scale-100'}
-              `}
-              >
-                {t('header.signin')}
-              </Button>
+              <Signin />
+              {/*<Button*/}
+              {/*  variant="ghost"*/}
+              {/*  className={`*/}
+              {/*  ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-white hover:bg-[#467DFF]*/}
+              {/*  hover:text-white rounded-[20px] font-medium transition-all duration-200*/}
+              {/*  hover:shadow-lg hover:shadow-[#467DFF]/25 hover:scale-105*/}
+              {/*  ${isScrolled ? 'scale-95' : 'scale-100'}*/}
+              {/*`}*/}
+              {/*  onClick={() => router.push('/profile')}*/}
+              {/*>*/}
+              {/*  {t('header.signin')}*/}
+              {/*</Button>*/}
             </div>
           </div>
         </div>

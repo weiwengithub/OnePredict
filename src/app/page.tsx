@@ -1,12 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Bell, Menu } from "lucide-react";
 import WelcomeModal from "@/components/WelcomeModal";
 import PredictionCard from "@/components/PredictionCard";
 import MobilePredictionCard from "@/components/MobilePredictionCard";
@@ -161,7 +155,7 @@ export default function Home() {
     }
   ];
   const getList = async () => {
-    const list = await apiService.getExtProjectList({})
+    const list = await apiService.getExtProjectList({projectStatus: 'All'})
     console.log(list)
   }
 

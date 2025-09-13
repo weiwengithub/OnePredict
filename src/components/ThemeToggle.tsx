@@ -1,7 +1,9 @@
 "use client";
 
 import { useTheme } from '@/contexts/ThemeContext';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import Sun from "@/assets/icons/sun.svg";
+import Moon from "@/assets/icons/moon.svg";
+import Monitor from "@/assets/icons/monitor.svg";
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -9,6 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import SearchIcon from "@/assets/icons/search.svg";
+import React from "react";
 
 interface ThemeToggleProps {
   variant?: 'simple' | 'dropdown';
@@ -27,7 +31,9 @@ export function ThemeToggle({ variant = 'simple', size = 'md' }: ThemeToggleProp
           <Button
             variant="ghost"
             size="sm"
-            className="w-9 h-9 bg-white/10 hover:bg-white/20 border border-white/20 hover:border-white/30 rounded-full transition-all duration-200"
+            className="flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20 text-white/20
+                hover:border-white hover:text-white rounded-[20px] cursor-pointer transition-all duration-200
+                hover:bg-white/5 hover:scale-105"
           >
             <Sun className={`h-${iconSize/4} w-${iconSize/4} rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0`} />
             <Moon className={`absolute h-${iconSize/4} w-${iconSize/4} rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100`} />

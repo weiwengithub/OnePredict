@@ -7,6 +7,7 @@ import 'swiper/css/pagination';
 import ClientBody from "./ClientBody";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import { Toaster } from 'sonner';
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -90,6 +91,9 @@ export default function RootLayout({
             <ClientBody>{children}</ClientBody>
           </ThemeProvider>
         </LanguageProvider>
+
+        {/* 全局挂载 */}
+        <Toaster position="top-center" richColors closeButton />
 
         {/* Service Worker Registration */}
         <script

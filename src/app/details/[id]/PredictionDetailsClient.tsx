@@ -205,7 +205,7 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
                 <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">Home</span>
               </div>
             </Link>
-            <ArrowRightIcon className="mx-[16px]" />
+            <ArrowRightIcon className="mx-[16px] text-white/40" />
             <div className="h-[18px] leading-[18px] text-[14px] text-white">Trade</div>
           </div>
 
