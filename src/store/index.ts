@@ -2,7 +2,7 @@ import { configureStore, createAction, createReducer, PayloadAction } from '@red
 
 export const connect = createAction<string>('connect')
 export const disconnect = createAction('disconnect')
-export const setZkLoginData = createAction<any>('setZkLoginData')
+export const setZkLoginData = createAction<unknown>('setZkLoginData')
 export const setIsZkLogin = createAction<boolean>('setIsZkLogin')
 export const setIsWalletLogin = createAction<boolean>('setIsWalletLogin')
 export const clearLoginData = createAction('clearLoginData')
@@ -10,7 +10,7 @@ export const clearLoginData = createAction('clearLoginData')
 export type AuthState = {
   connect: boolean
   account: string
-  zkLoginData: any | null
+  zkLoginData: unknown | null
   isZkLogin: boolean
   isWalletLogin: boolean
 }
@@ -33,7 +33,7 @@ const reducer = createReducer(initialState, (builder) =>
       state.connect = false
       state.account = ''
     })
-    .addCase(setZkLoginData, (state, action: PayloadAction<any>) => {
+    .addCase(setZkLoginData, (state, action: PayloadAction<unknown>) => {
       state.zkLoginData = action.payload
     })
     .addCase(setIsZkLogin, (state, action: PayloadAction<boolean>) => {
@@ -65,8 +65,6 @@ export type AppDispatch = typeof store.dispatch
 // 可选：仅在浏览器订阅变化并持久化（防止 reducer 内侧写 localStorage）
 function setupPersistence() {
   if (typeof window === 'undefined') return
-  const { ZKLOGIN_EXPIRE_END } = require('@/assets/config/constant')
-
   // 简单节流，避免频繁写入
   let ticking = false
   store.subscribe(() => {
@@ -91,9 +89,6 @@ function setupPersistence() {
         } else {
           localStorage.removeItem('isWalletLogin')
         }
-
-        // 过期时间在 InitAuth 里写入，这里不覆盖
-        // localStorage.setItem(ZKLOGIN_EXPIRE_END, ...)
       } catch (e) {
         // 忽略持久化异常（例如 Safari 隐私模式）
         console.warn('persist error:', e)

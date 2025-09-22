@@ -32,7 +32,35 @@ import WalletIcon from '@/assets/icons/walletIcon.svg';
 import {useLanguage} from "@/contexts/LanguageContext";
 import CloseIcon from "@/assets/icons/close_1.svg";
 
-export default () => {
+interface ZkLoginData {
+  email: string;
+  ephemeralKeyPairSecret: string;
+  aud: string | string[];
+  salt: string;
+  sub: string;
+  zkproof: Record<string, unknown>;
+  maxEpoch: number;
+  zkloginUserAddress: string;
+}
+
+interface CurrentAccount {
+  chains: readonly string[];
+  address?: string;
+}
+
+interface RootState {
+  zkLoginData: ZkLoginData | null;
+}
+
+interface ApiResult {
+  data: unknown;
+}
+
+interface LoginResponse {
+  data: unknown;
+}
+
+const Signin = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
@@ -44,35 +72,35 @@ export default () => {
   const { mutate: signPersonalMessage } = useSignPersonalMessage();
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
   const pathname = usePathname();
-  const zkLoginData = useSelector((state: any) => state.zkLoginData);
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
 
-  const checkSignandSignin = async (address: string) => {
+  const checkSignandSignin = useCallback(async (address: string) => {
     try {
       if(localStorage.getItem('rwa-token-'+address)){
         return
       }
-      const result: any = await apiService.getLoginNonce({ address: address });
+      const result: LoginResponse = await apiService.getLoginNonce({ address: address });
       console.log('result', result)
-      const signMessage = result.data;
+      const signMessage = (result.data as { data: string }).data;
       console.log('Message to sign:', signMessage);
       //zkLogin 签名交易兼容
-      const zkLoginData = store.getState().zkLoginData;
+      const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
       if(zkLoginData){
-        const ephemeralKeyPairSecret = zkLoginData.ephemeralKeyPairSecret;
+        const ephemeralKeyPairSecret = (zkLoginData as any).ephemeralKeyPairSecret;
         if (!ephemeralKeyPairSecret) {
           throw new Error('Ephemeral key pair not found');
         }
         const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(ephemeralKeyPairSecret);
         console.log('ephemeralKeyPair', ephemeralKeyPair.getPublicKey().toSuiAddress())
         const signature = await ephemeralKeyPair.signPersonalMessage(new TextEncoder().encode(signMessage));
-        const aud = Array.isArray(zkLoginData.aud) ? zkLoginData.aud[0] : zkLoginData.aud;
-        const addressSeed = genAddressSeed(zkLoginData.salt, "sub", zkLoginData.sub, aud).toString();
+        const aud = Array.isArray((zkLoginData as any).aud) ? (zkLoginData as any).aud[0] : (zkLoginData as any).aud;
+        const addressSeed = genAddressSeed((zkLoginData as any).salt, "sub", (zkLoginData as any).sub, aud).toString();
         const zkLoginSignature = getZkLoginSignature({
           inputs: {
-            ...zkLoginData.zkproof,
+            ...(zkLoginData as any).zkproof,
             addressSeed,
           },
-          maxEpoch: zkLoginData.maxEpoch,
+          maxEpoch: (zkLoginData as any).maxEpoch,
           userSignature:signature.signature
         });
         // let address = await verifyPersonalMessageSignature(new TextEncoder().encode(signMessage), signature.signature);
@@ -90,9 +118,9 @@ export default () => {
         //             address
         //     ]
         // });
-        const data:any = await apiService.zkLoginBySign({
+        const data: ApiResult = await apiService.zkLoginBySign({
           address: address,
-          zkLoginAccount: zkLoginData.email,
+          zkLoginAccount: (zkLoginData as any).email,
           originalMessage: signMessage,
           signedMessage: zkLoginSignature,
           chain: 'onechain',
@@ -100,7 +128,7 @@ export default () => {
         });
         console.log('data', data)
 
-        localStorage.setItem('rwa-token-'+address, data.data.token);
+        localStorage.setItem('rwa-token-'+address, (data.data as any).token);
 
 
       } else {
@@ -108,12 +136,12 @@ export default () => {
             message: new TextEncoder().encode(signMessage),
           },
           {
-            onSuccess: async (result: any) => {
+            onSuccess: async (result: { signature: string }) => {
               console.log('signature', result.signature);
               console.log('result', result);
-              const data:any = await apiService.loginBySign({ address: address, originalMessage: signMessage, signedMessage:result.signature });
-              console.log('data', data.data.token)
-              localStorage.setItem('rwa-token-'+address, data.data.token);
+              const data: ApiResult = await apiService.loginBySign({ address: address, originalMessage: signMessage, signedMessage:result.signature });
+              console.log('data', (data.data as any).token)
+              localStorage.setItem('rwa-token-'+address, (data.data as any).token);
             }
           });
       }
@@ -121,14 +149,15 @@ export default () => {
     } catch (error) {
       console.error('Failed to check sign and signin:', error);
     }
-  };
+  }, [signPersonalMessage]);
 
   // Check whitelist when wallet connects
   useEffect(() => {
-    if (currentAccount?.address || store.getState().zkLoginData?.zkloginUserAddress) {
-      checkSignandSignin(currentAccount?.address || store.getState().zkLoginData?.zkloginUserAddress);
+    const zkData = store.getState().zkLoginData as any;
+    if (currentAccount?.address || zkData?.zkloginUserAddress) {
+      checkSignandSignin(currentAccount?.address || zkData?.zkloginUserAddress);
     }
-  }, [currentAccount?.address, store.getState().zkLoginData?.zkloginUserAddress, pathname]);
+  }, [currentAccount?.address, pathname, checkSignandSignin]);
 
   // 禁止背景滚动
   useEffect(() => {
@@ -150,9 +179,9 @@ export default () => {
       setOpen(false)
       setOpenLoading(false)
     }
-  },[zkLoginData, currentAccount ])
+  },[zkLoginData, currentAccount])
   // 检测当前网络
-  const checkNetwork = useCallback(async (currentAccount: any) => {
+  const checkNetwork = useCallback(async (currentAccount: CurrentAccount) => {
     try {
       if (currentAccount.chains.length > 0 && currentAccount.chains[0] !== rightNetwork) {
         setIsWrongNetwork(true);
@@ -162,7 +191,7 @@ export default () => {
     } catch (error) {
       console.error('Failed to get network info:', error);
     }
-  }, [currentAccount]);
+  }, []);
 
   // 组件加载时检测网络
   useEffect(() => {
@@ -170,13 +199,13 @@ export default () => {
       console.log('currentAccount', currentAccount);
       checkNetwork(currentAccount);
     }
-  }, [currentAccount?.chains]);
+  }, [currentAccount, checkNetwork]);
 
   useEffect(()=>{
     if(zkLoginData){
       setOpenDropdown(false)
     }
-  },[pathname])
+  },[zkLoginData, pathname])
 
   const handleCopyAddress = () => {
     if (currentAccount?.address) {
@@ -189,7 +218,9 @@ export default () => {
       {
         zkLoginData || currentAccount ? (
           <div  onMouseEnter={() => {
-            (currentAccount || zkLoginData) && setOpenDropdown(true)
+            if (currentAccount || zkLoginData) {
+              setOpenDropdown(true);
+            }
           }}
                 onMouseLeave={() => {
                   setTimeout(() => {
@@ -201,9 +232,9 @@ export default () => {
                 handleCopyAddress()
               }
             }}>
-              {zkLoginData ? ( zkLoginData?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
+              {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
               {/*<img src={zkLoginData ? ( zkLoginData?.provider === 'google' ? googleIcon : appleIcon) : walletIcon} alt="" className='w-20 h-20 m-w-16 m-h-16' />*/}
-              {(zkLoginData && zkLoginData?.email) ?(addPoint(zkLoginData?.email,3)): addPoint(currentAccount?.address as string)}
+              {(zkLoginData && (zkLoginData as any)?.email) ?(addPoint((zkLoginData as any)?.email,3)): addPoint(currentAccount?.address as string)}
               {
                 currentAccount &&
                 <img
@@ -218,15 +249,15 @@ export default () => {
                 {
                   zkLoginData && (
                     <div className="dropdown-menu-title flex flex-center gap-16">
-                      {zkLoginData?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />}
+                      {(zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />}
                       {/*<img src={ zkLoginData?.provider === 'google' ? googleIcon : appleIcon} alt="" className='w-20 h-20 m-w-16 m-h-16' />*/}
                       <div className='flex flex-column gap-5'>
-                        {zkLoginData?.email ? <span className='m-fz-12 fz-14 cf fwb'>{zkLoginData?.email}</span>:''}
+                        {(zkLoginData as any)?.email ? <span className='m-fz-12 fz-14 cf fwb'>{(zkLoginData as any)?.email}</span>:''}
                         <span style={{ cursor: 'pointer' }} onClick={()=>{
-                          if(zkLoginData?.zkloginUserAddress){
-                            onCopyToText(zkLoginData?.zkloginUserAddress)
+                          if((zkLoginData as any)?.zkloginUserAddress){
+                            onCopyToText((zkLoginData as any)?.zkloginUserAddress)
                           }
-                        }} className='m-fz-12 fz-14 cf flex flex-center gap-5'>{addPoint(zkLoginData?.zkloginUserAddress)}
+                        }} className='m-fz-12 fz-14 cf flex flex-center gap-5'>{addPoint((zkLoginData as any)?.zkloginUserAddress)}
                           <img src={copyIcon} alt="" className='w-16 h-16 m-w-12 m-h-12 pointer' />
                             </span>
                       </div>
@@ -305,4 +336,8 @@ export default () => {
       </Dialog>
     </div>
   );
-}
+};
+
+Signin.displayName = 'Signin';
+
+export default Signin;

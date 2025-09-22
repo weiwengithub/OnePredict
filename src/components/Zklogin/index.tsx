@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useState, useMemo } from 'react'
 import { Ed25519Keypair } from "@onelabs/sui/keypairs/ed25519";
 import { CLIENT_ID, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, OCT_PROVER_ENDPOINT, RANDOMNESS_SESSION_STORAGE_KEY, REDIRECT_URI, USER_SALT_LOCAL_STORAGE_KEY } from '@/assets/config/constant';
 import { SuiClient } from '@onelabs/sui/client';
@@ -20,25 +20,32 @@ import {useLanguage} from "@/contexts/LanguageContext";
 import GoogleIcon from '@/assets/icons/google.svg';
 import AppleIcon from '@/assets/icons/apple.svg';
 
-export default ({onJump}: {onJump: () => void}) => {
+interface OauthParams {
+  [key: string]: string;
+}
+
+interface ZkLoginData {
+  [key: string]: unknown;
+}
+
+const Zklogin = ({onJump}: {onJump: () => void}) => {
   const { t } = useLanguage();
   const [ephemeralKeyPair, setEphemeralKeyPair] = useState<Ed25519Keypair | null>(null);
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
   const [maxEpoch, setMaxEpoch] = useState<number>(0);
   const [randomness, setRandomness] = useState<string>('');
-  const suiClient = new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-testnet.onelabs.cc:443' });
+  const suiClient = useMemo(() => new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-testnet.onelabs.cc:443' }), []);
   const [nonce, setNonce] = useState<string>('');
   const [decodedJwt, setDecodedJwt] = useState<JwtPayload>();
-  const [oauthParams, setOauthParams] = useState<any>();
+  const [oauthParams, setOauthParams] = useState<OauthParams>();
   const [jwtString, setJwtString] = useState<string>('');
   const [userSalt, setUserSalt] = useState<string>('');
   const [zkLoginUserAddress, setZkLoginUserAddress] = useState<string>('');
-  const [zkLoginData, setZkLoginData] = useState<any>();
+  const [zkLoginData, setZkLoginData] = useState<ZkLoginData>();
   useEffect(() => {
     const init = async () => {
       //保存app_lang
-      debugger
-      let app_lang = localStorage.getItem('app_lang') || 'en-US'
+      const app_lang = localStorage.getItem('app_lang') || 'en-US'
       localStorage.clear()
       sessionStorage.clear()
       localStorage.setItem('app_lang', app_lang)
@@ -72,14 +79,14 @@ export default ({onJump}: {onJump: () => void}) => {
       setNonce(nonce)
     }
     init()
-  }, [])
+  }, [suiClient])
   const handleGoogleLogin = useCallback(() => {
     //插件钱包断开链接
     console.log('谷歌登录 ***********************1')
     console.log(CLIENT_ID)
     console.log(REDIRECT_URI)
     console.log(nonce)
-    debugger;
+
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
       redirect_uri: REDIRECT_URI,
@@ -134,4 +141,8 @@ export default ({onJump}: {onJump: () => void}) => {
       </div>
     </div>
   )
-}
+};
+
+Zklogin.displayName = 'Zklogin';
+
+export default Zklogin;

@@ -2,11 +2,18 @@ import testnet from './testnet.json';
 import mainnet from './mainnet.json';
 import { tokenList } from './token';
 
-testnet.showBalancesTokenList = testnet.showBalancesTokenList.map((item: any) => ({
+interface TokenListItem {
+    coinType: string;
+    symbol: string;
+    decimals: number;
+    icon?: string;
+}
+
+testnet.showBalancesTokenList = testnet.showBalancesTokenList.map((item: TokenListItem) => ({
     ...item,
     icon: tokenList[item.symbol as keyof typeof tokenList]
 }))
-mainnet.showBalancesTokenList = mainnet.showBalancesTokenList.map((item: any) => ({
+mainnet.showBalancesTokenList = mainnet.showBalancesTokenList.map((item: TokenListItem) => ({
     ...item,
     icon: tokenList[item.symbol as keyof typeof tokenList]
 }))

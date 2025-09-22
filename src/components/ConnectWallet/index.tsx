@@ -13,7 +13,13 @@ import { rightNetwork } from '@/assets/config';
 import { useDispatch } from 'react-redux';
 import { setIsWalletLogin } from '@/store';
 import {useLanguage} from "@/contexts/LanguageContext";
-export default () => {
+
+interface CurrentAccount {
+  chains: readonly string[];
+  address?: string;
+}
+
+const ConnectWallet = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
@@ -23,7 +29,7 @@ export default () => {
   const { mutate: disconnect } = useDisconnectWallet();
   const [isWrongNetwork, setIsWrongNetwork] = useState(false);
   // 检测当前网络
-  const checkNetwork = useCallback(async (currentAccount: any) => {
+  const checkNetwork = useCallback(async (currentAccount: CurrentAccount) => {
     try {
       if (currentAccount.chains.length > 0 && currentAccount.chains[0] !== rightNetwork) {
         setIsWrongNetwork(true);
@@ -33,7 +39,7 @@ export default () => {
     } catch (error) {
       console.error('Failed to get network info:', error);
     }
-  }, [currentAccount]);
+  }, []);
 
   // 组件加载时检测网络
   useEffect(() => {
@@ -42,7 +48,7 @@ export default () => {
       dispatch(setIsWalletLogin(true));
       checkNetwork(currentAccount);
     }
-  }, [currentAccount?.chains]);
+  }, [currentAccount, checkNetwork, dispatch]);
   const handleCopyAddress = () => {
     if (currentAccount?.address) {
       onCopyToText(currentAccount.address);
@@ -60,4 +66,8 @@ export default () => {
         onOpenChange={(isOpen) => setOpen(isOpen)}
       /></div>
   );
-}
+};
+
+ConnectWallet.displayName = 'ConnectWallet';
+
+export default ConnectWallet;

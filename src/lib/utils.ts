@@ -10,8 +10,8 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-export const onCopyToText = (text:any) => {
-  var textField = document.createElement('textarea')
+export const onCopyToText = (text: string) => {
+  const textField = document.createElement('textarea')
   textField.innerText = text
   document.body.appendChild(textField)
   textField.select()
@@ -23,11 +23,11 @@ export const onCopyToText = (text:any) => {
 export const addPoint = (address:string, len = 5) => {
   return address ? address.substr(0, len) + '...' + address.substr(address.length - len,) : ''
 }
-export const numFormat = function (num:any) {
-  num = num.toString().split(".");
-  var arr = num[0].split("").reverse();
-  var res = [];
-  for (var i = 0, len = arr.length; i < len; i++) {
+export const numFormat = function (num: number | string) {
+  const numString = num.toString().split(".");
+  const arr = numString[0].split("").reverse();
+  const res: string[] = [];
+  for (let i = 0, len = arr.length; i < len; i++) {
     if (i % 3 === 0 && i !== 0) {
       res.push(",");
     }
@@ -35,13 +35,13 @@ export const numFormat = function (num:any) {
   }
   res.reverse();
 
-  if (num[1]) {
-    return res.join("").concat("." + num[1]);
+  if (numString[1]) {
+    return res.join("").concat("." + numString[1]);
   } else {
     return res.join("");
   }
 }
-const howManyZero = (num:any) => {
+const howManyZero = (num: number) => {
   if (num > 1) {
     return 0
   } else {
@@ -55,9 +55,11 @@ const howManyZero = (num:any) => {
     return zeronum - 1
   }
 }
-export const toFixed = (amount:any, num:any) => {
+export const toFixed = (amount: number | string, num: number) => {
   if (Number(amount) < 1) {
-    num <= howManyZero(amount) && (num = howManyZero(amount) + num)
+    if (num <= howManyZero(Number(amount))) {
+      num = howManyZero(Number(amount)) + num;
+    }
   }
   return Math.floor(Number(amount) * Math.pow(10, num)) / Math.pow(10, num)
 }
@@ -143,7 +145,7 @@ export const RwaProjectInfo = bcs.struct('RwaProjectInfo', {
   pending_dividend_funds: bcs.u64(),
   allow_sale: bcs.bool()
 });
-export function parseRwaProjectInfo(result: DevInspectResults): any {
+export function parseRwaProjectInfo(result: DevInspectResults): unknown {
   const returnValues = result.results?.[0]?.returnValues;
   if (returnValues && returnValues.length > 0) {
     const [bcsBytes] = returnValues[0];
@@ -158,7 +160,7 @@ export const UserDividendRecord = bcs.struct('UserDividendRecord', {
   dividend_income: bcs.u64(),
 });
 export const UserDividendRecords = bcs.vector(UserDividendRecord);
-export function parseRwaUserDividendRecords(result: DevInspectResults): any {
+export function parseRwaUserDividendRecords(result: DevInspectResults): unknown {
   if (result === undefined || result === null || result.results === undefined || result.results === null) {
     return undefined;
   }
@@ -177,8 +179,8 @@ export function parseRwaUserDividendRecords(result: DevInspectResults): any {
  * @param error 错误对象
  * @returns 是否用户拒绝
  */
-export const isUserRejectedTransaction = (error: any): boolean => {
-  const errorMessage = error?.message || error?.toString() || '';
+export const isUserRejectedTransaction = (error: unknown): boolean => {
+  const errorMessage = (error as any)?.message || (error as any)?.toString() || '';
   return (
     errorMessage.includes('reject') ||
     errorMessage.includes('User denied') ||
@@ -203,7 +205,7 @@ export const isUserRejectedTransaction = (error: any): boolean => {
  * @param onOtherError 其他错误时的回调
  */
 export const handleTransactionError = (
-  error: any,
+  error: unknown,
   onUserRejected?: () => void,
   onOtherError?: () => void
 ) => {

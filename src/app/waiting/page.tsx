@@ -20,7 +20,7 @@ import { useDispatch } from 'react-redux';
 interface CustomJwtPayload {
   email?: string;
   sub?: string;
-  [key: string]: any;
+  [key: string]: unknown;
 }
 import queryString from 'query-string';
 import { addPoint } from '@/lib/utils';
@@ -31,7 +31,18 @@ import {useLanguage} from "@/contexts/LanguageContext";
 import { useConnectWallet } from '@onelabs/dapp-kit';
 import GoogleIcon from '@/assets/icons/google.svg';
 import AppleIcon from '@/assets/icons/apple.svg';
-export default () => {
+
+interface OauthParams {
+  id_token?: string;
+  state?: string;
+  [key: string]: unknown;
+}
+
+interface ZkLoginData {
+  [key: string]: unknown;
+}
+
+const WaitingPage = () => {
   const { t } = useLanguage();
     const [ephemeralKeyPair, setEphemeralKeyPair] = useState<Ed25519Keypair | null>(null);
     const [currentEpoch, setCurrentEpoch] = useState<number>(0);
@@ -40,10 +51,10 @@ export default () => {
     const suiClient = new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || '' });
     const [nonce, setNonce] = useState<string>('');
     const [decodedJwt, setDecodedJwt] = useState<CustomJwtPayload>();
-    const [oauthParams, setOauthParams] = useState<any>();
+    const [oauthParams, setOauthParams] = useState<OauthParams>();
     const [jwtString, setJwtString] = useState<string>('');
     const [zkLoginUserAddress, setZkLoginUserAddress] = useState<string>('');
-    const [localZkLoginData, setLocalZkLoginData] = useState<any>();
+    const [localZkLoginData, setLocalZkLoginData] = useState<ZkLoginData>();
 
     const { mutate: connect } = useConnectWallet();
     const dispatch = useDispatch();
@@ -52,13 +63,13 @@ export default () => {
         const hashParams = queryString.parse(window.location.hash);
         const queryParams = queryString.parse(window.location.search);
         // 优先使用包含 id_token 的集合
-        const combined: any = { ...queryParams, ...hashParams };
+        const combined: OauthParams = { ...queryParams, ...hashParams };
         setOauthParams(combined);
-    }, [location]);
+    }, []);
     useEffect(() => {
         const getZkProof = async () => {
             if (oauthParams && oauthParams.id_token) {
-              debugger;
+
                 try {
                 const decodedJwt = jwtDecode(oauthParams.id_token as string) as CustomJwtPayload;
                 setJwtString(oauthParams.id_token as string);
@@ -93,7 +104,7 @@ export default () => {
                     window.sessionStorage.getItem(
                         KEY_PAIR_SESSION_STORAGE_KEY
                     ) as string
-                ))?.getPublicKey() as PublicKey,    
+                ))?.getPublicKey() as PublicKey,
                 Number(window.localStorage.getItem(
                     MAX_EPOCH_LOCAL_STORAGE_KEY
                 )),
@@ -151,17 +162,18 @@ export default () => {
                 window.location.href = '/'
             } finally {
             }
-        } 
+        }
     }
     getZkProof()
-    }, [oauthParams])
+    }, [oauthParams, dispatch, nonce])
     useEffect(() => {
-        if (window.localStorage.getItem('zkloginData')) {
-            const zkloginData = JSON.parse(window.localStorage.getItem('zkloginData') as string);
+        const zkloginDataRaw = window.localStorage.getItem('zkloginData');
+        if (zkloginDataRaw) {
+            const zkloginData = JSON.parse(zkloginDataRaw);
             console.log('zkloginData', zkloginData)
             setLocalZkLoginData(zkloginData)
         }
-    }, [window.localStorage.getItem('zkloginData')])
+    }, [])
   return <div className='waiting-page'>
     <div className='waiting-page-content'>
       <div className='waiting-page-content-title  flex flex-center flex-middle w100'>
@@ -178,5 +190,9 @@ export default () => {
         </span>
       </div>
     </div>
-  </div>;   
-}
+  </div>;
+};
+
+WaitingPage.displayName = 'WaitingPage';
+
+export default WaitingPage;
