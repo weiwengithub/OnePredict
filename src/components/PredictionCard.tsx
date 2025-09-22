@@ -4,13 +4,14 @@ import React, { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Calendar, Volume, TrendingUp, TrendingDown } from "lucide-react";
 import SemicircleGauge from "./SemicircleGauge";
 import MarketDetailModal from "./MarketDetailModal";
 import { getMiniTrendData } from "@/lib/chartData";
 import { PredictionTradingModal } from "./predictionTrading";
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { toast } from "sonner";
+import * as Tooltip from "@radix-ui/react-tooltip";
 
 interface PredictionCardProps {
   id?: string;
@@ -93,20 +94,55 @@ export default function PredictionCard({
 
           {/* Yes/No Buttons */}
           <div className="grid grid-cols-2 gap-[9px] mb-[12px]">
-            <Button
-              variant="outline"
-              className="h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-              onClick={(e) => handleButtonClick(e, 'yes')}
-            >
-              Yes
-            </Button>
-            <Button
-              variant="outline"
-              className="h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
-              onClick={(e) => handleButtonClick(e, 'no')}
-            >
-              No
-            </Button>
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  onClick={(e) => handleButtonClick(e, 'yes')}
+                >
+                  Yes
+                </Button>
+              </Tooltip.Trigger>
+
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  side="top"           // top | right | bottom | left
+                  align="center"       // start | center | end
+                  sideOffset={8}
+                  className="z-50 rounded-[8px] bg-[#5E6064] px-[15px] py-[11px] text-[16px] text-white shadow-lg backdrop-blur
+                     border border-[#26282E]"
+                >
+                  To win:1.96 x
+                  <Tooltip.Arrow className="fill-[#5E6064]" />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
+
+            <Tooltip.Root>
+              <Tooltip.Trigger asChild>
+                <Button
+                  variant="outline"
+                  className="h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  onClick={(e) => handleButtonClick(e, 'no')}
+                >
+                  No
+                </Button>
+              </Tooltip.Trigger>
+
+              <Tooltip.Portal>
+                <Tooltip.Content
+                  side="top"           // top | right | bottom | left
+                  align="center"       // start | center | end
+                  sideOffset={8}
+                  className="z-50 rounded-[8px] bg-[#5E6064] px-[15px] py-[11px] text-[16px] text-white shadow-lg backdrop-blur
+                     border border-[#26282E]"
+                >
+                  To win:    x
+                  <Tooltip.Arrow className="fill-[#5E6064]" />
+                </Tooltip.Content>
+              </Tooltip.Portal>
+            </Tooltip.Root>
           </div>
 
           {/* Footer with volume and deadline */}
@@ -117,7 +153,7 @@ export default function PredictionCard({
             <div className="flex items-center space-x-[12px]">
               <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
               <span className="inline-block leading-[24px]">{deadline}</span>
-              <Image src="/images/icon/icon-tag.png" alt="" width={12} height={12} />
+              <Image src="/images/icon/icon-tag.png" alt="" width={12} height={12} onClick={() => {toast.success('分享成功111')}} />
               <Image src="/images/icon/icon-export.png" alt="" width={12} height={12} />
             </div>
           </div>

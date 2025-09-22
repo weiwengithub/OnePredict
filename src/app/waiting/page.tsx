@@ -1,0 +1,182 @@
+"use client";
+
+import './index.scss'
+import { useEffect, useState } from 'react'
+import { Ed25519Keypair } from "@onelabs/sui/keypairs/ed25519";
+import { CLIENT_ID, GET_SALT_URL, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, OCT_PROVER_ENDPOINT, RANDOMNESS_SESSION_STORAGE_KEY, REDIRECT_URI, USER_SALT_LOCAL_STORAGE_KEY } from '@/assets/config/constant';
+import { SuiClient } from '@onelabs/sui/client';
+import {
+    genAddressSeed,
+    generateNonce,
+    generateRandomness,
+    getExtendedEphemeralPublicKey,
+    getZkLoginSignature,
+    jwtToAddress,
+} from "@onelabs/sui/zklogin";
+import { PublicKey } from '@onelabs/sui/cryptography';
+import { jwtDecode } from 'jwt-decode';
+import { useDispatch } from 'react-redux';
+
+interface CustomJwtPayload {
+  email?: string;
+  sub?: string;
+  [key: string]: any;
+}
+import queryString from 'query-string';
+import { addPoint } from '@/lib/utils';
+import axios from 'axios';
+import { setZkLoginData, setIsZkLogin } from '@/store';
+import Loading from '@/components/Loading';
+import {useLanguage} from "@/contexts/LanguageContext";
+import { useConnectWallet } from '@onelabs/dapp-kit';
+import GoogleIcon from '@/assets/icons/google.svg';
+import AppleIcon from '@/assets/icons/apple.svg';
+export default () => {
+  const { t } = useLanguage();
+    const [ephemeralKeyPair, setEphemeralKeyPair] = useState<Ed25519Keypair | null>(null);
+    const [currentEpoch, setCurrentEpoch] = useState<number>(0);
+    const [maxEpoch, setMaxEpoch] = useState<number>(0);
+    const [randomness, setRandomness] = useState<string>('');
+    const suiClient = new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || '' });
+    const [nonce, setNonce] = useState<string>('');
+    const [decodedJwt, setDecodedJwt] = useState<CustomJwtPayload>();
+    const [oauthParams, setOauthParams] = useState<any>();
+    const [jwtString, setJwtString] = useState<string>('');
+    const [zkLoginUserAddress, setZkLoginUserAddress] = useState<string>('');
+    const [localZkLoginData, setLocalZkLoginData] = useState<any>();
+
+    const { mutate: connect } = useConnectWallet();
+    const dispatch = useDispatch();
+    useEffect(() => {
+        // 解析回调参数（Apple 使用 fragment/hash，Google 可能使用 query/hash 取决于设置）
+        const hashParams = queryString.parse(window.location.hash);
+        const queryParams = queryString.parse(window.location.search);
+        // 优先使用包含 id_token 的集合
+        const combined: any = { ...queryParams, ...hashParams };
+        setOauthParams(combined);
+    }, [location]);
+    useEffect(() => {
+        const getZkProof = async () => {
+            if (oauthParams && oauthParams.id_token) {
+              debugger;
+                try {
+                const decodedJwt = jwtDecode(oauthParams.id_token as string) as CustomJwtPayload;
+                setJwtString(oauthParams.id_token as string);
+                setDecodedJwt(decodedJwt);
+                console.log('decodedJwt', JSON.stringify(decodedJwt, null, 2))
+                const {data:{data:{salt}}}= await axios.post(GET_SALT_URL+(oauthParams?.state === 'google' ? 'Google' : 'Apple'), {
+                    jwt: oauthParams?.id_token as string,
+                });
+                // const salt = '235526931573292926781184150281803245819';
+                console.log('salt', salt);
+                const zkLoginUserAddress = jwtToAddress(oauthParams.id_token, salt);
+                setZkLoginUserAddress(zkLoginUserAddress);
+                console.log('zkLoginUserAddress', zkLoginUserAddress)
+                const extendedEphemeralPublicKey =
+                    getExtendedEphemeralPublicKey(
+                        (Ed25519Keypair.fromSecretKey(
+                            window.sessionStorage.getItem(
+                                KEY_PAIR_SESSION_STORAGE_KEY
+                            ) as string
+                        ))?.getPublicKey() as PublicKey
+                    );
+
+            console.log('extendedEphemeralPublicKey', extendedEphemeralPublicKey)
+            console.log('maxEpoch', Number(window.localStorage.getItem(
+                MAX_EPOCH_LOCAL_STORAGE_KEY
+            )))
+            console.log('randomness', window.sessionStorage.getItem(
+                RANDOMNESS_SESSION_STORAGE_KEY
+            ))
+            const nonce = generateNonce(
+                (Ed25519Keypair.fromSecretKey(
+                    window.sessionStorage.getItem(
+                        KEY_PAIR_SESSION_STORAGE_KEY
+                    ) as string
+                ))?.getPublicKey() as PublicKey,    
+                Number(window.localStorage.getItem(
+                    MAX_EPOCH_LOCAL_STORAGE_KEY
+                )),
+                window.sessionStorage.getItem(
+                    RANDOMNESS_SESSION_STORAGE_KEY
+                ) as string
+            );
+            console.log('nonce', nonce)
+            const zkProofResult = await axios.post(
+                OCT_PROVER_ENDPOINT,
+                {
+                    jwt: oauthParams?.id_token as string,
+                    extendedEphemeralPublicKey: extendedEphemeralPublicKey,
+                    maxEpoch: window.localStorage.getItem(
+                        MAX_EPOCH_LOCAL_STORAGE_KEY
+                    ) as string,
+                    jwtRandomness: window.sessionStorage.getItem(
+                        RANDOMNESS_SESSION_STORAGE_KEY
+                    ) as string,
+                    salt: salt,
+                    keyClaimName: "sub",
+                },
+                {
+                    headers: {
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+            const zkloginData = {
+                zkproof: zkProofResult.data,
+                zkloginUserAddress: zkLoginUserAddress,
+                email: decodedJwt?.email,
+                sub: decodedJwt?.sub,
+                aud: decodedJwt?.aud,
+                salt: salt,
+                jwt: oauthParams?.id_token as string,
+                extendedEphemeralPublicKey: extendedEphemeralPublicKey,
+                ephemeralKeyPairSecret: window.sessionStorage.getItem(
+                    KEY_PAIR_SESSION_STORAGE_KEY
+                ) as string,
+                maxEpoch: window.localStorage.getItem(
+                    MAX_EPOCH_LOCAL_STORAGE_KEY
+                ) as string,
+                jwtRandomness: window.sessionStorage.getItem(
+                    RANDOMNESS_SESSION_STORAGE_KEY
+                ) as string,
+                nonce: nonce,
+                provider: (oauthParams?.state as string) || 'google'
+            }
+            dispatch(setZkLoginData(zkloginData));
+            dispatch(setIsZkLogin(true));
+            // window.close()
+            window.location.href = '/'
+            } catch (error) {
+                window.location.href = '/'
+            } finally {
+            }
+        } 
+    }
+    getZkProof()
+    }, [oauthParams])
+    useEffect(() => {
+        if (window.localStorage.getItem('zkloginData')) {
+            const zkloginData = JSON.parse(window.localStorage.getItem('zkloginData') as string);
+            console.log('zkloginData', zkloginData)
+            setLocalZkLoginData(zkloginData)
+        }
+    }, [window.localStorage.getItem('zkloginData')])
+  return <div className='waiting-page'>
+    <div className='waiting-page-content'>
+      <div className='waiting-page-content-title  flex flex-center flex-middle w100'>
+                <span className='fz-18 fwb cf ta w100 flex flex-center flex-middle gap-10 flex-column'>
+                    <Loading type='spinner'/>
+                    {oauthParams?.state === 'google' ? <GoogleIcon /> : <AppleIcon />}
+                    {/* <img src={googleIcon} alt="" className='w-16 h-16' /> */}
+                    {t('waiting.title', {name: oauthParams?.state === 'google' ? 'Google' : 'Apple'})}
+                 </span>
+        {/* <div className='fz-24 fwb cf  w100 flex flex-middle ta'>Waiting for Google to connect...</div> */}
+      </div>
+      <div className='waiting-page-content-title ta'>
+        <span className='fz-14 fwb cf06 ta w100 flex flex flex-middle ta'>{t('waiting.subtitle', {name: oauthParams?.state === 'google' ? 'Google' : 'Apple'})}
+        </span>
+      </div>
+    </div>
+  </div>;   
+}

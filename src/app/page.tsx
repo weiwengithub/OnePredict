@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 import WelcomeModal from "@/components/WelcomeModal";
 import PredictionCard from "@/components/PredictionCard";
 import MobilePredictionCard from "@/components/MobilePredictionCard";
 import MobileNavigation from "@/components/MobileNavigation";
-import BannerSlider from '@/components/BannerSlider';
+import CustomCarousel, { EffectType } from '@/components/CustomCarousel';
 import CategoryTabs from "@/components/CategoryTabs";
 import PWAInstallPrompt from "@/components/PWAInstallPrompt";
 import Footer from "@/components/Footer";
@@ -14,9 +14,10 @@ import Header from "@/components/Header";
 import Image from "next/image";
 import apiService from "@/lib/api/services";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { Swiper as SwiperType } from 'swiper';
 
 export default function Home() {
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const [activeCategory, setActiveCategory] = useState("trending");
   const [isMobile, setIsMobile] = useState(false);
   const { t } = useLanguage();
@@ -163,6 +164,41 @@ export default function Home() {
     getList();
   })
 
+  const carouselData = [
+    {
+      id: 1,
+      image: '/images/banners/banner_1.png',
+    },
+    {
+      id: 2,
+      image: '/images/banners/banner_2.png',
+    },
+    {
+      id: 3,
+      image: '/images/banners/banner_1.png',
+    },
+    {
+      id: 4,
+      image: '/images/banners/banner_2.png',
+    },
+    {
+      id: 5,
+      image: '/images/banners/banner_1.png',
+    },
+    {
+      id: 6,
+      image: '/images/banners/banner_2.png',
+    }
+  ];
+  const [autoplay, setAutoplay] = useState(false);
+  const [speed, setSpeed] = useState(4000);
+  const [effect, setEffect] = useState<EffectType>('slide');
+  const [height, setHeight] = useState('400px');
+  const swiperRef = useRef<SwiperType | null>(null);
+  const handleSwiperInit = (swiper: SwiperType) => {
+    swiperRef.current = swiper;
+  };
+
   return (
     <div className="min-h-screen bg-[#051A3D] pb-20 md:pb-0">
       {/* Desktop Header */}
@@ -178,7 +214,15 @@ export default function Home() {
       <main className="max-w-[1728px] mx-auto px-[40px] pt-[64px]">
         {/* Banner Cards - Hidden on small mobile */}
         <div className="hidden sm:block">
-          <BannerSlider />
+          <CustomCarousel
+            items={carouselData}
+            autoplay={autoplay}
+            loop={true}
+            autoplayDelay={speed}
+            effect={effect}
+            height={height}
+            onSwiper={handleSwiperInit}
+          />
         </div>
 
         {/* Desktop Category Navigation */}

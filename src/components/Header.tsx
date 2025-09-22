@@ -27,6 +27,7 @@ export default function Header({ currentPage }: HeaderProps) {
   const pathname = usePathname();
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
+  const [showTheme, setShowTheme] = useState(false);
 
   // 根据当前路径自动检测页面
   const getCurrentPage = () => {
@@ -132,9 +133,9 @@ export default function Header({ currentPage }: HeaderProps) {
             </div>
 
             {/* Right side - User menu */}
-            <div className="flex items-center">
+            <div className="flex items-center gap-[8px]">
               {/* USDH Balance */}
-              <div className="group mr-[48px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
+              <div className="group mr-[40px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
                 <div className="h-[16px] leading-[16px] text-[12px] text-white/40 group-hover:text-white">USDH</div>
                 <div className="mt-[4px] flex items-center space-x-[2px]">
                   <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
@@ -154,7 +155,7 @@ export default function Header({ currentPage }: HeaderProps) {
               </button>
 
               {/* Language Selector */}
-              <div className="relative ml-[8px]">
+              <div className="relative">
                 <button
                   onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                   className={`
@@ -203,24 +204,14 @@ export default function Header({ currentPage }: HeaderProps) {
               </div>
 
               {/* Theme Toggle */}
-              <div className="ml-[8px]">
-                <ThemeToggle variant="dropdown" />
-              </div>
+              {showTheme && (
+                <div className="ml-[8px]">
+                  <ThemeToggle variant="dropdown" />
+                </div>
+              )}
 
               {/* Sign In Button */}
               <Signin />
-              {/*<Button*/}
-              {/*  variant="ghost"*/}
-              {/*  className={`*/}
-              {/*  ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-white hover:bg-[#467DFF]*/}
-              {/*  hover:text-white rounded-[20px] font-medium transition-all duration-200*/}
-              {/*  hover:shadow-lg hover:shadow-[#467DFF]/25 hover:scale-105*/}
-              {/*  ${isScrolled ? 'scale-95' : 'scale-100'}*/}
-              {/*`}*/}
-              {/*  onClick={() => router.push('/profile')}*/}
-              {/*>*/}
-              {/*  {t('header.signin')}*/}
-              {/*</Button>*/}
             </div>
           </div>
         </div>

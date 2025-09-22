@@ -1,8 +1,9 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ProgressBar } from '@/components/ProgressBar';
 import Image from "next/image";
 import RefreshIcon from "@/assets/icons/refresh.svg";
 import SettingsIcon from "@/assets/icons/setting.svg";
@@ -34,6 +35,7 @@ export default function TradingForm({
 }: TradingFormProps) {
   const yesPrice = prediction.chance / 100;
   const noPrice = (100 - prediction.chance) / 100;
+  const [progress, setProgress] = useState(25);
 
   const handleAmountInputChange = (value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -160,7 +162,12 @@ export default function TradingForm({
           <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
           <span className="inline-block">{balance.toFixed(2)}</span>
         </div>
-        <div></div>
+        <div className="w-[140px]">
+          <ProgressBar
+            initialValue={progress}
+            onChange={setProgress}
+          />
+        </div>
       </div>
 
       {/* Sign In 按钮 */}

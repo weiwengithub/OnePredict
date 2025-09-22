@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { DM_Sans } from "next/font/google";
 import "./globals.css";
 import 'swiper/css';
 import 'swiper/css/navigation';
@@ -7,9 +7,10 @@ import 'swiper/css/pagination';
 import ClientBody from "./ClientBody";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import { LanguageProvider } from "@/contexts/LanguageContext";
-import { Toaster } from 'sonner';
+import Toaster from '@/components/ui/toaster';
+import TooltipProvider from "@/components/ui/tooltip-provider";
 
-const inter = Inter({ subsets: ["latin"] });
+const dmSans = DM_Sans({ subsets: ["latin"] });
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -31,7 +32,6 @@ export const metadata: Metadata = {
   formatDetection: {
     telephone: false,
   },
-  manifest: "/manifest.json",
   icons: {
     icon: [
       { url: "/icon.svg", type: "image/svg+xml" },
@@ -62,7 +62,7 @@ export const metadata: Metadata = {
   }
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -71,7 +71,6 @@ export default function RootLayout({
     <html lang="en">
       <head>
         {/* PWA Meta Tags */}
-        <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#1f2937" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
@@ -84,35 +83,19 @@ export default function RootLayout({
 
         {/* Preload critical resources */}
         <link rel="preload" href="/icon.svg" as="image" type="image/svg+xml" />
+        <title></title>
       </head>
-      <body className={inter.className}>
+      <body className={dmSans.className}>
         <LanguageProvider>
           <ThemeProvider>
-            <ClientBody>{children}</ClientBody>
+            <TooltipProvider>
+              <ClientBody>{children}</ClientBody>
+            </TooltipProvider>
           </ThemeProvider>
         </LanguageProvider>
 
         {/* 全局挂载 */}
-        <Toaster position="top-center" richColors closeButton />
-
-        {/* Service Worker Registration */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', function() {
-                  navigator.serviceWorker.register('/sw.js')
-                    .then(function(registration) {
-                      console.log('SW registered: ', registration);
-                    })
-                    .catch(function(registrationError) {
-                      console.log('SW registration failed: ', registrationError);
-                    });
-                });
-              }
-            `,
-          }}
-        />
+        <Toaster />
       </body>
     </html>
   );

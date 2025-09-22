@@ -1,5 +1,5 @@
-import { ZKLOGIN_EXPIRE_DAY, ZKLOGIN_EXPIRE_END } from '@/assets/config/constant'
-import { createAction, createReducer, configureStore, PayloadAction  } from '@reduxjs/toolkit'
+import { configureStore, createAction, createReducer, PayloadAction } from '@reduxjs/toolkit'
+
 export const connect = createAction<string>('connect')
 export const disconnect = createAction('disconnect')
 export const setZkLoginData = createAction<any>('setZkLoginData')
@@ -7,70 +7,100 @@ export const setIsZkLogin = createAction<boolean>('setIsZkLogin')
 export const setIsWalletLogin = createAction<boolean>('setIsWalletLogin')
 export const clearLoginData = createAction('clearLoginData')
 
-const reducer = createReducer(
-    {
-      connect: false,
-      account: '',
-      zkLoginData: JSON.parse(localStorage.getItem('zkloginData') as string) || null,
-      isZkLogin: localStorage.getItem('isZkLogin') === '1' ? true : false,
-      isWalletLogin: localStorage.getItem('isWalletLogin') === '1' ? true : false
-    },
-    builder => builder
-      .addCase(connect, (state, action: PayloadAction<string>) => {
-        return {
-          ...state,
-          connect: true,
-          account: action.payload
+export type AuthState = {
+  connect: boolean
+  account: string
+  zkLoginData: any | null
+  isZkLogin: boolean
+  isWalletLogin: boolean
+}
+
+const initialState: AuthState = {
+  connect: false,
+  account: '',
+  zkLoginData: null,       // 这里不再从 localStorage 取，避免 SSR 报错
+  isZkLogin: false,
+  isWalletLogin: false,
+}
+
+const reducer = createReducer(initialState, (builder) =>
+  builder
+    .addCase(connect, (state, action: PayloadAction<string>) => {
+      state.connect = true
+      state.account = action.payload
+    })
+    .addCase(disconnect, (state) => {
+      state.connect = false
+      state.account = ''
+    })
+    .addCase(setZkLoginData, (state, action: PayloadAction<any>) => {
+      state.zkLoginData = action.payload
+    })
+    .addCase(setIsZkLogin, (state, action: PayloadAction<boolean>) => {
+      state.isZkLogin = action.payload
+      if (action.payload) {
+        state.isWalletLogin = false
+      }
+    })
+    .addCase(setIsWalletLogin, (state, action: PayloadAction<boolean>) => {
+      state.isWalletLogin = action.payload
+      if (action.payload) {
+        state.zkLoginData = null
+        state.isZkLogin = false
+      }
+    })
+    .addCase(clearLoginData, (state) => {
+      state.zkLoginData = null
+      state.isZkLogin = false
+      state.isWalletLogin = false
+    })
+)
+
+export const store = configureStore({ reducer })
+
+// ---------- Typed helpers ----------
+export type RootState = ReturnType<typeof store.getState>
+export type AppDispatch = typeof store.dispatch
+
+// 可选：仅在浏览器订阅变化并持久化（防止 reducer 内侧写 localStorage）
+function setupPersistence() {
+  if (typeof window === 'undefined') return
+  const { ZKLOGIN_EXPIRE_END } = require('@/assets/config/constant')
+
+  // 简单节流，避免频繁写入
+  let ticking = false
+  store.subscribe(() => {
+    if (ticking) return
+    ticking = true
+    queueMicrotask(() => {
+      try {
+        const state = store.getState() as RootState
+        // 只持久化必要字段
+        if (state.isZkLogin) {
+          localStorage.setItem('isZkLogin', '1')
+          if (state.zkLoginData) {
+            localStorage.setItem('zkloginData', JSON.stringify(state.zkLoginData))
+          }
+        } else {
+          localStorage.removeItem('isZkLogin')
+          localStorage.removeItem('zkloginData')
         }
-      })
-      .addCase(disconnect, (state, action) => {
-        localStorage.removeItem('isWalletLogin')
-        localStorage.removeItem('zkloginData')
-        localStorage.removeItem('isZkLogin')
-        return {
-          ...state,
-          connect: false,
-          account: ''
+
+        if (state.isWalletLogin) {
+          localStorage.setItem('isWalletLogin', '1')
+        } else {
+          localStorage.removeItem('isWalletLogin')
         }
-      })
-      .addCase(setZkLoginData, (state, action: PayloadAction<any>) => {
-        localStorage.setItem('zkloginData', JSON.stringify(action.payload))
-        localStorage.setItem(ZKLOGIN_EXPIRE_END, (new Date().getTime() + ZKLOGIN_EXPIRE_DAY * 24 * 60 * 60 * 1000).toString())
-        return {
-          ...state,
-          zkLoginData: action.payload
-        }
-      })
-      .addCase(setIsZkLogin, (state, action: PayloadAction<boolean>) => {
-        localStorage.setItem('isZkLogin', action.payload ? '1' : '0')
-        localStorage.removeItem('isWalletLogin')
-        return {
-          ...state,
-          isZkLogin: action.payload
-        }
-      })
-      .addCase(setIsWalletLogin, (state, action: PayloadAction<boolean>) => {
-        localStorage.setItem('isWalletLogin', action.payload ? '1' : '0')
-        localStorage.removeItem('zkloginData')
-        localStorage.removeItem('isZkLogin')
-        return {
-          ...state,
-          isWalletLogin: action.payload
-        }
-      })
-      .addCase(clearLoginData, (state) => {
-        localStorage.removeItem('zkloginData')
-        localStorage.removeItem('isZkLogin')
-        localStorage.removeItem('isWalletLogin')
-        localStorage.removeItem(ZKLOGIN_EXPIRE_END)
-        return {
-          ...state,
-          zkLoginData:  null,
-          isZkLogin: false,
-          isWalletLogin: false
-        }
-      })
-    )   
-export default configureStore({
-    reducer
-})
+
+        // 过期时间在 InitAuth 里写入，这里不覆盖
+        // localStorage.setItem(ZKLOGIN_EXPIRE_END, ...)
+      } catch (e) {
+        // 忽略持久化异常（例如 Safari 隐私模式）
+        console.warn('persist error:', e)
+      } finally {
+        ticking = false
+      }
+    })
+  })
+}
+setupPersistence()

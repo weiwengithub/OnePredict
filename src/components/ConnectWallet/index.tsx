@@ -8,9 +8,8 @@ import {
   useSuiClient,
   useWallets,
 } from "@onelabs/dapp-kit";
-import { addPoint, onCopyToText } from '@/assets/util';
+import { addPoint, onCopyToText } from '@/lib/utils';
 import { rightNetwork } from '@/assets/config';
-import Zklogin from '../Zklogin';
 import { useDispatch } from 'react-redux';
 import { setIsWalletLogin } from '@/store';
 import {useLanguage} from "@/contexts/LanguageContext";
@@ -52,13 +51,13 @@ export default () => {
   return (
     <div className='connect-wallet-area'>
       <ConnectModal
-                open={open}
-                trigger={
-                    <div className="signin-btn  cf  pointer m-fz-12 fz-14 cf w100 " >
-                    {t('common.connectWithExistingWallet')}
-                  </div>
-                }
-                onOpenChange={(isOpen) => setOpen(isOpen)}
-              /></div>
+        open={open}
+        trigger={
+          <div className="mb-[20px] h-[46px] leading-[46px] bg-[#04122B] border border-white/20 rounded-[16px] text-[12px] text-white/60 hover:text-white text-center cursor-pointer" >
+            {t('common.connectWithExistingWallet')}
+          </div>
+        }
+        onOpenChange={(isOpen) => setOpen(isOpen)}
+      /></div>
   );
 }

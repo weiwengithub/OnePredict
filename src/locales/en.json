@@ -3,8 +3,14 @@
     "home": "Home",
     "leaderboard": "Leaderboard",
     "rewards": "Rewards",
-    "signin": "Sign in",
-    "language": "English"
+    "signIn": "Sign in",
+    "desc": "Sign in with Google or connect with existing wallet",
+    "or": "Or",
+    "language": "English",
+    "copyAddress": "Copy address",
+    "menu": "Wallet",
+    "disconnect": "Disconnect",
+    "connectingGoogle": "Connecting with Google..."
   },
   "categories": {
     "trending": "Trending",
@@ -53,7 +59,10 @@
   "common": {
     "loadMore": "Load more",
     "volume": "Vol.",
-    "search": "Search"
+    "search": "Search",
+    "connectWithGoogle": "Google",
+    "connectWithApple": "Apple ID",
+    "connectWithExistingWallet": "Connect with Existing Wallet"
   },
   "search": {
     "placeholder": "Search Markets.contract address",

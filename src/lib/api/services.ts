@@ -3,8 +3,18 @@ import apiClient from "@/lib/api/client";
 // 具体的API接口方法
 export const apiService = {
   // 示例：获取预测数据
-  getPredictions: (params?: { category?: string; page?: number; limit?: number }) => {
-    return apiClient.get('/predictions', params);
+  getLoginNonce: (data: Record<string, unknown>) => {
+    return apiClient.post('/ext/member/loginNonce', data);
+  },
+
+  // 示例：创建预测
+  zkLoginBySign: (data: Record<string, unknown>) => {
+    return apiClient.post('/ext/member/zkLoginBySign', data);
+  },
+
+  // 示例：创建预测
+  loginBySign: (data: Record<string, unknown>) => {
+    return apiClient.post('/ext/member/loginBySign', data);
   },
 
   // 示例：获取预测详情

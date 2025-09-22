@@ -2,10 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent} from "@/components/ui/card";
 import MobileNavigation from "@/components/MobileNavigation";
+import {onCopyToText} from "@/lib/utils";
 import {
   Gift,
   Users,
@@ -184,7 +183,7 @@ export default function Rewards() {
 
                   <div className="mt-[12px] flex items-center justify-between text-white px-[12px]">
                     <p className="flex-1 h-[18px] leading-[18px] text-[16px] pr-[12px] truncate">https://bayes.market/?code=93GQPN</p>
-                    <div className="cursor-pointer">
+                    <div className="cursor-pointer" onClick={() => {onCopyToText('https://bayes.market/?code=93GQPN&v=1')}}>
                       <CopyIcon />
                     </div>
                   </div>
