@@ -4,7 +4,7 @@ export const CLIENT_ID = process.env.UMI_APP_CLIENT_ID || "109304040919-r9dpaeg4
 
 // export const REDIRECT_URI = "https://sui-zklogin.vercel.app/";
 // export const REDIRECT_URI = "https://rwa.deltax.online/waiting";
-export const REDIRECT_URI = process.env.NODE_ENV === 'development' ? "http://localhost:8082/waiting": window.location.origin + "/waiting"; //根据环境变量切换 本地开发环境 线上环境 测试环境
+export const REDIRECT_URI = "http://localhost:8082/waiting"; //根据环境变量切换 本地开发环境 线上环境 测试环境
 
 export const GET_SALT_URL = process.env.UMI_APP_GET_SALT_URL || 'https://salt.deltax.online/api/userSalt/'
 
