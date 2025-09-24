@@ -45,7 +45,7 @@ export default function InitAuth() {
           )
         }
       } else if (isWalletLogin) {
-        dispatch(setIsWalletLogin(true))
+        dispatch(setIsWalletLogin(1))
       }
     } catch (e) {
       console.warn('InitAuth restore error:', e)

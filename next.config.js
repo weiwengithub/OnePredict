@@ -13,7 +13,7 @@ const nextConfig = {
       return [
         {
           source: '/api/:path*',
-          destination: `${process.env.PROXY_TARGET || 'https://poly-admin.deltax.online/api'}/:path*`,
+          destination: `${process.env.PROXY_TARGET || 'http://18.142.31.43:3001'}/:path*`,
         },
       ];
     }

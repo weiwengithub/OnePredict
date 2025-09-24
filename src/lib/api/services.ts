@@ -1,4 +1,5 @@
 import apiClient from "@/lib/api/client";
+import {ResultData, ResMarketList} from "@/lib/api/interface";
 
 // 具体的API接口方法
 export const apiService = {
@@ -48,8 +49,8 @@ export const apiService = {
   },
 
   // 示例：创建预测
-  getExtProjectList: (data: Record<string, unknown>) => {
-    return apiClient.post('/ext/project/list', data);
+  getMarketList: () => {
+    return apiClient.post<ResMarketList>('/api/market/list');
   },
 };
 

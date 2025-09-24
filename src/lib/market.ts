@@ -94,6 +94,7 @@ export class MarketClient {
                 tx.object(this.clockId),
             ],
         });
+        tx.setGasBudget(1000000000);
         return tx;
     }
 

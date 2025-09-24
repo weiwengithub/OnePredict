@@ -6,10 +6,12 @@ import MobileNavigation from "@/components/MobileNavigation";
 import Link from 'next/link';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { Input } from "@/components/ui/input";
 import HomeIcon from "@/assets/icons/home.svg";
 import ExportIcon from "@/assets/icons/export.svg";
 import ArrowRightIcon from "@/assets/icons/arrow-right.svg";
 import UserIcon from "@/assets/icons/user.svg";
+import WarningIcon from "@/assets/icons/warning.svg";
 import Image from "next/image";
 
 interface MarketInfo {
@@ -205,73 +207,70 @@ export default function Profile() {
         <div className="flex items-center">
           <Link href="/">
             <div className="flex items-center text-white/40 hover:text-white">
-              <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">Settings</span>
+              <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">Home</span>
             </div>
           </Link>
           <ArrowRightIcon className="mx-[16px] text-white/40" />
-          <div className="h-[18px] leading-[18px] text-[14px] text-white">Profile</div>
+          <div className="h-[18px] leading-[18px] text-[14px] text-white">Settings</div>
         </div>
 
-        {/* Header */}
-        <div className="mt-[24px]">
-          <div className="flex gap-3">
-            <Avatar className="w-[136px] h-[136px] rounded-full">
+        <div className="mt-[36px] space-y-[36px]">
+          <div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">Profile</div>
+          <div className="flex items-center">
+            <Avatar className="w-[64px] h-[64px] rounded-[24px]">
               <AvatarImage src={prediction.avatar} alt="Prediction" />
               <AvatarFallback className="bg-blue-600 text-white">?</AvatarFallback>
             </Avatar>
-            <div className="ml-[24px]">
-              <div className="h-[31px] leading-[31px] text-[24px] text-white font-bold">Kupc</div>
-              <div className="mt-[12px] flex gap-[10px] h-[18px] text-[14px] text-white/80">
-                <span>1 Followers</span>
-                <span className="border-l border-white/80 my-[1px]"></span>
-                <span>0 Followers</span>
-                <span className="border-l border-white/80 my-[1px]"></span>
-                <span>0 Opinions</span>
-              </div>
-              <div className="mt-[22px] flex items-center gap-[12px]">
-                <div className="h-[32px] leading-[32px] rounded-[24px] border border-white/40 text-[12px] px-[12px] text-white">Follow</div>
-                <div className="h-[36px] flex items-center rounded-[32px] border border-white/40 text-[12px] px-[12px] text-white"><ExportIcon /></div>
-              </div>
+            <div className="ml-[24px] h-[36px] leading-[36px] border border-white/40 rounded-[24px] px-[12px] text-white text-[16px]">
+              Upload new image (Max 5MB)
             </div>
           </div>
-        </div>
-
-        <div className="mt-[40px] flex gap-[24px]">
-          {/* Position */}
-          <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
-            <Image src="/images/icon/icon-profile-1.png" alt="" width={36} height={36} />
-            <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">Position</div>
-            <div className="mt-[24px] leading-[24px] text-[24px] text-white font-bold">35</div>
-          </div>
-
-          {/* Volume Traded */}
-          <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
-            <Image src="/images/icon/icon-profile-2.png" alt="" width={36} height={36} />
-            <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">Volume Traded</div>
-            <div className="mt-[24px] flex gap-[8px] leading-[24px] text-[24px] text-white font-bold">
-              <Image src="/images/icon/icon-token.png" alt="" width={24} height={24} />
-              <span>539</span>
+          <div>
+            <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Username</div>
+            <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
+              <Input className="flex-1 px-[24px] bg-transparent border-none" />
+              <span className="text-[18px] text-white mx-[24px] cursor-pointer">Edit</span>
             </div>
           </div>
-
-          {/* PnL Rank */}
-          <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
-            <Image src="/images/icon/icon-profile-3.png" alt="" width={36} height={36} />
-            <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">PnL Rank</div>
-            <div className="mt-[24px] leading-[24px] text-[24px] text-white font-bold">35</div>
+          <div>
+            <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Bio</div>
+            <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
+              <Input className="flex-1 px-[24px] bg-transparent border-none" placeholder="Tell people a bit more about you" />
+              <span className="text-[18px] text-white mx-[24px] cursor-pointer">Edit</span>
+            </div>
           </div>
-        </div>
-
-        {/* All Markets */}
-        <div className="mt-[32px] bg-[#04122B] rounded-[16px] p-[24px] overflow-hidden">
-          <div className="mb-[24px] leading-[24px] text-[18px] text-white font-bold">All Markets</div>
-          <div className="space-y-[12px]">
-            {listData.map((prediction, index) => (
-              <MarketsItem
-                key={index}
-                {...prediction}
-              />
-            ))}
+          <div>
+            <div className="h-[24px] leading-[24px] text=[18px] text-white/60">UID</div>
+            <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
+              <Input className="flex-1 px-[24px] bg-transparent border-none" />
+              <span className="inline-block h-[32px] leading-[32px] bg-white/40 rounded-[12px] px-[10px] text-[18px] text-white mx-[24px] cursor-pointer">Copy</span>
+            </div>
+          </div>
+          <div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">Account</div>
+          <div>
+            <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Email</div>
+            <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
+              <Input className="flex-1 px-[24px] bg-transparent border-none" />
+              <span className="inline-block h-[32px] leading-[32px] bg-white/40 rounded-[12px] px-[10px] text-[18px] text-white mx-[24px] cursor-pointer">Copy</span>
+            </div>
+          </div>
+          <div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">Referral</div>
+          <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Were you invited by a friend? Enter their referral code to get your signup bonus!</div>
+          <div>
+            <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Invite Code</div>
+            <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
+              <Input className="flex-1 px-[24px] bg-transparent border-none" placeholder="Is an 6-digit string" />
+              <span className="text-[18px] text-white mx-[24px] cursor-pointer">Submit</span>
+            </div>
+          </div>
+          <div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">Private Key</div>
+          <div className="bg-[#04122B] rounded-[16px] p-[24px]">
+            <div className="flex">
+              <WarningIcon className="text-[24px] text-white" />
+              <span className="ml-[24px] leading-[24px] text-[16px] text-white">Warning: Never disclose Private key.</span>
+            </div>
+            <div className="mt-[24px] pl-[48px] leading-[24px] text-[16px] text-white">Anyone with your private keys can steal any assets held in your account. You can export your private keys and store them in a secure location for backup.</div>
+            <div className="mt-[36px] ml-[48px] inline-block h-[32px] leading-[32px] bg-[#A63030] rounded-[12px] text-[18px] text-white px-[12px] cursor-pointer">Show Private Key</div>
           </div>
         </div>
       </main>

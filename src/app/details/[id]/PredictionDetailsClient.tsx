@@ -452,7 +452,7 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
             onAmountChange={setAmount}
             balance={balance}
             onTrade={handleTrade}
-            prediction={prediction}
+            // prediction={prediction}
           />
 
           {/* 使用可复用的服务条款组件 */}

@@ -7,6 +7,8 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SemicircleGauge from "./SemicircleGauge";
 import MarketDetailModal from "./MarketDetailModal";
 import { getMiniTrendData } from "@/lib/chartData";
+import { formatShortDate } from "@/lib/utils";
+import { MarketOption } from "@/lib/api/interface";
 import { PredictionTradingModal } from "./predictionTrading";
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -14,34 +16,19 @@ import { toast } from "sonner";
 import * as Tooltip from "@radix-ui/react-tooltip";
 
 interface PredictionCardProps {
-  id?: string;
-  question: string;
-  chance: number;
-  volume: string;
-  deadline: string;
-  category: string;
-  avatar: string;
-  isLive?: boolean;
+  key: number;
+  prediction: MarketOption;
 }
 
 export default function PredictionCard({
-  id,
-  question,
-  chance,
-  volume,
-  deadline,
-  category,
-  avatar,
-  isLive = false
+  prediction,
 }: PredictionCardProps) {
   const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showTradingModal, setShowTradingModal] = useState(false);
   const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes');
-  const trendData = getMiniTrendData(question);
-  const isPositiveTrend = trendData.length > 1 &&
-    trendData[trendData.length - 1].value > trendData[0].value;
 
+  const chance = 30;
   const [percentage, setPercentage] = React.useState(25);
 
   const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -49,14 +36,14 @@ export default function PredictionCard({
   };
 
   const handleCardClick = () => {
-    if (id) {
-      router.push(`/details/${id}`);
+    if (prediction.marketId) {
+      router.push(`/details/${prediction.marketId}`);
     } else {
       setShowDetailModal(true);
     }
   };
 
-  const handleButtonClick = (e: React.MouseEvent, action: 'yes' | 'no') => {
+  const handleButtonClick = async (e: React.MouseEvent, action: 'yes' | 'no') => {
     e.stopPropagation();
     setSelectedOutcome(action);
     setShowTradingModal(true);
@@ -69,17 +56,17 @@ export default function PredictionCard({
         <CardContent className="p-[24px]">
           {/* Header with avatar and question */}
           <div className="flex items-start space-x-[19px] mb-[20px]">
-            <Avatar className="w-[48px] h-[48px] rounded-[8px] flex-shrink-0 ring-2 ring-gray-100 group-hover:ring-gray-200 transition-all">
-              <AvatarImage src={avatar} alt="avatar" />
+            <Avatar className="w-[48px] h-[48px] rounded-[8px] transition-all">
+              <AvatarImage src={prediction.metaJson.image_url} alt="avatar" />
               <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-gray-700 font-semibold">
-                {category.charAt(0).toUpperCase()}
+                loading...
               </AvatarFallback>
             </Avatar>
             <div
               className="flex-1 min-w-0 h-[96px] leading-[24px] text-white text-[20px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:4] [-webkit-box-orient:vertical] cursor-pointer"
               onClick={handleCardClick}
             >
-              {question}
+              {prediction.metaJson.title}
             </div>
             <div className="h-[48px] w-[80px]">
               <SemicircleGauge
@@ -148,11 +135,11 @@ export default function PredictionCard({
           {/* Footer with volume and deadline */}
           <div className="flex items-center justify-between text-[13px] text-white/60">
             <div className="flex items-center space-x-1">
-              <span className="inline-block leading-[24px]">{volume}</span>
+              <span className="inline-block leading-[24px]">{'volume'}</span>
             </div>
             <div className="flex items-center space-x-[12px]">
               <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
-              <span className="inline-block leading-[24px]">{deadline}</span>
+              <span className="inline-block leading-[24px]">{formatShortDate(Number(prediction.metaJson.end_time_ms))}</span>
               <Image src="/images/icon/icon-tag.png" alt="" width={12} height={12} onClick={() => {toast.success('分享成功111')}} />
               <Image src="/images/icon/icon-export.png" alt="" width={12} height={12} />
             </div>
@@ -164,27 +151,14 @@ export default function PredictionCard({
       <MarketDetailModal
         open={showDetailModal}
         onOpenChange={setShowDetailModal}
-        question={question}
         chance={chance}
-        volume={volume}
-        deadline={deadline}
-        category={category}
-        avatar={avatar}
-        isLive={isLive}
       />
 
       {/* Trading Modal */}
       <PredictionTradingModal
         isOpen={showTradingModal}
         onClose={() => setShowTradingModal(false)}
-        prediction={{
-          avatar,
-          question,
-          chance,
-          volume,
-          deadline,
-          id
-        }}
+        prediction={prediction}
         initialOutcome={selectedOutcome}
       />
     </>

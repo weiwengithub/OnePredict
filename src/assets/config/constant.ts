@@ -2,9 +2,7 @@
 
 export const CLIENT_ID = process.env.UMI_APP_CLIENT_ID || "109304040919-r9dpaeg4036p4cb4s045ofjv71m833p0.apps.googleusercontent.com"
 
-// export const REDIRECT_URI = "https://sui-zklogin.vercel.app/";
-// export const REDIRECT_URI = "https://rwa.deltax.online/waiting";
-export const REDIRECT_URI = "http://localhost:8082/waiting"; //根据环境变量切换 本地开发环境 线上环境 测试环境
+export const REDIRECT_URI = process.env.NODE_ENV === 'development' ? "http://localhost:8082/waiting" : "https://poly.deltax.online/waiting";
 
 export const GET_SALT_URL = process.env.UMI_APP_GET_SALT_URL || 'https://salt.deltax.online/api/userSalt/'
 
@@ -23,7 +21,7 @@ export const ZKLOGIN_EXPIRE_DAY = 10;
 
 
 //OCT
-export const OCT_RPC_URL = process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-testnet.onelabs.cc:443';
+export const OCT_RPC_URL = process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-mainnet.onelabs.cc:443';
 
 
 export const OCT_PROVER_ENDPOINT = process.env.UMI_APP_OCT_PROVER_ENDPOINT || 'https://zkprover.deltax.online/v1';

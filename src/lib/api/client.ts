@@ -41,7 +41,7 @@ api.interceptors.request.use(
 // 响应拦截器
 api.interceptors.response.use(
   (response: AxiosResponse) => {
-    return response;
+    return response.data;
   },
   (error: AxiosError) => {
     // 处理常见错误

@@ -263,3 +263,20 @@ export function getCoinInWithFees(
   const out = new BigNumber(reserveOutSize_after).minus(reserveOut).multipliedBy(1+slippageVal).multipliedBy(feeMultiplier).toNumber()
   return out > 0 ? out : 0
 }
+
+export function formatShortDate(
+  input: number | string | Date,
+  timeZone: string = 'Asia/Kuala_Lumpur' // 或 'UTC'
+) {
+  // 兼容秒/毫秒级时间戳
+  const ms = typeof input === 'number'
+    ? (input < 1e12 ? input * 1000 : input)
+    : new Date(input).getTime();
+
+  return new Intl.DateTimeFormat('en-US', {
+    month: 'short',   // 'Sep'
+    day: 'numeric',   // 30（不补零）
+    year: 'numeric',  // 2025
+    timeZone,
+  }).format(new Date(ms));
+}

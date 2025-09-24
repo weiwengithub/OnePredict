@@ -4,7 +4,9 @@ import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProgressBar } from '@/components/ProgressBar';
+import { MarketOption } from "@/lib/api/interface";
 import Image from "next/image";
+import BigNumber from "bignumber.js";
 import RefreshIcon from "@/assets/icons/refresh.svg";
 import SettingsIcon from "@/assets/icons/setting.svg";
 
@@ -17,9 +19,7 @@ interface TradingFormProps {
   onAmountChange: (amount: number) => void;
   balance: number;
   onTrade: () => void;
-  prediction: {
-    chance: number;
-  };
+  // prediction: MarketOption;
 }
 
 export default function TradingForm({
@@ -31,10 +31,12 @@ export default function TradingForm({
   onAmountChange,
   balance,
   onTrade,
-  prediction
+  // prediction
 }: TradingFormProps) {
-  const yesPrice = prediction.chance / 100;
-  const noPrice = (100 - prediction.chance) / 100;
+  // const yesPrice = new BigNumber(prediction.pProbsJson[0]).shiftedBy(-12);
+  // const noPrice = new BigNumber(prediction.pProbsJson[1]).shiftedBy(-12);
+  const yesPrice = 0.5;
+  const noPrice = 0.5;
   const [progress, setProgress] = useState(25);
 
   const handleAmountInputChange = (value: string) => {

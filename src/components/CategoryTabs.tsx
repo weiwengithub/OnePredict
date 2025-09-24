@@ -8,7 +8,6 @@ import TrendingIcon from '@/assets/icons/trending.svg';
 import LiveIcon from '@/assets/icons/live.svg';
 import NewIcon from '@/assets/icons/new.svg';
 import WatchIcon from '@/assets/icons/watch.svg';
-import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
 
 // 统一类型，保证 Icon 是一个 React 组件
 type SvgComp = React.ComponentType<React.SVGProps<SVGSVGElement>>;

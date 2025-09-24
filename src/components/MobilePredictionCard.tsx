@@ -10,28 +10,21 @@ import MarketDetailModal from "./MarketDetailModal";
 import { PredictionTradingModal } from "./predictionTrading";
 import { getMiniTrendData } from "@/lib/chartData";
 import { useRouter } from 'next/navigation';
+import {MarketOption} from "@/lib/api/interface";
 
 interface MobilePredictionCardProps {
-  id?: string;
-  question: string;
-  chance: number;
-  volume: string;
-  deadline: string;
-  category: string;
-  avatar: string;
-  isLive?: boolean;
+  key: number;
+  prediction: MarketOption;
 }
 
-export default function MobilePredictionCard({
-  id,
-  question,
-  chance,
-  volume,
-  deadline,
-  category,
-  avatar,
-  isLive = false
-}: MobilePredictionCardProps) {
+export default function MobilePredictionCard({prediction}: MobilePredictionCardProps) {
+  const question = '';
+  const chance = 35;
+  const volume = '';
+  const deadline = '';
+  const category = '';
+  const avatar = '';
+  const isLive = false;
   const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showTradingModal, setShowTradingModal] = useState(false);
@@ -41,8 +34,8 @@ export default function MobilePredictionCard({
     trendData[trendData.length - 1].value > trendData[0].value;
 
   const handleCardClick = () => {
-    if (id) {
-      router.push(`/details/${id}`);
+    if (prediction.marketId) {
+      router.push(`/details/${prediction.marketId}`);
     } else {
       setShowDetailModal(true);
     }
@@ -171,27 +164,14 @@ export default function MobilePredictionCard({
       <MarketDetailModal
         open={showDetailModal}
         onOpenChange={setShowDetailModal}
-        question={question}
         chance={chance}
-        volume={volume}
-        deadline={deadline}
-        category={category}
-        avatar={avatar}
-        isLive={isLive}
       />
 
       {/* Trading Modal */}
       <PredictionTradingModal
         isOpen={showTradingModal}
         onClose={() => setShowTradingModal(false)}
-        prediction={{
-          avatar,
-          question,
-          chance,
-          volume,
-          deadline,
-          id
-        }}
+        prediction={prediction}
         initialOutcome={selectedOutcome}
       />
     </>

@@ -11,7 +11,7 @@ import {
 import { addPoint, onCopyToText } from '@/lib/utils';
 import { rightNetwork } from '@/assets/config';
 import { useDispatch } from 'react-redux';
-import { setIsWalletLogin } from '@/store';
+import { setIsWalletLogin, setIsZkLogin } from '@/store';
 import {useLanguage} from "@/contexts/LanguageContext";
 
 interface CurrentAccount {
@@ -45,7 +45,8 @@ const ConnectWallet = () => {
   useEffect(() => {
     if (currentAccount) {
       console.log('currentAccount', currentAccount);
-      dispatch(setIsWalletLogin(true));
+      dispatch(setIsWalletLogin(1));
+      dispatch(setIsZkLogin(false));
       checkNetwork(currentAccount);
     }
   }, [currentAccount, checkNetwork, dispatch]);

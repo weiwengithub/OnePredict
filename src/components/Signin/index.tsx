@@ -31,6 +31,10 @@ import AppleIcon from '@/assets/icons/apple.svg';
 import WalletIcon from '@/assets/icons/walletIcon.svg';
 import {useLanguage} from "@/contexts/LanguageContext";
 import CloseIcon from "@/assets/icons/close_1.svg";
+import ProfileIcon from '@/assets/icons/profile.svg';
+import SettingsIcon from '@/assets/icons/settings.svg';
+import LogoutIcon from '@/assets/icons/logout.svg';
+import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
 
 interface ZkLoginData {
   email: string;
@@ -64,7 +68,7 @@ const Signin = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
-  const [openDown, setOpenDropdown] = useState(false);
+  const [openDown, setOpenDropdown] = useState(true);
   const [open, setOpen] = useState(false);
   const [openLoading, setOpenLoading] = useState(false);
   const { isConnecting } = useCurrentWallet();
@@ -152,12 +156,12 @@ const Signin = () => {
   }, [signPersonalMessage]);
 
   // Check whitelist when wallet connects
-  useEffect(() => {
-    const zkData = store.getState().zkLoginData as any;
-    if (currentAccount?.address || zkData?.zkloginUserAddress) {
-      checkSignandSignin(currentAccount?.address || zkData?.zkloginUserAddress);
-    }
-  }, [currentAccount?.address, pathname, checkSignandSignin]);
+  // useEffect(() => {
+  //   const zkData = store.getState().zkLoginData as any;
+  //   if (currentAccount?.address || zkData?.zkloginUserAddress) {
+  //     checkSignandSignin(currentAccount?.address || zkData?.zkloginUserAddress);
+  //   }
+  // }, [currentAccount?.address, pathname, checkSignandSignin]);
 
   // 禁止背景滚动
   useEffect(() => {
@@ -227,77 +231,54 @@ const Signin = () => {
                     setOpenDropdown(false)
                   }, 200)
                 }}>
-            <button className="signin-btn trans-btn p-l-24 p-r-24 cf fwb pointer flex flex-center gap-10 m-h-30 m-fz-12 m-p-l-12 m-p-r-12" onClick={()=>{
+            <button className="flex items-center gap-[12px] h-[36px] border border-white/20 text-white/20
+                  hover:border-white hover:text-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
+                  hover:bg-white/5" onClick={()=>{
               if(currentAccount){
                 handleCopyAddress()
               }
             }}>
               {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
-              {/*<img src={zkLoginData ? ( zkLoginData?.provider === 'google' ? googleIcon : appleIcon) : walletIcon} alt="" className='w-20 h-20 m-w-16 m-h-16' />*/}
               {(zkLoginData && (zkLoginData as any)?.email) ?(addPoint((zkLoginData as any)?.email,3)): addPoint(currentAccount?.address as string)}
-              {
-                currentAccount &&
-                <img
-                  className="wallet-copy pointer"
-                  src={copyIcon}
-                  alt=""
-                  title={t('header.copyAddress')}
-                />}
+              <ArrowDownIcon className="text-[16px]" />
             </button>
             {
-              openDown ? <div className={`signin-dropdown-menu`}>
-                {
-                  zkLoginData && (
-                    <div className="dropdown-menu-title flex flex-center gap-16">
-                      {(zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />}
-                      {/*<img src={ zkLoginData?.provider === 'google' ? googleIcon : appleIcon} alt="" className='w-20 h-20 m-w-16 m-h-16' />*/}
-                      <div className='flex flex-column gap-5'>
-                        {(zkLoginData as any)?.email ? <span className='m-fz-12 fz-14 cf fwb'>{(zkLoginData as any)?.email}</span>:''}
-                        <span style={{ cursor: 'pointer' }} onClick={()=>{
-                          if((zkLoginData as any)?.zkloginUserAddress){
-                            onCopyToText((zkLoginData as any)?.zkloginUserAddress)
-                          }
-                        }} className='m-fz-12 fz-14 cf flex flex-center gap-5'>{addPoint((zkLoginData as any)?.zkloginUserAddress)}
-                          <img src={copyIcon} alt="" className='w-16 h-16 m-w-12 m-h-12 pointer' />
-                            </span>
+              openDown ? (
+                <div className="absolute top-[36px] w-full pt-[14px]">
+                  <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
+                    <Link href="/profile" className="inline-block w-full">
+                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
+                        <ProfileIcon />
+                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">Profile</span>
                       </div>
-                    </div>
-                  )
-                }
-                <div className="dropdown-menu-list">
-                  <Link href="/wallet">
-                    <div className="dropdown-menu-item flex align-center m-fz-12">
-                      <img src={walletIcon} alt="wallet" className="dropdown-menu-icon" />
-                      <span>{t('header.menu')}</span>
-                    </div>
-                  </Link>
-                  {/* <div className="dropdown-menu-item flex align-center">
-                  <img src={settingIcon} alt="setting" className="dropdown-menu-icon" />
-                  <span>Setting</span>
-                </div> */}
-                  <Link href="/profile">
-                    <div className="dropdown-menu-item flex align-center m-fz-12">
-                      <img src={profitIcon} alt="profit" className="dropdown-menu-icon" />
-                      <span>{t('profit.title')}</span>
-                    </div>
-                  </Link>
+                    </Link>
+                    <Link href="/setting" className="inline-block w-full">
+                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
+                        <SettingsIcon />
+                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">Settings</span>
+                      </div>
+                    </Link>
+                    <Link href="#" className="inline-block w-full">
+                      <div
+                        className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
+                        onClick={() => {
+                          if(zkLoginData){
+                            dispatch(clearLoginData())
+                            disconnect()
+                            window.location.reload()
+                          }else{
+                            disconnect()
+                          }
+                        }}
+                      >
+                        <LogoutIcon />
+                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">Logout</span>
+                      </div>
+                    </Link>
+                  </div>
                 </div>
-                <div className="dropdown-menu-divider"></div>
-                <div className="dropdown-menu-disconnect flex align-center flex-center flex-middle m-fz-12" onClick={()=>{
-                  if(zkLoginData){
-                    dispatch(clearLoginData())
-                    disconnect()
-                    window.location.reload()
-                  }else{
-                    disconnect()
-                  }
-                }}>
-                  <img src={disconnectIcon} alt="disconnect" className="dropdown-menu-icon blue" />
-                  <span className="blue">{t('header.disconnect')}</span>
-                </div>
-              </div> : ''
+              ) : ''
             }
-
           </div>
         ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-50 hover:opacity-100 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => setOpen(true)}>
           {t('header.signIn')}

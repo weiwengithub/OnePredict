@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { Provider } from 'react-redux';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@onelabs/dapp-kit';
@@ -27,23 +27,34 @@ export default function ClientBody({
 }: {
   children: React.ReactNode;
 }) {
+  const [autoConnectReady, setAutoConnectReady] = useState(false);
+  const [shouldAutoConnect, setShouldAutoConnect] = useState(false);
   // Remove any extension-added classes during hydration
   useEffect(() => {
     // This runs only on the client after hydration
     document.body.className = "antialiased";
+    console.log('store.getState().isWalletLogin', !!store.getState().isWalletLogin)
+    try {
+      const isWalletLogin = typeof window !== 'undefined' && localStorage.getItem('isWalletLogin') === '1';
+      setShouldAutoConnect(!!isWalletLogin);
+    } finally {
+      setAutoConnectReady(true);
+    }
   }, []);
 
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <SuiClientProvider networks={networkConfig} defaultNetwork={Number(process.env.UMI_APP_IS_MAINNET) ? "mainnet" : "testnet"} onNetworkChange={(network) => {
+        <SuiClientProvider networks={networkConfig} defaultNetwork={"mainnet"} onNetworkChange={(network) => {
           console.log('Network changed:', network);
         }}>
-          <WalletProvider autoConnect={!!Number(store.getState().isWalletLogin)}>
-            <div className="antialiased">{children}</div>
-            {/* 客户端挂载后恢复登录态/本地数据 */}
-            <InitAuth />
-          </WalletProvider>
+          {autoConnectReady ? (
+            <WalletProvider autoConnect={shouldAutoConnect}>
+              <div className="antialiased">{children}</div>
+              {/* 客户端挂载后恢复登录态/本地数据 */}
+              <InitAuth />
+            </WalletProvider>
+          ) : null}
         </SuiClientProvider>
       </QueryClientProvider>
     </Provider>

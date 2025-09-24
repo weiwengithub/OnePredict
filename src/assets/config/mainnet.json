@@ -6,7 +6,7 @@
             "decimals": 9      
         },
         {
-            "coinType": "0x72eba41c73c4c2ce2bcfc6ec1dc0896ba1b5c17bfe7ae7c6c779943f84912b41::usdh::USDH",
+            "coinType": "0x3d1ecd3dc3c8ecf8cb17978b6b5fe0b06704d4ed87cc37176a01510c45e21c92::usdh::USDH",
             "symbol": "USDH",
             "decimals": 9
         }

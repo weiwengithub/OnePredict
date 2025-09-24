@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useCallback} from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Image from 'next/image';
@@ -14,10 +14,15 @@ import SearchIcon from "@/assets/icons/search.svg";
 import NetworkIcon from "@/assets/icons/network.svg";
 import SelectIcon from "@/assets/icons/select-icon.svg";
 import CheckedIcon from "@/assets/icons/checked.svg";
+import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
+import BigNumber from "bignumber.js";
+import {store} from '@/store';
 
 interface HeaderProps {
   currentPage?: 'home' | 'leaderboard' | 'rewards' | 'details';
 }
+
+const USDH_TYPE = "0x3d1ecd3dc3c8ecf8cb17978b6b5fe0b06704d4ed87cc37176a01510c45e21c92::usdh::USDH";
 
 export default function Header({ currentPage }: HeaderProps) {
   const [showIntegralModal, setShowIntegralModal] = useState(false);
@@ -52,6 +57,40 @@ export default function Header({ currentPage }: HeaderProps) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = store.getState().zkLoginData;
+  const suiClient = useSuiClient();
+  const [usdhBalance, setUsdhBalance] = useState<string>("0.00");
+  const fetchTokenBalance = useCallback(
+    async (userAddress: string, coinType: string = USDH_TYPE) => {
+      const { totalBalance } = await suiClient.getBalance({
+        owner: userAddress,
+        coinType,
+      });
+      // 假设精度 9：除以 10^9
+      const human = new BigNumber(totalBalance).shiftedBy(-9).toFixed(2);
+      // 如果用工具函数：const human = fromBaseUnits(totalBalance, 9).toFixed(2);
+      setUsdhBalance(human);
+    },
+    [suiClient]
+  )
+
+  // @ts-expect-error -- zkLoginData类型报错
+  const userAddress = currentAccount?.address || zkLoginData?.zkloginUserAddress || "";
+  useEffect(() => {
+    if (!userAddress) return;
+    let cancelled = false;
+
+    (async () => {
+      await fetchTokenBalance(userAddress);
+      if (cancelled) return;
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userAddress, fetchTokenBalance]);
 
   // 点击外部关闭语言下拉菜单
   // useEffect(() => {
@@ -139,7 +178,7 @@ export default function Header({ currentPage }: HeaderProps) {
                 <div className="h-[16px] leading-[16px] text-[12px] text-white/40 group-hover:text-white">USDH</div>
                 <div className="mt-[4px] flex items-center space-x-[2px]">
                   <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                  <span className="inline-block h-[16px] leading-[16px] text-[16px] font-bold text-white/60 group-hover:text-white">0</span>
+                  <span className="inline-block h-[16px] leading-[16px] text-[16px] font-bold text-white/60 group-hover:text-white">{usdhBalance}</span>
                 </div>
               </div>
 

@@ -34,7 +34,7 @@ const Zklogin = ({onJump}: {onJump: () => void}) => {
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
   const [maxEpoch, setMaxEpoch] = useState<number>(0);
   const [randomness, setRandomness] = useState<string>('');
-  const suiClient = useMemo(() => new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-testnet.onelabs.cc:443' }), []);
+  const suiClient = useMemo(() => new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-mainnet.onelabs.cc:443' }), []);
   const [nonce, setNonce] = useState<string>('');
   const [decodedJwt, setDecodedJwt] = useState<JwtPayload>();
   const [oauthParams, setOauthParams] = useState<OauthParams>();

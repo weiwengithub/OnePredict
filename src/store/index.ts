@@ -4,7 +4,7 @@ export const connect = createAction<string>('connect')
 export const disconnect = createAction('disconnect')
 export const setZkLoginData = createAction<unknown>('setZkLoginData')
 export const setIsZkLogin = createAction<boolean>('setIsZkLogin')
-export const setIsWalletLogin = createAction<boolean>('setIsWalletLogin')
+export const setIsWalletLogin = createAction<number>('setIsWalletLogin')
 export const clearLoginData = createAction('clearLoginData')
 
 export type AuthState = {
@@ -12,7 +12,7 @@ export type AuthState = {
   account: string
   zkLoginData: unknown | null
   isZkLogin: boolean
-  isWalletLogin: boolean
+  isWalletLogin: number
 }
 
 const initialState: AuthState = {
@@ -20,7 +20,7 @@ const initialState: AuthState = {
   account: '',
   zkLoginData: null,       // 这里不再从 localStorage 取，避免 SSR 报错
   isZkLogin: false,
-  isWalletLogin: false,
+  isWalletLogin: 0,
 }
 
 const reducer = createReducer(initialState, (builder) =>
@@ -39,10 +39,10 @@ const reducer = createReducer(initialState, (builder) =>
     .addCase(setIsZkLogin, (state, action: PayloadAction<boolean>) => {
       state.isZkLogin = action.payload
       if (action.payload) {
-        state.isWalletLogin = false
+        state.isWalletLogin = 0
       }
     })
-    .addCase(setIsWalletLogin, (state, action: PayloadAction<boolean>) => {
+    .addCase(setIsWalletLogin, (state, action: PayloadAction<number>) => {
       state.isWalletLogin = action.payload
       if (action.payload) {
         state.zkLoginData = null
@@ -52,7 +52,7 @@ const reducer = createReducer(initialState, (builder) =>
     .addCase(clearLoginData, (state) => {
       state.zkLoginData = null
       state.isZkLogin = false
-      state.isWalletLogin = false
+      state.isWalletLogin = 0
     })
 )
 

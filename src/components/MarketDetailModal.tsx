@@ -11,26 +11,20 @@ import { marketData } from "@/lib/chartData";
 interface MarketDetailModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  question: string;
   chance: number;
-  volume: string;
-  deadline: string;
-  category: string;
-  avatar: string;
-  isLive?: boolean;
 }
 
 export default function MarketDetailModal({
   open,
   onOpenChange,
-  question,
   chance,
-  volume,
-  deadline,
-  category,
-  avatar,
-  isLive = false
 }: MarketDetailModalProps) {
+  const question = '';
+  const volume = '';
+  const deadline = '';
+  const category = '';
+  const avatar = '';
+  const isLive = false;
   const chartData = marketData[question as keyof typeof marketData] || [];
   const currentPrice = chartData[chartData.length - 1]?.value || chance;
   const previousPrice = chartData[chartData.length - 2]?.value || chance;
