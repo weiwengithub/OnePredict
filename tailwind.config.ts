@@ -58,6 +58,7 @@ export default {
       },
       backgroundImage: {
         slideshow: "url('/images/slideshow-bg.png')",
+        card: "url('/images/card-bg.png')",
       },
       container: {
       center: true,

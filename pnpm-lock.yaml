@@ -56,6 +56,9 @@ importers:
       next:
         specifier: ^15.3.2
         version: 15.5.3(@babel/core@7.28.4)(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(sass@1.69.5)
+      qr-code-styling:
+        specifier: ^1.9.2
+        version: 1.9.2
       query-string:
         specifier: ^9.3.0
         version: 9.3.0
@@ -3159,6 +3162,13 @@ packages:
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
+
+  qr-code-styling@1.9.2:
+    resolution: {integrity: sha512-RgJaZJ1/RrXJ6N0j7a+pdw3zMBmzZU4VN2dtAZf8ZggCfRB5stEQ3IoDNGaNhYY3nnZKYlYSLl5YkfWN5dPutg==}
+    engines: {node: '>=18.18.0'}
+
+  qrcode-generator@1.5.2:
+    resolution: {integrity: sha512-pItrW0Z9HnDBnFmgiNrY1uxRdri32Uh9EjNYLPVC2zZ3ZRIIEqBoDgm4DkvDwNNDHTK7FNkmr8zAa77BYc9xNw==}
 
   query-string@9.3.0:
     resolution: {integrity: sha512-IQHOQ9aauHAApwAaUYifpEyLHv6fpVGVkMOnwPzcDScLjbLj8tLsILn6unSW79NafOw1llh8oK7Gd0VwmXBFmA==}
@@ -7054,6 +7064,12 @@ snapshots:
   proxy-from-env@1.1.0: {}
 
   punycode@2.3.1: {}
+
+  qr-code-styling@1.9.2:
+    dependencies:
+      qrcode-generator: 1.5.2
+
+  qrcode-generator@1.5.2: {}
 
   query-string@9.3.0:
     dependencies:

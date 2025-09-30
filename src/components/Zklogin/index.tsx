@@ -34,7 +34,7 @@ const Zklogin = ({onJump}: {onJump: () => void}) => {
   const [currentEpoch, setCurrentEpoch] = useState<number>(0);
   const [maxEpoch, setMaxEpoch] = useState<number>(0);
   const [randomness, setRandomness] = useState<string>('');
-  const suiClient = useMemo(() => new SuiClient({ url: process.env.UMI_APP_OCT_RPC_URL || 'https://rpc-mainnet.onelabs.cc:443' }), []);
+  const suiClient = useMemo(() => new SuiClient({ url: process.env.NEXT_PUBLIC_OCT_RPC_URL || '' }), []);
   const [nonce, setNonce] = useState<string>('');
   const [decodedJwt, setDecodedJwt] = useState<JwtPayload>();
   const [oauthParams, setOauthParams] = useState<OauthParams>();
@@ -104,7 +104,7 @@ const Zklogin = ({onJump}: {onJump: () => void}) => {
   const handleAppleLogin = useCallback(() => {
     //插件钱包断开链接
     const params = new URLSearchParams({
-      client_id: process.env.UMI_APP_APPLE_CLIENT_ID || '',
+      client_id: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || '',
       // redirect_uri: 'https://rwa.deltax.online/waiting',
       redirect_uri: REDIRECT_URI,
       response_type: "code id_token",

@@ -127,16 +127,16 @@ export class ZkloginClient {
   }
 
   async reserveGas(gasBudget: number, reserveDurationSecs: number): Promise<BudgetResult> {
-      const budgetResult = await apiClient.post('/ext/gas/reserve',{
-        "gas_budget": gasBudget,
-        "reserve_duration_secs": reserveDurationSecs
-       })
-       // @ts-expect-error -- TS类型报错
+    const budgetResult = await apiClient.post('/api/market/gas/reserve',{
+      "gas_budget": gasBudget,
+      "reserve_duration_secs": reserveDurationSecs
+    })
+    // @ts-expect-error -- TS类型报错
     return budgetResult?.data?.result as BudgetResult
   }
 
   async executeTransaction(reservationId: string, txBytes: string, zkLoginSignature: string) {
-        const executeRes: any = await apiClient.post('/ext/gas/executeTx', {
+        const executeRes: any = await apiClient.post('/api/market/executeTx', {
             reservation_id: reservationId,
             tx_bytes: txBytes,
             user_sig: zkLoginSignature,

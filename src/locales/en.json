@@ -34,7 +34,7 @@
         "description": "Discover prediction topics you care about, like \"Will it rain on the Olympics opening day?\""
       },
       "deposit": {
-        "title": "Deposit USDC",
+        "title": "Deposit USDH",
         "description": "Fund your own wallet to start making predictions."
       },
       "trade": {
@@ -62,7 +62,25 @@
     "search": "Search",
     "connectWithGoogle": "Google",
     "connectWithApple": "Apple ID",
-    "connectWithExistingWallet": "Connect with Existing Wallet"
+    "connectWithExistingWallet": "Connect with Existing Wallet",
+    "copy": "Copy successful"
+  },
+  "nav": {
+    "home": "Home",
+    "leaderboard": "Leaderboard",
+    "rewards": "Rewards",
+    "profile": "Profile"
+  },
+  "notFound": {
+    "title": "Page Not Found",
+    "description": "Sorry, the page you are looking for does not exist or has been moved. Please check the URL or return to the homepage to continue browsing.",
+    "goHome": "Go Home",
+    "goBack": "Go Back",
+    "quickLinks": "Or visit these pages:"
+  },
+  "waiting": {
+    "title": "Waiting for {{name}} to connect...",
+    "subtitle": "Please wait while we connect with {{name}}"
   },
   "search": {
     "placeholder": "Search Markets.contract address",

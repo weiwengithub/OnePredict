@@ -176,4 +176,17 @@
   .bg-op-warning {
     background-color: rgb(var(--op-warning));
   }
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  .scrollbar-none::-webkit-scrollbar-track,
+  .scrollbar-none::-webkit-scrollbar-thumb {
+    background: transparent;
+    border: none;
+  }
 }

@@ -35,40 +35,13 @@ import ProfileIcon from '@/assets/icons/profile.svg';
 import SettingsIcon from '@/assets/icons/settings.svg';
 import LogoutIcon from '@/assets/icons/logout.svg';
 import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
-
-interface ZkLoginData {
-  email: string;
-  ephemeralKeyPairSecret: string;
-  aud: string | string[];
-  salt: string;
-  sub: string;
-  zkproof: Record<string, unknown>;
-  maxEpoch: number;
-  zkloginUserAddress: string;
-}
-
-interface CurrentAccount {
-  chains: readonly string[];
-  address?: string;
-}
-
-interface RootState {
-  zkLoginData: ZkLoginData | null;
-}
-
-interface ApiResult {
-  data: unknown;
-}
-
-interface LoginResponse {
-  data: unknown;
-}
+import { ZkLoginData, CurrentAccount, RootState, ApiResult, LoginResponse } from "@/lib/interface";
 
 const Signin = () => {
   const { t } = useLanguage();
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
-  const [openDown, setOpenDropdown] = useState(true);
+  const [openDown, setOpenDropdown] = useState(false);
   const [open, setOpen] = useState(false);
   const [openLoading, setOpenLoading] = useState(false);
   const { isConnecting } = useCurrentWallet();
@@ -128,7 +101,7 @@ const Signin = () => {
           originalMessage: signMessage,
           signedMessage: zkLoginSignature,
           chain: 'onechain',
-          chainNet: Number(process.env.UMI_APP_IS_MAINNET) ? 'mainnet' : 'testnet'
+          chainNet: Number(process.env.NEXT_PUBLIC_IS_MAINNET) ? 'mainnet' : 'testnet'
         });
         console.log('data', data)
 
@@ -221,16 +194,18 @@ const Signin = () => {
     <div className="signin-area">
       {
         zkLoginData || currentAccount ? (
-          <div  onMouseEnter={() => {
-            if (currentAccount || zkLoginData) {
-              setOpenDropdown(true);
-            }
-          }}
-                onMouseLeave={() => {
-                  setTimeout(() => {
-                    setOpenDropdown(false)
-                  }, 200)
-                }}>
+          <div
+            onMouseEnter={() => {
+              if (currentAccount || zkLoginData) {
+                setOpenDropdown(true);
+              }
+            }}
+            onMouseLeave={() => {
+              setTimeout(() => {
+                setOpenDropdown(false)
+              }, 200)
+            }}
+          >
             <button className="flex items-center gap-[12px] h-[36px] border border-white/20 text-white/20
                   hover:border-white hover:text-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
                   hover:bg-white/5" onClick={()=>{

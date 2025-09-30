@@ -61,7 +61,7 @@ export default function CategoryTabs() {
             <SelectValue placeholder="Pick one" />
           </SelectTrigger>
           <SelectContent className="mt-[12px] bg-[#04122B] border-none p-[12px] space-y-[4px]">
-            <SelectItem value="eth" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Ethereum</SelectItem>
+            <SelectItem value="eth" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Expire Time</SelectItem>
             <SelectItem value="sui" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Sui</SelectItem>
             <SelectItem value="sol" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Solana</SelectItem>
           </SelectContent>

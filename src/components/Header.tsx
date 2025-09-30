@@ -7,25 +7,33 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
+import DepositModal from "@/components/DepositModal";
+import WithdrawModal from "@/components/WithdrawModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchModal from "@/components/SearchModal";
 import Signin from "@/components/Signin";
+import { useUsdhBalance } from "@/hooks/useUsdhBalance";
 import SearchIcon from "@/assets/icons/search.svg";
 import NetworkIcon from "@/assets/icons/network.svg";
-import SelectIcon from "@/assets/icons/select-icon.svg";
+import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
 import CheckedIcon from "@/assets/icons/checked.svg";
-import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
-import BigNumber from "bignumber.js";
-import {store} from '@/store';
+import GoogleIcon from "@/assets/icons/google.svg";
+import AppleIcon from "@/assets/icons/apple.svg";
+import WalletIcon from "@/assets/icons/walletIcon.svg";
+import {addPoint} from "@/lib/utils";
+import ProfileIcon from "@/assets/icons/profile.svg";
+import SettingsIcon from "@/assets/icons/settings.svg";
+import {clearLoginData} from "@/store";
+import LogoutIcon from "@/assets/icons/logout.svg";
 
 interface HeaderProps {
   currentPage?: 'home' | 'leaderboard' | 'rewards' | 'details';
 }
 
-const USDH_TYPE = "0x3d1ecd3dc3c8ecf8cb17978b6b5fe0b06704d4ed87cc37176a01510c45e21c92::usdh::USDH";
-
 export default function Header({ currentPage }: HeaderProps) {
   const [showIntegralModal, setShowIntegralModal] = useState(false);
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -33,6 +41,11 @@ export default function Header({ currentPage }: HeaderProps) {
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
   const [showTheme, setShowTheme] = useState(false);
+
+  const { balance: usdhBalance } = useUsdhBalance({
+    // address: userAddress, // 可选：不传则自动解析
+    pollMs: 0, // 可选：例如 5000 开启 5s 轮询
+  });
 
   // 根据当前路径自动检测页面
   const getCurrentPage = () => {
@@ -57,52 +70,6 @@ export default function Header({ currentPage }: HeaderProps) {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
-
-  const currentAccount = useCurrentAccount();
-  const zkLoginData = store.getState().zkLoginData;
-  const suiClient = useSuiClient();
-  const [usdhBalance, setUsdhBalance] = useState<string>("0.00");
-  const fetchTokenBalance = useCallback(
-    async (userAddress: string, coinType: string = USDH_TYPE) => {
-      const { totalBalance } = await suiClient.getBalance({
-        owner: userAddress,
-        coinType,
-      });
-      // 假设精度 9：除以 10^9
-      const human = new BigNumber(totalBalance).shiftedBy(-9).toFixed(2);
-      // 如果用工具函数：const human = fromBaseUnits(totalBalance, 9).toFixed(2);
-      setUsdhBalance(human);
-    },
-    [suiClient]
-  )
-
-  // @ts-expect-error -- zkLoginData类型报错
-  const userAddress = currentAccount?.address || zkLoginData?.zkloginUserAddress || "";
-  useEffect(() => {
-    if (!userAddress) return;
-    let cancelled = false;
-
-    (async () => {
-      await fetchTokenBalance(userAddress);
-      if (cancelled) return;
-    })();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [userAddress, fetchTokenBalance]);
-
-  // 点击外部关闭语言下拉菜单
-  // useEffect(() => {
-  //   const handleClickOutside = (event: MouseEvent) => {
-  //     if (showLanguageDropdown) {
-  //       setShowLanguageDropdown(false);
-  //     }
-  //   };
-  //
-  //   document.addEventListener('mousedown', handleClickOutside);
-  //   return () => document.removeEventListener('mousedown', handleClickOutside);
-  // }, [showLanguageDropdown]);
 
   const navigationItems = [
     { key: 'home', label: t('header.home'), href: '/' },
@@ -194,7 +161,17 @@ export default function Header({ currentPage }: HeaderProps) {
               </button>
 
               {/* Language Selector */}
-              <div className="relative">
+              <div
+                className="relative"
+                onMouseEnter={() => {
+                  setShowLanguageDropdown(true);
+                }}
+                onMouseLeave={() => {
+                  setTimeout(() => {
+                    setShowLanguageDropdown(false)
+                  }, 200)
+                }}
+              >
                 <button
                   onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                   className={`
@@ -206,38 +183,40 @@ export default function Header({ currentPage }: HeaderProps) {
                   <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px]">
                     {t('header.language')}
                   </span>
-                  <SelectIcon className="text-[8px]" />
+                  <ArrowDownIcon className="text-[16px]" />
                 </button>
 
                 {/* Language Dropdown */}
                 {showLanguageDropdown && (
-                  <div className="absolute top-full mt-2 right-0 bg-[#04122B] border border-[#051A3D] rounded-[8px] px-[5px] py-[8px] space-y-[8px] z-50 min-w-[120px]">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLanguage('en');
-                        setShowLanguageDropdown(false);
-                      }}
-                      className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
-                        language === 'en' ? 'text-white' : 'text-white/50 hover:text-white'
-                      }`}
-                    >
-                      <span>English</span>
-                      {language === 'en' && <CheckedIcon className="text-[12px]" />}
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setLanguage('zh');
-                        setShowLanguageDropdown(false);
-                      }}
-                      className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
-                        language === 'zh' ? 'text-white' : 'text-white/50 hover:text-white'
-                      }`}
-                    >
-                      <span>简体中文</span>
-                      {language === 'zh' && <CheckedIcon className="text-[12px]" />}
-                    </button>
+                  <div className="absolute top-[36px] w-full pt-[14px]">
+                    <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLanguage('en');
+                          setShowLanguageDropdown(false);
+                        }}
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
+                          language === 'en' ? 'text-white' : 'text-white/50 hover:text-white'
+                        }`}
+                      >
+                        <span>English</span>
+                        {language === 'en' && <CheckedIcon className="text-[12px]" />}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLanguage('zh');
+                          setShowLanguageDropdown(false);
+                        }}
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
+                          language === 'zh' ? 'text-white' : 'text-white/50 hover:text-white'
+                        }`}
+                      >
+                        <span>简体中文</span>
+                        {language === 'zh' && <CheckedIcon className="text-[12px]" />}
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -265,6 +244,8 @@ export default function Header({ currentPage }: HeaderProps) {
       <PredictionIntegralModal
         isOpen={showIntegralModal}
         onClose={() => setShowIntegralModal(false)}
+        onShowDeposit={() => setShowDeposit(true)}
+        onShowWithdraw={() => setShowWithdraw(true)}
         prediction={{
           question: 'string',
           chance: 0,
@@ -273,6 +254,12 @@ export default function Header({ currentPage }: HeaderProps) {
           id: ''
         }}
       />
+
+      {/* Deposit Modal */}
+      <DepositModal open={showDeposit} onOpenChange={setShowDeposit} />
+
+      {/* Withdraw Modal */}
+      <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
 
       {/* Search Modal */}
       <SearchModal

@@ -35,7 +35,7 @@ export default function MobilePredictionCard({prediction}: MobilePredictionCardP
 
   const handleCardClick = () => {
     if (prediction.marketId) {
-      router.push(`/details/${prediction.marketId}`);
+      router.push(`/details?marketId=${prediction.marketId}`);
     } else {
       setShowDetailModal(true);
     }

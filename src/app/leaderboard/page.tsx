@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +8,7 @@ import MobileNavigation from "@/components/MobileNavigation";
 import { Trophy, Medal, Award, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
 import Footer from "@/components/Footer";
 import Header from "@/components/Header";
+import { Pagination } from "@/components/Pagination";
 import Image from "next/image";
 import ExportIcon from "@/assets/icons/export.svg";
 import DeclineIcon from "@/assets/icons/decline.svg";
@@ -18,9 +19,9 @@ type SortField = 'pnl' | 'volume' | 'trades'
 export default function Leaderboard() {
   const [isMobile, setIsMobile] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
   const [currentPeriod, setCurrentPeriod] = useState<TimePeriod>('weekly');
   const [currentSortField, setCurrentSortField] = useState<SortField>('pnl');
-  const usersPerPage = 10;
 
   // Detect mobile viewport
   useEffect(() => {
@@ -116,15 +117,20 @@ export default function Leaderboard() {
   const leaderboardData = generatePeriodData(currentPeriod);
 
   // Pagination logic
-  const totalPages = Math.ceil(leaderboardData.length / usersPerPage);
-  const startIndex = (currentPage - 1) * usersPerPage;
-  const endIndex = startIndex + usersPerPage;
+  const totalPages = Math.ceil(leaderboardData.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
   const currentUsers = leaderboardData.slice(startIndex, endIndex);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     // Scroll to top of table when page changes
     window.scrollTo({ top: 300, behavior: 'smooth' });
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
   };
 
   const handlePeriodChange = (period: TimePeriod) => {
@@ -142,91 +148,6 @@ export default function Leaderboard() {
       default:
         return <span className="h-[24px] leading-[24px] text-white text-center">{rank}</span>;
     }
-  };
-
-  // Pagination component
-  const PaginationComponent = () => {
-    const maxVisiblePages = 5;
-    const startPage = Math.max(1, currentPage - Math.floor(maxVisiblePages / 2));
-    const endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
-    const adjustedStartPage = Math.max(1, endPage - maxVisiblePages + 1);
-
-    const visiblePages = Array.from(
-      { length: endPage - adjustedStartPage + 1 },
-      (_, index) => adjustedStartPage + index
-    );
-
-    return (
-      <div className="flex items-center justify-center space-x-2 mt-8">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handlePageChange(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronLeft className="w-4 h-4" />
-        </Button>
-
-        {adjustedStartPage > 1 && (
-          <>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePageChange(1)}
-              className="text-white/60 hover:text-white hover:bg-white/10 min-w-[40px]"
-            >
-              1
-            </Button>
-            {adjustedStartPage > 2 && (
-              <span className="text-white/40 px-2">...</span>
-            )}
-          </>
-        )}
-
-        {visiblePages.map((page) => (
-          <Button
-            key={page}
-            variant="ghost"
-            size="sm"
-            onClick={() => handlePageChange(page)}
-            className={`min-w-[40px] ${
-              currentPage === page
-                ? 'bg-blue-600 text-white hover:bg-blue-700'
-                : 'text-white/60 hover:text-white hover:bg-white/10'
-            }`}
-          >
-            {page}
-          </Button>
-        ))}
-
-        {endPage < totalPages && (
-          <>
-            {endPage < totalPages - 1 && (
-              <span className="text-white/40 px-2">...</span>
-            )}
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => handlePageChange(totalPages)}
-              className="text-white/60 hover:text-white hover:bg-white/10 min-w-[40px]"
-            >
-              {totalPages}
-            </Button>
-          </>
-        )}
-
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => handlePageChange(currentPage + 1)}
-          disabled={currentPage === totalPages}
-          className="text-white/60 hover:text-white hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed"
-        >
-          <ChevronRight className="w-4 h-4" />
-        </Button>
-      </div>
-    );
   };
 
   // Time period selector component
@@ -422,8 +343,17 @@ export default function Leaderboard() {
           </div>
         </div>
 
-        {/* Pagination */}
-        <PaginationComponent />
+        {/*分页组件*/}
+        <div className="max-w-[1020px] mt-[24px] mx-auto">
+          <Pagination
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+            itemsPerPage={itemsPerPage}
+            onItemsPerPageChange={handleItemsPerPageChange}
+            itemsPerPageOptions={[5, 10, 20, 50]}
+          />
+        </div>
       </main>
 
       {/* Footer */}

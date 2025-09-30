@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -11,6 +11,9 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import TradingForm from "@/components/predictionTrading/TradingForm";
 import TermsAgreement from "@/components/predictionTrading/TermsAgreement";
+import { Pagination } from "@/components/Pagination";
+import { useSearchParams } from "next/navigation";
+import apiService from "@/lib/api/services";
 import HomeIcon from "@/assets/icons/home.svg";
 import EditIcon from "@/assets/icons/edit.svg";
 import Edit1Icon from "@/assets/icons/edit_1.svg";
@@ -27,6 +30,7 @@ import DisputeWindow from "@/assets/icons/disputeWindow.svg";
 import FinalOutcome from "@/assets/icons/finalOutcome.svg";
 import WechatIcon from "@/assets/icons/wechat.svg";
 import Image from "next/image";
+import {MarketOption} from "@/lib/api/interface";
 
 interface PredictionDetail {
   id: string;
@@ -46,11 +50,9 @@ interface PredictionDetail {
   relatedPredictions: string[];
 }
 
-interface PredictionDetailsClientProps {
-  id: string;
-}
-
-export default function PredictionDetailsClient({ id }: PredictionDetailsClientProps) {
+export default function PredictionDetailsClient() {
+  const searchParams = useSearchParams();
+  const marketId = searchParams.get("marketId") as string;
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
 
@@ -75,6 +77,23 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const didFetchRef = useRef(false);
+  const [predictionData, setPredictionData] = useState<MarketOption[]>([]);
+  useEffect(() => {
+    if (didFetchRef.current) return;   // 防止 StrictMode 下的第二次执行
+    didFetchRef.current = true;
+
+    (async () => {
+      try {
+        const {data} = await apiService.getMarketDetail(marketId);
+        console.log('************222 marketDetail')
+        console.log(data);
+        // setPredictionData(data.item)
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, [marketId]);
   // Mock prediction data based on ID
   const getPredictionData = (id: string): PredictionDetail => {
     const predictionMap: { [key: string]: PredictionDetail } = {
@@ -131,7 +150,7 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
     return predictionMap[id] || predictionMap["0"];
   };
 
-  const prediction = getPredictionData(id);
+  const prediction = getPredictionData(marketId);
 
   const handleVote = (vote: 'yes' | 'no') => {
     setUserVote(vote);
@@ -181,8 +200,18 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
     }, '');
   };
 
-  const [pageSize, setPageSize] = useState(10);
-  const [pageNo, setPageNo] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const totalPages = 57;
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (newItemsPerPage: number) => {
+    setItemsPerPage(newItemsPerPage);
+    setCurrentPage(1);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-20 md:pb-0">
@@ -409,20 +438,14 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
                 <div>0.75</div>
               </div>
               {/*分页组件*/}
-              <div className="h-[32px] flex items-center justify-between">
-                <div className="w-[98px] leading-[32px] text-white text-[16px]">Page 1 of 15</div>
-                <div className="flex gap-[8px]">
-                  <span className="size-[32px] rounded-[8px] border border-white/40 text-white/40 text-[12px] flex items-center justify-center cursor-pointer hover:bg-white/20 hover:text-white hover:border-transparent"><ArrowLeftIcon /></span>
-                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 1 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>1</span>
-                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 2 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>2</span>
-                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 3 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>3</span>
-                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 4 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>4</span>
-                  <span className={`size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer ${pageNo === 5 ? 'bg-white/20 text-white border-transparent' : 'text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent'}`}>5</span>
-                  <span className="size-[32px] rounded-[8px] leading-[32px] text-[16px] text-center border cursor-pointer text-white/40 border-white/40 hover:bg-white/20 hover:text-white hover:border-transparent">...</span>
-                  <span className="size-[32px] rounded-[8px] border border-white/40 text-white/40 text-[12px] flex items-center justify-center cursor-pointer hover:bg-white/20 hover:text-white hover:border-transparent"><ArrowRightIcon /></span>
-                </div>
-                <div className="h-[32px] w-[98px] border border-white/40 rounded-[8px] flex items-center justify-center cursor-pointer text-[16px] text-white/40 hover:text-white">10/page <ArrowDownIcon className="text-[12px]" /></div>
-              </div>
+              <Pagination
+                currentPage={currentPage}
+                totalPages={totalPages}
+                onPageChange={handlePageChange}
+                itemsPerPage={itemsPerPage}
+                onItemsPerPageChange={handleItemsPerPageChange}
+                itemsPerPageOptions={[5, 10, 20, 50]}
+              />
             </div>
           </div>
 
@@ -444,15 +467,11 @@ export default function PredictionDetailsClient({ id }: PredictionDetailsClientP
         <div className="w-[368px] sticky top-[80px] z-50">
           {/* 使用可复用的交易表单组件 */}
           <TradingForm
-            tradeType={tradeType}
-            onTradeTypeChange={setTradeType}
-            outcome={userVote}
-            onOutcomeChange={setUserVote}
-            amount={amount}
-            onAmountChange={setAmount}
-            balance={balance}
-            onTrade={handleTrade}
-            // prediction={prediction}
+            initialOutcome='yes'
+            marketId=''
+            packageId=''
+            coinType=''
+            pProbsJson={['0.5', '0.5']}
           />
 
           {/* 使用可复用的服务条款组件 */}

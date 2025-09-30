@@ -5,6 +5,8 @@ const nextConfig = {
     output: 'export',
     distDir: 'out',
   }),
+  // 确保导出的路由以目录形式存在，例如 /waiting -> waiting/index.html
+  trailingSlash: true,
   allowedDevOrigins: ["*.preview.same-app.com"],
 
   // 开发环境API代理配置
