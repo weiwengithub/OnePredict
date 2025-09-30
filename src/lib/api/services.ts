@@ -38,6 +38,11 @@ export const apiService = {
     return apiClient.post<ResMarketList>('/api/market/trade/history', {userAddr});
   },
 
+  // 获取用户交易历史记录
+  getTransactionHistory: (userAddr: string) => {
+    return apiClient.post<ResMarketList>('/api/user/transaction/history', {userAddr});
+  },
+
   // 示例：获取预测详情
   getPredictionDetail: (id: string) => {
     return apiClient.get(`/predictions/${id}`);

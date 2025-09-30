@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import apiService from "@/lib/api/services";
@@ -43,9 +43,13 @@ export default function PredictionIntegralModal({
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState<number>(0);
   const [currentTab, setCurrentTab] = useState<'positions' | 'trades' | 'transaction'>('positions');
-  const [positionList, setPositionList] = useState<number[]>([1, 2, 3, 4, 5]);
-  const [tradeList, setTradeList] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [positionList, setPositionList] = useState<any[]>([]);
+  const [tradeList, setTradeList] = useState<any[]>([]);
   const [transactionList, setTransactionList] = useState<number[]>([1, 2, 3, 4, 5]);
+
+  // 添加加载状态管理
+  const [loading, setLoading] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
@@ -55,6 +59,7 @@ export default function PredictionIntegralModal({
     pollMs: 0, // 可选：例如 5000 开启 5s 轮询
   });
 
+  // 组件加载时的初始化效果
   useEffect(() => {
     if (isOpen) {
       // 重置表单
@@ -63,6 +68,9 @@ export default function PredictionIntegralModal({
       const originalOverflow = document.body.style.overflow;
       // 禁止滚动
       document.body.style.overflow = 'hidden';
+
+      // 模态框打开时，立即调用getMarketPosition查询数据
+      getMarketPosition();
 
       // 清理函数：恢复滚动
       return () => {
@@ -93,41 +101,124 @@ export default function PredictionIntegralModal({
     onClose();
   };
 
-  const getMarketPosition = async () => {
+  // 优化getMarketPosition函数，添加错误处理和加载状态
+  const getMarketPosition = useCallback(async () => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
       console.error('No wallet connected');
+      setError('No wallet connected');
       return;
     }
-    const res = await apiService.getMarketPosition(owner)
-    console.log('**************** market position')
-    console.log(res)
-  }
 
-  const getMarketTradeHistory = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiService.getMarketPosition(owner);
+      console.log('**************** market position');
+      console.log(res);
+
+      // 假设API返回的数据格式，你需要根据实际API响应调整
+      if (res && res.data) {
+        setPositionList(res.data);
+      } else {
+        setPositionList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching market position:', err);
+      setError('Failed to fetch market positions');
+      setPositionList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentAccount?.address, zkLoginData]);
+
+  // 优化getMarketTradeHistory函数，添加错误处理和加载状态
+  const getMarketTradeHistory = useCallback(async () => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
       console.error('No wallet connected');
+      setError('No wallet connected');
       return;
     }
-    const res = await apiService.getMarketTradeHistory(owner)
-    console.log('**************** market position')
-    console.log(res)
-  }
 
-  useEffect(() => {
-    switch (currentTab) {
+    try {
+      setLoading(true);
+      setError(null);
+      const res = await apiService.getMarketTradeHistory(owner);
+      console.log('**************** market trade history');
+      console.log(res);
+
+      // 假设API返回的数据格式，你需要根据实际API响应调整
+      if (res && res.data) {
+        setTradeList(res.data);
+      } else {
+        setTradeList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching market trade history:', err);
+      setError('Failed to fetch trade history');
+      setTradeList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentAccount?.address, zkLoginData]);
+
+  // 添加获取交易记录的函数
+  const getTransactionHistory = useCallback(async () => {
+    const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+    if (!owner) {
+      console.error('No wallet connected');
+      setError('No wallet connected');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      setError(null);
+      console.log('Fetching transaction history...');
+
+      // 调用交易历史API
+      const res = await apiService.getTransactionHistory(owner);
+      console.log('**************** transaction history');
+      console.log(res);
+
+      if (res && res.data) {
+        setTransactionList(res.data);
+      } else {
+        setTransactionList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching transaction history:', err);
+      setError('Failed to fetch transaction history');
+      setTransactionList([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentAccount?.address, zkLoginData]);
+
+  // 根据当前标签页调用相应的查询方法
+  const fetchDataByTab = useCallback(async (tab: 'positions' | 'trades' | 'transaction') => {
+    switch (tab) {
       case 'positions':
-        getMarketPosition();
+        await getMarketPosition();
         break;
       case 'trades':
-        getMarketTradeHistory();
+        await getMarketTradeHistory();
         break;
       case 'transaction':
-        console.log('transaction');
+        await getTransactionHistory();
         break;
+      default:
+        console.log('Unknown tab:', tab);
     }
-  }, [currentTab]);
+  }, [getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
+
+  // currentTab变化时调用对应的查询方法
+  useEffect(() => {
+    if (isOpen && currentTab) {
+      fetchDataByTab(currentTab);
+    }
+  }, [currentTab, isOpen, fetchDataByTab]);
 
   if (!isOpen) return null;
 
@@ -215,17 +306,35 @@ export default function PredictionIntegralModal({
                 Transaction
               </span>
           </div>
-          {currentTab === 'positions' && (
+
+          {/* 加载状态和错误状态显示 */}
+          {loading && (
+            <div className="mt-[24px] flex items-center justify-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+              <span className="ml-2 text-white/60">Loading...</span>
+            </div>
+          )}
+
+          {error && (
+            <div className="mt-[24px] p-4 bg-red-500/20 border border-red-500/40 rounded-lg">
+              <div className="text-red-400 text-sm">{error}</div>
+            </div>
+          )}
+          {currentTab === 'positions' && !loading && (
             <>
               {positionList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
-                  {positionList.map((position) => (
-                    <div key={position} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                  {positionList.map((position, index) => (
+                    <div key={position.id || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
                       <div className="flex items-center">
                         <Image src="/images/demo.png" alt="" width={40} height={40} />
                         <div className="ml-[12px] flex-1 overflow-hidden">
-                          <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">Will US–EU strike a tariff deal?deal?deal?deal?deal?deal</div>
-                          <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">37.15 Yes</div>
+                          <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
+                            {position.question || "Will US–EU strike a tariff deal?"}
+                          </div>
+                          <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
+                            {position.price || "37.15"} {position.outcome || "Yes"}
+                          </div>
                         </div>
                         <div className="text-white px-[12px] text-[12px] mx-[20px]">
                           <ExportIcon />
@@ -235,29 +344,41 @@ export default function PredictionIntegralModal({
                       <div className="mt-[24px] flex pt-[24px] border-t border-white/10">
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">Entry Price</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">0.5</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {position.entryPrice || "0.5"}
+                          </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">Market Price</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">32.91</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {position.marketPrice || "32.91"}
+                          </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">Bet</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">32.91</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {position.betAmount || "32.91"}
+                          </div>
                         </div>
                       </div>
                       <div className="mt-[16px] flex">
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">Current</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">0.5</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {position.currentValue || "0.5"}
+                          </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">Pnl</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">32.91</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {position.pnl || "32.91"}
+                          </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">To win</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">32.91</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {position.toWin || "32.91"}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -274,35 +395,47 @@ export default function PredictionIntegralModal({
               )}
             </>
           )}
-          {currentTab === 'trades' && (
+          {currentTab === 'trades' && !loading && (
             <>
               {tradeList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
-                  {tradeList.map((trade) => (
-                    <div key={trade} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                  {tradeList.map((trade, index) => (
+                    <div key={trade.id || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
                       <div className="flex">
                         <Image src="/images/demo.png" alt="" width={40} height={40} />
                         <div className="ml-[12px] flex-1 overflow-hidden">
-                          <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">Will US–EU strike a tariff deal?deal?deal?deal?deal?deal</div>
-                          <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">37.15 Yes</div>
+                          <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
+                            {trade.question || "Will US–EU strike a tariff deal?"}
+                          </div>
+                          <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
+                            {trade.price || "37.15"} {trade.outcome || "Yes"}
+                          </div>
                         </div>
                       </div>
                       <div className="mt-[24px] flex justify-between pt-[24px] border-t border-white/10">
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">Type</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white">Buy</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                            {trade.type || "Buy"}
+                          </div>
                         </div>
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">Price</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">0.5</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {trade.tradePrice || "0.5"}
+                          </div>
                         </div>
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">Value</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">32.91</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                            {trade.value || "32.91"}
+                          </div>
                         </div>
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">Date</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white">4 days ago</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                            {trade.date || "4 days ago"}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -319,23 +452,34 @@ export default function PredictionIntegralModal({
               )}
             </>
           )}
-          {currentTab === 'transaction' && (
+          {currentTab === 'transaction' && !loading && (
             <>
               {transactionList.length > 0 ? (
                 <div className="mt-[24px] flex-1">
                   <div className="space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
-                    {transactionList.map((transaction) => (
-                      <div key={transaction} className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0">
+                    {transactionList.map((transaction, index) => (
+                      <div key={transaction.id || index} className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0">
                         <div className="size-[32px] flex-none">
                           <Image src="/images/icon/icon-token.png" alt="" width={32} height={32} />
                         </div>
                         <div className="mx-[12px] flex-1">
-                          <div className="leading-[16px] text-[16px] text-white">Task rewards</div>
-                          <div className="mt-[6px] leading-[16px] text-[16px] text-white/40">Bonus for your sign up</div>
+                          <div className="leading-[16px] text-[16px] text-white">
+                            {transaction.title || "Task rewards"}
+                          </div>
+                          <div className="mt-[6px] leading-[16px] text-[16px] text-white/40">
+                            {transaction.description || "Bonus for your sign up"}
+                          </div>
                         </div>
                         <div className="flex-none text-right">
-                          <div className="leading-[16px] text-[16px] text-white/60"><span className="mr-1 text-[#28C04E] font-bold">+500</span>Points</div>
-                          <div className="mt-[6px] leading-[16px] text-[16px] text-white/60">4 days ago</div>
+                          <div className="leading-[16px] text-[16px] text-white/60">
+                            <span className="mr-1 text-[#28C04E] font-bold">
+                              {transaction.amount || "+500"}
+                            </span>
+                            {transaction.unit || "Points"}
+                          </div>
+                          <div className="mt-[6px] leading-[16px] text-[16px] text-white/60">
+                            {transaction.date || "4 days ago"}
+                          </div>
                         </div>
                       </div>
                     ))}
