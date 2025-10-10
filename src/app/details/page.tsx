@@ -464,7 +464,7 @@ export default function PredictionDetailsClient() {
             <div className="mt-[12x] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">Nothing yet</div>
           </div>
         </div>
-        <div className="w-[368px] sticky top-[80px] z-50">
+        <div className="w-[368px] sticky top-[80px]">
           {/* 使用可复用的交易表单组件 */}
           <TradingForm
             initialOutcome='yes'

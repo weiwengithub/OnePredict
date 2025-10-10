@@ -11,7 +11,10 @@ import CopyIcon from "@/assets/icons/copy.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
 import { useUsdhBalance } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
+import { Transaction } from '@onelabs/sui/transactions'
 import {store} from "@/store";
+import { ZkloginClient } from '@/txsdk/zklogin';
+import { toast } from "sonner";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -20,8 +23,8 @@ interface WelcomeModalProps {
 
 export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) {
   const { t } = useLanguage();
-  const [amount, setAmount] = useState("");
-  const [address, setAddress] = useState("");
+  const suiClient = useSuiClient();
+
   // 禁止背景滚动
   useEffect(() => {
     if (open) {
@@ -47,6 +50,68 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
   useEffect(() => {
     setOwnerAddress(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')
   }, [currentAccount, zkLoginData])
+
+  const tokenAddress = process.env.NEXT_PUBLIC_USDH_TYPE || ''
+  const [amount, setAmount] = useState("");
+  const [toAddress, setToAddress] = useState("");
+  const withdraw = async () => {
+    try {
+      const zkLoginData = store.getState().zkLoginData
+      if (!zkLoginData) {
+        throw new Error('zkLogin data not found')
+      }
+
+
+
+      if (!tokenAddress) throw new Error('Token type is required')
+      if (!toAddress) throw new Error('Recipient is required')
+      if (!amount || Number(amount) <= 0) throw new Error('Amount should be greater than 0')
+
+      const toAtomic = (val: string, decimals: number): bigint => {
+        const [i, f = ''] = String(val).split('.')
+        const frac = (f + '0'.repeat(decimals)).slice(0, decimals)
+        return BigInt(i + frac)
+      }
+
+      const decimals = 9
+      const amountAtomic = toAtomic(amount, decimals)
+
+      const tx = new Transaction()
+
+      if (tokenAddress.toLowerCase() === '0x2::oct::oct') {
+        const [coin] = tx.splitCoins(tx.gas, [tx.pure.u64(amountAtomic)])
+        tx.transferObjects([coin], toAddress)
+      } else {
+        // @ts-ignore
+        const coins = await suiClient.getCoins({ owner: zkLoginData.zkloginUserAddress, coinType: tokenAddress })
+        const coinIds = coins.data.map((c: any) => c.coinObjectId)
+        if (!coinIds.length) throw new Error('Insufficient balance')
+        const primary = tx.object(coinIds[0])
+        if (coinIds.length > 1) {
+          tx.mergeCoins(primary, coinIds.slice(1).map((id: string) => tx.object(id)))
+        }
+        const [split] = tx.splitCoins(primary, [tx.pure.u64(amountAtomic)])
+        tx.transferObjects([split], toAddress)
+      }
+      const zkloginClient = new ZkloginClient(suiClient as any);
+      const result = await zkloginClient.sendTransaction(tx, tokenAddress.toLowerCase() === '0x2::oct::oct');
+      console.log('transfer executed:', result)
+      toast.success(t('send.msg.transferSent'))
+      setAmount('')
+      // setSending(false)
+      setTimeout(() => {
+        // getBalances(tokenAddress)
+      }, 2000)
+    } catch (error) {
+      console.error('Failed to transfer token:', error)
+      // handleTransactionError(
+      //   error,
+      //   () => toast.info(t('common.txCancelled')),
+      //   () => toast.error(t('send.msg.sendFailed')+':'+((error as any)?.message || JSON.stringify(error)))
+      // );
+      throw error
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -76,8 +141,8 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
             <Input
               className="flex-1 px-0 bg-transparent border-none text-[20px] text-white placeholder:text-white/60"
               placeholder="Arbitrum One Address"
-              value={address}
-              onChange={(e) => setAddress(e.target.value)}
+              value={toAddress}
+              onChange={(e) => setToAddress(e.target.value)}
             />
           </div>
           <div className="mt-[38px] flex items-center">
@@ -86,7 +151,8 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
           </div>
           <Button
             className="mt-[48px] w-full h-[68px] rounded-[20px] bg-[#28C04E] leading-[68px] text-[20px] text-white text-center disabled:bg-[#98999A] disabled:opacity-100 disabled:text-black"
-            disabled={!amount || !address}
+            disabled={!amount || !toAddress}
+            onClick={withdraw}
           >Withdraw</Button>
         </div>
       </DialogContent>

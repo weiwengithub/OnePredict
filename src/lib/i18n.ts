@@ -20,7 +20,7 @@ i18n
   .use(initReactI18next)
   .init({
     resources,
-    lng: 'en', // default language
+    // lng: 'en', // default language
     fallbackLng: 'en',
     debug: process.env.NODE_ENV === 'development',
 
@@ -30,8 +30,8 @@ i18n
     },
 
     detection: {
-      order: ['localStorage', 'navigator', 'htmlTag'],
-      caches: ['localStorage'],
+      order: ['cookie', 'localStorage', 'navigator', 'htmlTag'],
+      caches: ['cookie', 'localStorage'],
       lookupLocalStorage: 'i18nextLng',
     },
   });

@@ -20,8 +20,7 @@ mainnet.showBalancesTokenList = mainnet.showBalancesTokenList.map((item: TokenLi
 
 const onechain_testnet = testnet
 const onechain_mainnet = mainnet
-const isMainnet = '1'
-const currentNetwork = (isMainnet === '1') ? onechain_mainnet : onechain_testnet
+const currentNetwork = Number(process.env.NEXT_PUBLIC_IS_MAINNET) ? onechain_mainnet : onechain_testnet
 export default currentNetwork
 export const showBalancesTokenList = currentNetwork.showBalancesTokenList
 export const rightNetwork = currentNetwork.rightNetwork

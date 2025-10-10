@@ -21,7 +21,7 @@ export class ZkloginClient {
   private transport: SuiHTTPTransport
   constructor(private readonly suiClient: SuiClient) {
     this.suiClient = suiClient
-    this.transport = new SuiHTTPTransport({url: 'https://rpc-mainnet.onelabs.cc:443'});
+    this.transport = new SuiHTTPTransport({url: process.env.NEXT_PUBLIC_OCT_RPC_URL || ''});
   }
   async sendTransaction(tx: Transaction, donotuseGasPool: boolean = false) {
     //init zklogindata

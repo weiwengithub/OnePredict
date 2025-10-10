@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,6 +9,9 @@ import { Copy, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchIcon from "@/assets/icons/search.svg";
 import UserIcon from "@/assets/icons/user.svg";
+import apiService from "@/lib/api/services";
+import {MarketOption} from "@/lib/api/interface";
+import {useRouter} from "next/navigation";
 
 interface SearchResult {
   id: string;
@@ -22,62 +25,11 @@ interface SearchModalProps {
   onOpenChange: (open: boolean) => void;
 }
 
-// 模拟搜索数据
-const trendingResults: SearchResult[] = [
-  {
-    id: "1",
-    title: "Search Markets.contract address",
-    address: "0x1234...5678",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "2",
-    title: "Search Markets.contract address",
-    address: "0x2345...6789",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "3",
-    title: "Search Markets.contract address",
-    address: "0x3456...7890",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "4",
-    title: "Search Markets.contract address",
-    address: "0x4567...8901",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "5",
-    title: "Search Markets.contract address",
-    address: "0x5678...9012",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "6",
-    title: "Search Markets.contract address",
-    address: "0x6789...0123",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "7",
-    title: "Search Markets.contract address",
-    address: "0x7890...1234",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  },
-  {
-    id: "8",
-    title: "Search Markets.contract address",
-    address: "0x8901...2345",
-    icon: "https://ext.same-assets.com/1276354692/3070211314.svg"
-  }
-];
-
 export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const { t } = useLanguage();
+  const router = useRouter();
 
   // 禁止背景滚动
   useEffect(() => {
@@ -104,9 +56,24 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
     }
   };
 
+  const didFetchRef = useRef(false);
+  const [trendingResults, setTrendingResults] = useState<MarketOption[]>([]);
+  useEffect(() => {
+    if (didFetchRef.current) return;   // 防止 StrictMode 下的第二次执行
+    didFetchRef.current = true;
+
+    (async () => {
+      try {
+        const {data} = await apiService.getMarketList();
+        setTrendingResults(data.item)
+      } catch (e) {
+        console.error(e);
+      }
+    })();
+  }, []);
+
   const filteredResults = trendingResults.filter(result =>
-    result.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    result.address.toLowerCase().includes(searchQuery.toLowerCase())
+    result.metaJson.title.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -115,14 +82,16 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
         {/* Header with gradient border effect */}
         <div className="relative">
           {/* Search Box with enhanced gradient */}
-          <div className="h-[56px] bg-[#010A2C] rounded-[100px] flex items-center">
-            <SearchIcon />
-            <Input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t('search.placeholder')}
-              className="flex-1 bg-transparent border-0 text-white placeholder:text-white/60 focus:ring-0 focus:outline-none text-[16px]"
-            />
+          <div className="h-[56px] bg-[#010A2C] rounded-[100px] flex items-center px-[32px]">
+            <SearchIcon className="flex-none text-white text-[16px]" />
+            <div className="flex-1">
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder={t('search.placeholder')}
+                className="bg-transparent text-white placeholder:text-white/60 text-[16px] border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+              />
+            </div>
           </div>
 
           {/* Trending Title with better styling */}
@@ -136,19 +105,22 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
           <div className="space-y-1">
             {filteredResults.map((result, index) => (
               <div
-                key={result.id}
+                key={result.marketId}
                 className="flex items-center justify-between p-[8px] hover:bg-white/20 rounded-[8px] transition-all duration-200 group cursor-pointer"
+                onClick={() => {
+                  router.push(`/details?marketId=${result.marketId}`);
+                }}
               >
                 <div className="w-[32px] h-[32px] rounded-[8px] overflow-hidden">
                   <Image
-                    src={result.icon}
+                    src={result.metaJson.image_url}
                     alt=""
                     width={18}
                     height={18}
                     className="size-full"
                   />
                 </div>
-                <div className="flex-1 h-[24px] leading-[24px] text-[20px] text-white px-[12px]">{result.title}</div>
+                <div className="flex-1 h-[24px] leading-[24px] text-[20px] text-white px-[12px] truncate">{result.metaJson.title}</div>
                 <UserIcon className="text-[12px] text-white/60" />
                 <div className="ml-[4px] h-[24px] leading-[24px] text-[14px] text-white/60">155</div>
               </div>

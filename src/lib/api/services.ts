@@ -1,5 +1,5 @@
 import apiClient from "@/lib/api/client";
-import {ResultData, ResMarketList} from "@/lib/api/interface";
+import {ResultData, ResMarketList, ResMarketPosition, ResMarketTradeHistory, ResTransactionHistory} from "@/lib/api/interface";
 
 // 具体的API接口方法
 export const apiService = {
@@ -30,17 +30,17 @@ export const apiService = {
 
   // 获取用户持仓
   getMarketPosition: (userAddr: string) => {
-    return apiClient.post<ResMarketList>('/api/market/position', {userAddr});
+    return apiClient.post<ResMarketPosition>('/api/market/position', {userAddr});
   },
 
   // 获取历史交易记录
   getMarketTradeHistory: (userAddr: string) => {
-    return apiClient.post<ResMarketList>('/api/market/trade/history', {userAddr});
+    return apiClient.post<ResMarketTradeHistory>('/api/market/trade/history', {userAddr});
   },
 
   // 获取用户交易历史记录
   getTransactionHistory: (userAddr: string) => {
-    return apiClient.post<ResMarketList>('/api/user/transaction/history', {userAddr});
+    return apiClient.post<ResTransactionHistory>('/api/user/transaction/history', {userAddr});
   },
 
   // 示例：获取预测详情

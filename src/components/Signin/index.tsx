@@ -206,8 +206,8 @@ const Signin = () => {
               }, 200)
             }}
           >
-            <button className="flex items-center gap-[12px] h-[36px] border border-white/20 text-white/20
-                  hover:border-white hover:text-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
+            <button className="flex items-center gap-[12px] h-[36px] border border-white/60 text-white
+                  hover:border-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
                   hover:bg-white/5" onClick={()=>{
               if(currentAccount){
                 handleCopyAddress()
@@ -215,7 +215,7 @@ const Signin = () => {
             }}>
               {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
               {(zkLoginData && (zkLoginData as any)?.email) ?(addPoint((zkLoginData as any)?.email,3)): addPoint(currentAccount?.address as string)}
-              <ArrowDownIcon className="text-[16px]" />
+              <ArrowDownIcon className="text-[16px] text-white/60" />
             </button>
             {
               openDown ? (

@@ -18,12 +18,15 @@ import WalletIcon from "@/assets/icons/walletIcon.svg";
 import { useUsdhBalance } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
 import {addPoint, onCopyToText} from "@/lib/utils";
+import { TabSkeleton } from "@/components/SkeletonScreens";
+import { MarketPositionOption, MarketTradeOption, TransactionOption } from "@/lib/api/interface";
 
 interface PredictionIntegralModalProps {
   isOpen: boolean;
   onClose: () => void;
   onShowDeposit: () => void;
   onShowWithdraw: () => void;
+  onShowSale: () => void;
   prediction: {
     question: string;
     chance: number;
@@ -38,14 +41,15 @@ export default function PredictionIntegralModal({
   onClose,
   onShowDeposit,
   onShowWithdraw,
+  onShowSale,
   prediction,
 }: PredictionIntegralModalProps) {
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [amount, setAmount] = useState<number>(0);
   const [currentTab, setCurrentTab] = useState<'positions' | 'trades' | 'transaction'>('positions');
-  const [positionList, setPositionList] = useState<any[]>([]);
-  const [tradeList, setTradeList] = useState<any[]>([]);
-  const [transactionList, setTransactionList] = useState<number[]>([1, 2, 3, 4, 5]);
+  const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
+  const [tradeList, setTradeList] = useState<MarketTradeOption[]>([]);
+  const [transactionList, setTransactionList] = useState<TransactionOption[]>([]);
 
   // 添加加载状态管理
   const [loading, setLoading] = useState<boolean>(false);
@@ -64,13 +68,12 @@ export default function PredictionIntegralModal({
     if (isOpen) {
       // 重置表单
       setAmount(0);
+      // 重置错误状态
+      setError(null);
       // 保存当前的overflow值
       const originalOverflow = document.body.style.overflow;
       // 禁止滚动
       document.body.style.overflow = 'hidden';
-
-      // 模态框打开时，立即调用getMarketPosition查询数据
-      getMarketPosition();
 
       // 清理函数：恢复滚动
       return () => {
@@ -119,7 +122,7 @@ export default function PredictionIntegralModal({
 
       // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
-        setPositionList(res.data);
+        setPositionList(res.data.items);
       } else {
         setPositionList([]);
       }
@@ -150,7 +153,7 @@ export default function PredictionIntegralModal({
 
       // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
-        setTradeList(res.data);
+        setTradeList(res.data.items);
       } else {
         setTradeList([]);
       }
@@ -183,7 +186,7 @@ export default function PredictionIntegralModal({
       console.log(res);
 
       if (res && res.data) {
-        setTransactionList(res.data);
+        setTransactionList(res.data.items);
       } else {
         setTransactionList([]);
       }
@@ -196,29 +199,24 @@ export default function PredictionIntegralModal({
     }
   }, [currentAccount?.address, zkLoginData]);
 
-  // 根据当前标签页调用相应的查询方法
-  const fetchDataByTab = useCallback(async (tab: 'positions' | 'trades' | 'transaction') => {
-    switch (tab) {
-      case 'positions':
-        await getMarketPosition();
-        break;
-      case 'trades':
-        await getMarketTradeHistory();
-        break;
-      case 'transaction':
-        await getTransactionHistory();
-        break;
-      default:
-        console.log('Unknown tab:', tab);
-    }
-  }, [getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
 
   // currentTab变化时调用对应的查询方法
   useEffect(() => {
-    if (isOpen && currentTab) {
-      fetchDataByTab(currentTab);
+    if (!isOpen || !currentTab) return;
+
+    // 根据当前标签页直接调用对应的查询方法
+    switch (currentTab) {
+      case 'positions':
+        getMarketPosition();
+        break;
+      case 'trades':
+        getMarketTradeHistory();
+        break;
+      case 'transaction':
+        getTransactionHistory();
+        break;
     }
-  }, [currentTab, isOpen, fetchDataByTab]);
+  }, [currentTab, isOpen, getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
 
   if (!isOpen) return null;
 
@@ -307,15 +305,11 @@ export default function PredictionIntegralModal({
               </span>
           </div>
 
-          {/* 加载状态和错误状态显示 */}
-          {loading && (
-            <div className="mt-[24px] flex items-center justify-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
-              <span className="ml-2 text-white/60">Loading...</span>
-            </div>
-          )}
+          {/* 骨架屏加载状态 */}
+          {loading && <TabSkeleton currentTab={currentTab} />}
 
-          {error && (
+          {/* 错误状态显示 */}
+          {error && !loading && (
             <div className="mt-[24px] p-4 bg-red-500/20 border border-red-500/40 rounded-lg">
               <div className="text-red-400 text-sm">{error}</div>
             </div>
@@ -325,7 +319,7 @@ export default function PredictionIntegralModal({
               {positionList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
                   {positionList.map((position, index) => (
-                    <div key={position.id || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                    <div key={position.marketId || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
                       <div className="flex items-center">
                         <Image src="/images/demo.png" alt="" width={40} height={40} />
                         <div className="ml-[12px] flex-1 overflow-hidden">
@@ -339,7 +333,10 @@ export default function PredictionIntegralModal({
                         <div className="text-white px-[12px] text-[12px] mx-[20px]">
                           <ExportIcon />
                         </div>
-                        <div className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px]">Sale</div>
+                        <div
+                          className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px]"
+                          onClick={onShowSale}
+                        >Sale</div>
                       </div>
                       <div className="mt-[24px] flex pt-[24px] border-t border-white/10">
                         <div className="flex-1">
@@ -400,7 +397,7 @@ export default function PredictionIntegralModal({
               {tradeList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
                   {tradeList.map((trade, index) => (
-                    <div key={trade.id || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                    <div key={trade.marketId || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
                       <div className="flex">
                         <Image src="/images/demo.png" alt="" width={40} height={40} />
                         <div className="ml-[12px] flex-1 overflow-hidden">

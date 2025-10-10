@@ -66,3 +66,91 @@ export interface ResMarketList {
   limit: number;
   offset: number;
 }
+
+export interface MarketPositionOption {
+  buyPrice: string;
+  eventMs: number;
+  marketId: string;
+  outcome: number;
+  shares: string;
+  userAddr: string;
+  question: string;
+  price: string;
+  entryPrice: string;
+  marketPrice: string;
+  betAmount: string;
+  currentValue: string;
+  pnl: string;
+  toWin: string;
+}
+
+export interface ResMarketPosition {
+  items: MarketPositionOption[];
+  count: number;
+  userAddr: string;
+}
+
+export interface MarketTradeOption {
+  amount: string;
+  change: string;
+  createdMs: number;
+  deltaShares: string;
+  eventMs: number;
+  eventSeq: number;
+  fee: string;
+  kind: number;
+  marketId: string;
+  outcome: number;
+  payloadJson: {
+    change: string;
+    cost: string;
+    delta: string;
+    fee_trade: string;
+    kind: number;
+    market_id: string;
+    min_shares_out: string;
+    outcome: string;
+    pay_in: string;
+    probs: string[];
+    protocol_vault_value: string;
+    t_ms: string;
+    total: string;
+    vault_value: string;
+    who: string;
+  };
+  side: string;
+  total: string;
+  txDigest: string;
+  userAddr: string;
+  question: string;
+  price: string;
+  type: string;
+  tradePrice: string;
+  value: string;
+  date: string;
+}
+
+export interface ResMarketTradeHistory {
+  items: MarketTradeOption[];
+  count: number;
+  limit: number;
+  offset: number;
+  marketId: null;
+  userAddr: string;
+}
+
+export interface TransactionOption {
+  id: string;
+  title: string;
+  description: string;
+  amount: string;
+  unit: string;
+  date: string;
+}
+
+export interface ResTransactionHistory {
+  items: TransactionOption[];
+  count: number;
+  limit: number;
+  offset: number;
+}

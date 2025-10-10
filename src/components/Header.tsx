@@ -9,6 +9,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
 import DepositModal from "@/components/DepositModal";
 import WithdrawModal from "@/components/WithdrawModal";
+import SaleModal from "@/components/SaleModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchModal from "@/components/SearchModal";
 import Signin from "@/components/Signin";
@@ -34,6 +35,7 @@ export default function Header({ currentPage }: HeaderProps) {
   const [showIntegralModal, setShowIntegralModal] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showSale, setShowSale] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -94,9 +96,9 @@ export default function Header({ currentPage }: HeaderProps) {
       `}
       >
         <div className="max-w-[1728px] mx-auto px-[40px]">
-          <div className="flex items-center justify-between transition-all duration-300">
+          <div className="relative flex items-center justify-between transition-all duration-300 h-[64px]">
             {/* Left side - Logo */}
-            <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-4 z-10">
               <Link href="/" className="block transition-transform hover:scale-105">
                 <Image
                   src="/images/logo.png"
@@ -108,38 +110,38 @@ export default function Header({ currentPage }: HeaderProps) {
               </Link>
             </div>
 
-            {/* Center - Navigation */}
-            <div className="flex-1 max-w-md mx-8">
-              <nav className="flex gap-[40px]">
+            {/* Center - Navigation (绝对居中) */}
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+              <nav className="flex gap-[40px] items-center justify-center">
                 {navigationItems.map((item) => (
                   <Link
                     key={item.key}
                     href={item.href}
                     className={`
                     h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200
-                    hover:text-white relative group
+                    hover:text-[#477CFC] relative group whitespace-nowrap
                     ${activePage === item.key
-                      ? 'text-white font-medium'
-                      : 'text-white/60'
+                      ? 'text-[#477CFC] font-medium'
+                      : 'text-white'
                     }
                   `}
                   >
                     {item.label}
 
                     {/* 活跃页面下划线 */}
-                    {activePage === item.key && (
-                      <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />
-                    )}
+                    {/*{activePage === item.key && (*/}
+                    {/*  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />*/}
+                    {/*)}*/}
 
                     {/* 悬停效果 */}
-                    <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />
+                    {/*<div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />*/}
                   </Link>
                 ))}
               </nav>
             </div>
 
             {/* Right side - User menu */}
-            <div className="flex items-center gap-[8px]">
+            <div className="flex items-center gap-[8px] z-10">
               {/* USDH Balance */}
               <div className="group mr-[40px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
                 <div className="h-[16px] leading-[16px] text-[12px] text-white/40 group-hover:text-white">USDH</div>
@@ -153,8 +155,8 @@ export default function Header({ currentPage }: HeaderProps) {
               <button
                 onClick={() => setShowSearchModal(true)}
                 className={`
-                flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20 text-white/20
-                hover:border-white hover:text-white rounded-[20px] cursor-pointer transition-all duration-200
+                flex items-center justify-center size-[36px] border-[1px] border-solid border-white/60 text-white
+                hover:border-white rounded-[20px] cursor-pointer transition-all duration-200
                 hover:bg-white/5 hover:scale-105
               `}>
                 <SearchIcon />
@@ -175,15 +177,15 @@ export default function Header({ currentPage }: HeaderProps) {
                 <button
                   onClick={() => setShowLanguageDropdown(!showLanguageDropdown)}
                   className={`
-                  flex items-center h-[36px] border-[1px] border-solid border-white/20 text-white/20
-                  hover:border-white hover:text-white rounded-[20px] pl-[16px] pr-[12px] cursor-pointer transition-all duration-200
+                  flex items-center h-[36px] border-[1px] border-solid border-white/60 text-white
+                  hover:border-white rounded-[20px] pl-[16px] pr-[12px] cursor-pointer transition-all duration-200
                   hover:bg-white/5
                 `}>
                   <NetworkIcon />
                   <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px]">
                     {t('header.language')}
                   </span>
-                  <ArrowDownIcon className="text-[16px]" />
+                  <ArrowDownIcon className="text-[16px] text-white/60" />
                 </button>
 
                 {/* Language Dropdown */}
@@ -246,6 +248,7 @@ export default function Header({ currentPage }: HeaderProps) {
         onClose={() => setShowIntegralModal(false)}
         onShowDeposit={() => setShowDeposit(true)}
         onShowWithdraw={() => setShowWithdraw(true)}
+        onShowSale={() => setShowSale(true)}
         prediction={{
           question: 'string',
           chance: 0,
@@ -260,6 +263,9 @@ export default function Header({ currentPage }: HeaderProps) {
 
       {/* Withdraw Modal */}
       <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
+
+      {/* Sale Modal */}
+      <SaleModal open={showSale} onOpenChange={setShowSale}></SaleModal>
 
       {/* Search Modal */}
       <SearchModal

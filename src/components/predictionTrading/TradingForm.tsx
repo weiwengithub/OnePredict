@@ -80,7 +80,6 @@ export default function TradingForm({
       outcome: buyOutcome === 'yes' ? 1 : 0,
       deltaShares: amount*Math.pow(10, 9),
       paymentCoinId: coinObjectId,
-      minSharesOut: 0,
     });
     console.log(tx)
     await executeTransaction(tx, false);
