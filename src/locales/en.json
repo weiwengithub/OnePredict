@@ -23,7 +23,9 @@
     "society": "Society",
     "sortBy": "Sort by",
     "expireTime": "Expire Time",
-    "watchlist": "Watchlist"
+    "watchlist": "Watchlist",
+    "pickOne": "Pick one",
+    "volume": "Volume"
   },
   "welcome": {
     "title": "Welcome to OnePredict",

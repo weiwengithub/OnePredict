@@ -45,7 +45,7 @@ export default function ClientBody({
   return (
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <SuiClientProvider networks={networkConfig} defaultNetwork={"mainnet"} onNetworkChange={(network) => {
+        <SuiClientProvider networks={networkConfig} defaultNetwork={Number(process.env.NEXT_PUBLIC_IS_MAINNET) ? "mainnet" : "testnet"} onNetworkChange={(network) => {
           console.log('Network changed:', network);
         }}>
           {autoConnectReady ? (

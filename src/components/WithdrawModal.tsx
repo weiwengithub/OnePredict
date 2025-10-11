@@ -54,6 +54,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
   const tokenAddress = process.env.NEXT_PUBLIC_USDH_TYPE || ''
   const [amount, setAmount] = useState("");
   const [toAddress, setToAddress] = useState("");
+  const [isConfirmed, setIsConfirmed] = useState(false);
   const withdraw = async () => {
     try {
       const zkLoginData = store.getState().zkLoginData
@@ -129,7 +130,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
           </div>
           <div className="mt-[8px] h-[76px] border border-white/20 rounded-[20px] px-[20px] flex items-center">
             <Input
-              className="flex-1 px-0 bg-transparent border-none text-[20px] text-white placeholder:text-white/60"
+              className="flex-1 px-0 bg-transparent text-[20px] text-white placeholder:text-white/60 border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
               placeholder="0.00"
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
@@ -139,19 +140,24 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
           <div className="mt-[28px] h-[20px] leading-[20px] text-[16px] text-white/60">To</div>
           <div className="mt-[8px] h-[76px] border border-white/20 rounded-[20px] px-[20px] flex items-center">
             <Input
-              className="flex-1 px-0 bg-transparent border-none text-[20px] text-white placeholder:text-white/60"
+              className="flex-1 px-0 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none text-[20px] text-white placeholder:text-white/60"
               placeholder="Arbitrum One Address"
               value={toAddress}
               onChange={(e) => setToAddress(e.target.value)}
             />
           </div>
           <div className="mt-[38px] flex items-center">
-            <Input type="checkbox" className="w-[24px] h-[24px] flex-none border-[2px] border-white/60 bg-transparent" />
+            <Input
+              type="checkbox"
+              className="w-[24px] h-[24px] flex-none border-[2px] border-white/60 bg-transparent"
+              checked={isConfirmed}
+              onChange={(e) => setIsConfirmed(e.target.checked)}
+            />
             <div className="ml-[10px] leading-[24px] text-[16px] text-white">I understand this only supports Arbitrum One native USDH (by Circle), <span className="text-[#F95D5F]">NOT bridged USDH.e</span></div>
           </div>
           <Button
             className="mt-[48px] w-full h-[68px] rounded-[20px] bg-[#28C04E] leading-[68px] text-[20px] text-white text-center disabled:bg-[#98999A] disabled:opacity-100 disabled:text-black"
-            disabled={!amount || !toAddress}
+            disabled={!amount || !toAddress || !isConfirmed}
             onClick={withdraw}
           >Withdraw</Button>
         </div>

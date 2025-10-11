@@ -64,6 +64,7 @@ export default function CustomCarousel({
   effect = 'slide',
   height = '400px',
 }: CustomCarouselProps) {
+  const supportFullscreen = false;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -220,6 +221,7 @@ export default function CustomCarousel({
               effect === 'cards' ? 'bg-white' : ''
             }`}
             onClick={() => {
+              if (!supportFullscreen) return;
               setCurrentSlide(index);
               setIsFullscreen(true);
             }}
@@ -234,16 +236,18 @@ export default function CustomCarousel({
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
               {/* 全屏按钮 */}
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setCurrentSlide(index);
-                  setIsFullscreen(true);
-                }}
-                className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-300 opacity-0 group-hover:opacity-100 z-10"
-              >
-                <Maximize className="w-5 h-5" />
-              </button>
+              {supportFullscreen && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setCurrentSlide(index);
+                    setIsFullscreen(true);
+                  }}
+                  className="absolute top-4 right-4 w-10 h-10 bg-black/50 hover:bg-black/70 rounded-full flex items-center justify-center text-white transition-all duration-300 opacity-0 group-hover:opacity-100 z-10"
+                >
+                  <Maximize className="w-5 h-5" />
+                </button>
+              )}
 
               {(item.title || item.description) && (
                 <div className="absolute bottom-0 left-0 right-0 p-6 text-white">

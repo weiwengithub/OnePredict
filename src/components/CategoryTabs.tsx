@@ -58,12 +58,11 @@ export default function CategoryTabs() {
         <div className="h-[18px] leading-[18px] text-white text-[14px] font-bold">{t('categories.sortBy')}</div>
         <Select onValueChange={(v) => console.log(v)}>
           <SelectTrigger className="ml-[12px] h-[36px] w-[170px] bg-[#010A2C] border border-[#26282E] rounded-[8px] text-white text-[14px] px-[16px]">
-            <SelectValue placeholder="Pick one" />
+            <SelectValue placeholder={t('categories.pickOne')} />
           </SelectTrigger>
           <SelectContent className="mt-[12px] bg-[#04122B] border-none p-[12px] space-y-[4px]">
-            <SelectItem value="eth" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Expire Time</SelectItem>
-            <SelectItem value="sui" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Sui</SelectItem>
-            <SelectItem value="sol" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">Solana</SelectItem>
+            <SelectItem value="eth" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">{t('categories.expireTime')}</SelectItem>
+            <SelectItem value="sui" className="h-[32px] text-white hover:bg-white/10 focus:bg-white/10">{t('categories.volume')}</SelectItem>
           </SelectContent>
         </Select>
         <div className="ml-[16px] h-[36px] border-l border-white/10 flex items-center text-white pl-[16px]">

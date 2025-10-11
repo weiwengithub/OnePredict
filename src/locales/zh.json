@@ -3,99 +3,108 @@
     "home": "首页",
     "leaderboard": "排行榜",
     "rewards": "奖励",
-    "signin": "登录",
-    "language": "简体中文"
+    "signIn": "登录",
+    "desc": "使用 Google 登录或连接已有钱包",
+    "or": "或",
+    "language": "简体中文",
+    "copyAddress": "复制地址",
+    "menu": "钱包",
+    "disconnect": "断开连接",
+    "connectingGoogle": "正在通过 Google 连接…"
   },
   "categories": {
     "trending": "热门",
-    "live": "直播",
+    "live": "实时",
     "new": "最新",
     "politics": "政治",
     "economy": "经济",
-    "crypto": "加密货币",
+    "crypto": "加密",
     "entertainment": "娱乐",
     "society": "社会",
     "sortBy": "排序方式",
-    "expireTime": "到期时间",
-    "watchlist": "关注列表"
+    "expireTime": "结束时间",
+    "watchlist": "关注列表",
+    "pickOne": "请选择",
+    "volume": "成交量"
   },
   "welcome": {
-    "title": "欢迎来到 OnePredict",
+    "title": "欢迎使用 OnePredict",
     "subtitle": "开始预测，开始赚钱。",
     "features": {
       "explore": {
-        "title": "探索问题",
-        "description": "发现您关心的预测话题，比如『奥运会开幕式那天会下雨吗？』"
+        "title": "浏览问题",
+        "description": "发现你关心的预测主题，例如“奥运会开幕当天会下雨吗？”"
       },
       "deposit": {
-        "title": "存入 USDH",
-        "description": "为您的钱包充值以开始进行预测。"
+        "title": "充值 USDH",
+        "description": "为你的钱包充值以开始进行预测。"
       },
       "trade": {
         "title": "交易",
-        "description": "根据您的信念买入或卖出结果——价格反映了群体的概率估计。"
+        "description": "根据你的判断买入或卖出结果——价格反映群体的概率预估。"
       },
       "earn": {
         "title": "赚取",
-        "description": "如果您的预测正确，您就赢了！"
+        "description": "如果你的预测正确，你就会获胜！"
       }
     },
     "cta": "领取 500 积分并立即预测",
-    "terms": "继续操作即表示您确认已满 18 岁并接受我们的条款"
+    "terms": "继续操作即表示你已年满 18 岁并接受我们的条款"
   },
   "footer": {
-    "marketplace": "市场",
-    "market": "市场",
-    "faq": "常见问题",
-    "documentation": "文档",
-    "about": "关于",
-    "exploreProjects": "探索项目",
-    "aboutUs": "关于我们",
-    "copyright": "OnePredict © 2025，保留所有权利"
+    "privacy": "隐私",
+    "termsOfUse": "使用条款",
+    "learn": "了解",
+    "FAQ": "常见问题",
+    "copyright": "© OnePredict 2025。保留所有权利"
   },
   "common": {
     "loadMore": "加载更多",
-    "volume": "交易量",
-    "search": "搜索"
+    "volume": "成交量",
+    "search": "搜索",
+    "connectWithGoogle": "Google",
+    "connectWithApple": "Apple ID",
+    "connectWithExistingWallet": "连接已有钱包",
+    "copy": "复制成功"
   },
   "nav": {
     "home": "首页",
     "leaderboard": "排行榜",
     "rewards": "奖励",
-    "profile": "个人资料"
+    "profile": "个人中心"
   },
   "notFound": {
     "title": "页面未找到",
-    "description": "抱歉，您访问的页面不存在或已被移动。请检查URL是否正确，或返回首页继续浏览。",
+    "description": "抱歉，你访问的页面不存在或已被移动。请检查 URL，或返回首页继续浏览。",
     "goHome": "返回首页",
-    "goBack": "返回上页",
-    "quickLinks": "或者访问以下页面："
+    "goBack": "返回上一页",
+    "quickLinks": "或访问这些页面："
   },
   "waiting": {
-    "title": "正在等待 {{name}} 连接...",
-    "subtitle": "请在 {{name}} 窗口中完成身份验证。"
+    "title": "正在等待 {{name}} 连接…",
+    "subtitle": "请稍候，我们正在与 {{name}} 建立连接"
   },
   "search": {
-    "placeholder": "搜索市场合约地址",
+    "placeholder": "搜索市场/合约地址",
     "trending": "热门",
-    "contractAddress": "搜索市场合约地址",
-    "noResults": "未找到结果",
-    "trySearching": "尝试搜索 \"{query}\""
+    "contractAddress": "搜索市场/合约地址",
+    "noResults": "未找到相关结果",
+    "trySearching": "尝试搜索“{query}”"
   },
   "predictions": {
     "questions": {
-      "shanghaiMicroelectronics": "上海微電子是否會上市？",
-      "ethBreakAth": "ETH 在 2025 年会突破历史最高价吗？",
-      "keungToRelationship": "姜涛会在 2025 年确认恋爱关系或绯闻吗？",
-      "klarnaIpo": "Klarna 2025 年 IPO？",
-      "usFedRateHike": "美國聯邦儲備局會在任何時間升息嗎？",
-      "koreaHottestSummer": "韩国会报告 2025 年夏天是最热的吗？",
-      "koreanGovItaewon": "韩国政府会发布梨泰院惨案的新官方调查结果吗？",
-      "cultItaewon": "发现邪教在梨泰院惨案中发挥了作用？",
+      "shanghaiMicroelectronics": "上海微电子会上市吗？",
+      "ethBreakAth": "ETH 会在 2025 年创下历史新高吗？",
+      "keungToRelationship": "姜涛会在 2025 年前确认恋情或爆出绯闻吗？",
+      "klarnaIpo": "Klarna 将在 2025 年上市吗？",
+      "usFedRateHike": "美国联邦储备会在任何时间加息吗？",
+      "koreaHottestSummer": "韩国是否会报告 2025 年夏季为史上最热？",
+      "koreanGovItaewon": "韩国政府会发布有关梨泰院惨案的新官方调查结果吗？",
+      "cultItaewon": "是否会发现某个邪教在梨泰院惨案中发挥作用？",
       "canadaPalestine": "加拿大会在九月前正式承认巴勒斯坦国吗？",
-      "australiaPalestine": "澳大利亚今年会正式承认巴勒斯坦国吗？",
-      "earthquake9": "今年任何地方会发生 9.0 级地震吗？",
-      "bricsNewMember": "金砖国家会在 12 月 31 日前增加新成员吗？"
+      "australiaPalestine": "澳大利亚会在今年正式承认巴勒斯坦国吗？",
+      "earthquake9": "今年全球会发生 9.0 级地震吗？",
+      "bricsNewMember": "金砖国家会在 12 月 31 日前新增成员吗？"
     }
   }
 }

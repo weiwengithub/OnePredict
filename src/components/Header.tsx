@@ -87,13 +87,7 @@ export default function Header({ currentPage }: HeaderProps) {
   return (
     <>
       <header
-        className={`
-        hidden md:block fixed top-0 left-0 right-0 z-50 h-[64px] transition-all duration-300
-        ${isScrolled
-          ? 'bg-[#04122B]/95 backdrop-blur-md border-b border-white/10 shadow-lg shadow-black/20'
-          : 'bg-[#04122B]'
-        }
-      `}
+        className="hidden md:block fixed top-0 left-0 right-0 z-50 h-[64px] transition-all duration-300 bg-[#04122B]"
       >
         <div className="max-w-[1728px] mx-auto px-[40px]">
           <div className="relative flex items-center justify-between transition-all duration-300 h-[64px]">
@@ -105,7 +99,7 @@ export default function Header({ currentPage }: HeaderProps) {
                   alt="OnePredict"
                   width={195}
                   height={64}
-                  className={`transition-all duration-300 ${isScrolled ? 'scale-90' : 'scale-100'}`}
+                  className="transition-all duration-300"
                 />
               </Link>
             </div>

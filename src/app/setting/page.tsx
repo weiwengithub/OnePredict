@@ -228,21 +228,21 @@ export default function Profile() {
           <div>
             <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Username</div>
             <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
-              <Input className="flex-1 px-[24px] bg-transparent border-none" />
+              <Input className="flex-1 px-[24px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" />
               <span className="text-[18px] text-white mx-[24px] cursor-pointer">Edit</span>
             </div>
           </div>
           <div>
             <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Bio</div>
             <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
-              <Input className="flex-1 px-[24px] bg-transparent border-none" placeholder="Tell people a bit more about you" />
+              <Input className="flex-1 px-[24px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" placeholder="Tell people a bit more about you" />
               <span className="text-[18px] text-white mx-[24px] cursor-pointer">Edit</span>
             </div>
           </div>
           <div>
             <div className="h-[24px] leading-[24px] text=[18px] text-white/60">UID</div>
             <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
-              <Input className="flex-1 px-[24px] bg-transparent border-none" />
+              <Input className="flex-1 px-[24px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" />
               <span className="inline-block h-[32px] leading-[32px] bg-white/40 rounded-[12px] px-[10px] text-[18px] text-white mx-[24px] cursor-pointer">Copy</span>
             </div>
           </div>
@@ -250,7 +250,7 @@ export default function Profile() {
           <div>
             <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Email</div>
             <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
-              <Input className="flex-1 px-[24px] bg-transparent border-none" />
+              <Input className="flex-1 px-[24px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" />
               <span className="inline-block h-[32px] leading-[32px] bg-white/40 rounded-[12px] px-[10px] text-[18px] text-white mx-[24px] cursor-pointer">Copy</span>
             </div>
           </div>
@@ -259,7 +259,7 @@ export default function Profile() {
           <div>
             <div className="h-[24px] leading-[24px] text=[18px] text-white/60">Invite Code</div>
             <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
-              <Input className="flex-1 px-[24px] bg-transparent border-none" placeholder="Is an 6-digit string" />
+              <Input className="flex-1 px-[24px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none" placeholder="Is an 6-digit string" />
               <span className="text-[18px] text-white mx-[24px] cursor-pointer">Submit</span>
             </div>
           </div>

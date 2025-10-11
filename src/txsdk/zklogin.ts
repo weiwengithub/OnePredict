@@ -132,7 +132,7 @@ export class ZkloginClient {
       "reserve_duration_secs": reserveDurationSecs
     })
     // @ts-expect-error -- TS类型报错
-    return budgetResult?.data?.result as BudgetResult
+    return budgetResult?.result as BudgetResult
   }
 
   async executeTransaction(reservationId: string, txBytes: string, zkLoginSignature: string) {
@@ -144,7 +144,7 @@ export class ZkloginClient {
         if(executeRes?.data?.error) {
             throw new Error(executeRes?.data?.error)
         }
-        return executeRes?.data
+        return executeRes
   }
   async signAndExecuteTransaction(txBytes: string, zkLoginSignature: string) {
     const result = await this.suiClient.executeTransactionBlock({
