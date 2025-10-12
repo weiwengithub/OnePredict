@@ -10,7 +10,7 @@ import Image from "next/image";
 import CloseIcon from "@/assets/icons/close_1.svg";
 import CopyIcon from "@/assets/icons/copy.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
-import { useUsdhBalance } from "@/hooks/useUsdhBalance";
+import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { useExecuteTransaction } from '@/hooks/useExecuteTransaction';
 import { ZkLoginData } from "@/lib/interface";
 import { Transaction } from '@onelabs/sui/transactions'
@@ -47,9 +47,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
 
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
-  const { balance: usdhBalance } = useUsdhBalance({
-    pollMs: 0, // 可选：例如 5000 开启 5s 轮询
-  });
+  const { balance: usdhBalance, refresh } = useUsdhBalanceFromStore();
 
   const [ownerAddress, setOwnerAddress] = useState("");
   useEffect(() => {
@@ -108,7 +106,8 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
       console.log('transfer executed:', result)
       toast.success(t('send.sendSuccess'))
       setAmount('')
-      // setTimeout(() => { if (tokenAddress) getBalances(tokenAddress) }, 2000)
+      onOpenChange(false);
+      setTimeout(() => refresh(), 2000)
     } catch (error) {
       toast.error(t('send.sendError'));
     } finally {

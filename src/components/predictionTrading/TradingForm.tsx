@@ -1,10 +1,10 @@
 "use client";
 
-import React, {useEffect, useMemo, useState} from "react";
+import React, {useCallback, useEffect, useMemo, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProgressBar } from '@/components/ProgressBar';
-import { MarketOption } from "@/lib/api/interface";
+import {MarketOption, MarketPositionOption} from "@/lib/api/interface";
 import Image from "next/image";
 import BigNumber from "bignumber.js";
 import RefreshIcon from "@/assets/icons/refresh.svg";
@@ -13,7 +13,7 @@ import ArrowDownIcon from "@/assets/icons/arrowDown.svg";
 import CheckedIcon from "@/assets/icons/circle-checked.svg";
 import WarningIcon from "@/assets/icons/warning_2.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
-import { useUsdhBalance } from "@/hooks/useUsdhBalance";
+import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { useExecuteTransaction } from '@/hooks/useExecuteTransaction';
 import { ZkLoginData } from "@/lib/interface";
 import {hideLoading, setSigninOpen, showLoading, store} from "@/store";
@@ -21,6 +21,9 @@ import {MarketClient} from "@/lib/market";
 import { useDispatch } from 'react-redux';
 import {useLanguage} from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import apiService from "@/lib/api/services";
+import {TooltipAmount} from "@/components/TooltipAmount";
+import {fix, toDisplayDenomAmount} from "@/lib/numbers";
 
 interface TradingFormProps {
   initialOutcome: 'yes' | 'no';
@@ -32,6 +35,7 @@ interface TradingFormProps {
     YES: string;
     NO: string;
   }
+  buyFee: string;
   onClose?: () => void;
 }
 
@@ -42,21 +46,29 @@ export default function TradingForm({
   coinType,
   pProbsJson,
   outcomeYields,
+  buyFee,
   onClose
 }: TradingFormProps) {
   const { t } = useLanguage();
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [buyOutcome, setBuyOutcome] = useState<'yes' | 'no'>(initialOutcome);
-  const [sellOutcome, setSellOutcome] = useState<'yes' | 'no'>('yes');
+  const [sellOutcome, setSellOutcome] = useState(0);
   const [amount, setAmount] = useState<number | string>('');
+  const [sellAmount, setSellAmount] = useState<number | string>('');
+  const [sellAvailable, setSellAvailable] = useState<number | string>('');
   const yesPrice = new BigNumber(pProbsJson[0]).shiftedBy(-12);
   const noPrice = new BigNumber(pProbsJson[1]).shiftedBy(-12);
   const [progress, setProgress] = useState(0);
+  const [sellProgress, setSellProgress] = useState(0);
   const suiClient = useSuiClient() as any;
   const executeTransaction = useExecuteTransaction();
   const dispatch = useDispatch();
   const [tradeDeadlineTime, setTradeDeadlineTime] = useState('');
   const [showTradeDeadline, setShowTradeDeadline] = useState<boolean>(false);
+
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
+  const { balance: usdhBalance, refresh } = useUsdhBalanceFromStore();
 
   const handleAmountInputChange = (value: string) => {
     const max = Number(usdhBalance);
@@ -79,6 +91,27 @@ export default function TradingForm({
     setProgress(100);
   };
 
+  const handleSellAmountInputChange = (value: string) => {
+    const max = Number(sellAvailable);
+    const newAmount = value ? Math.min(parseFloat(value), max) : '';
+    setSellAmount(newAmount);
+    const progress = newAmount ? 100 * Number(newAmount) / max : 0;
+    setSellProgress(progress);
+  };
+
+  const addSellAmount = (value: number) => {
+    const max = Number(sellAvailable);
+    const newAmount = Math.min(sellAmount ? Number(sellAmount) + value : value, max);
+    setSellAmount(newAmount);
+    const progress = 100 * Number(newAmount) / max
+    setSellProgress(progress);
+  };
+
+  const setMaxSellAmount = () => {
+    setSellAmount(sellAvailable);
+    setSellProgress(100);
+  };
+
   const handleTrade = async () => {
     store.dispatch(showLoading('Processing transaction...'));
     try {
@@ -98,10 +131,11 @@ export default function TradingForm({
         console.error('No coin object found for type:', coinType);
         return;
       }
+      const payAmount = MarketClient.calcTotalFromCost(Number(amount) * Math.pow(10, 9), buyFee);
       const tx = await marketClient.buildBuyByAmountTx({
         marketId: marketId,
         outcome: buyOutcome === 'yes' ? 0 : 1,
-        amount: Number(amount) * Math.pow(10, 9),
+        amount: payAmount,
         paymentCoinId: coinObjectId,
         minSharesOut: 0,
       });
@@ -109,6 +143,7 @@ export default function TradingForm({
       await executeTransaction(tx, false);
       toast.success(t('predictions.buySuccess'));
       onClose && onClose();
+      setTimeout(() => refresh(), 2000);
     } catch (error) {
       toast.error(t('predictions.buyError'));
       console.error(error);
@@ -117,24 +152,93 @@ export default function TradingForm({
     }
   };
 
-  const currentAccount = useCurrentAccount();
-  const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
-  const { balance: usdhBalance } = useUsdhBalance({
-    pollMs: 0, // 可选：例如 5000 开启 5s 轮询
-  });
-
   const [ownerAddress, setOwnerAddress] = useState("");
   useEffect(() => {
     setOwnerAddress(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')
   }, [currentAccount, zkLoginData])
 
-  const [positionList, setPositionList] = useState<Array<{type: 'yes' | 'no'; id: number;}>>([{type: 'yes', id: 1}, {type: 'no', id: 2}]);
+  // const [positionList, setPositionList] = useState<Array<{type: 'yes' | 'no'; id: number;}>>([{type: 'yes', id: 1}, {type: 'no', id: 2}]);
+  const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [showCheckPosition, setShowCheckPosition] = useState(false);
+  const getMarketPosition = useCallback(async () => {
+    const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+    if (!owner) {
+      console.error('No wallet connected');
+      return;
+    }
+
+    try {
+      const res = await apiService.getMarketPosition(owner);
+
+      // 假设API返回的数据格式，你需要根据实际API响应调整
+      if (res && res.data) {
+        const list = res.data.items.filter(item => item.marketId === marketId);
+        list.sort((a, b) => a.outcome > b.outcome ? 1 : -1);
+        if (list.length > 0) {
+          setSellOutcome(list[0].outcome)
+          setSellAvailable(toDisplayDenomAmount(list[0].shares, 9).toString())
+        }
+        setPositionList(list);
+      } else {
+        setPositionList([]);
+      }
+    } catch (err) {
+      console.error('Error fetching market position:', err);
+      setPositionList([]);
+    }
+  }, [currentAccount?.address, zkLoginData]);
+
+  useEffect(() => {
+    getMarketPosition()
+  }, []);
 
   const toWin = useMemo(() => {
     const _yield = buyOutcome === 'yes' ? outcomeYields.YES : outcomeYields.NO;
     return amount ? Number(_yield) * Number(amount) : 0
   }, [buyOutcome, amount])
+
+  const handleSale = async () => {
+    const position = positionList[sellOutcome];
+    store.dispatch(showLoading('Processing transaction...'));
+    try {
+      const marketClient = new MarketClient(suiClient, {
+        packageId: position.packageId,
+        coinType: position.coinType
+      });
+      // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
+      const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+      if (!owner) {
+        console.error('No wallet connected');
+        return;
+      }
+      const coins = await suiClient.getCoins({ owner, coinType: position.coinType });
+      const coinObjectId = coins?.data?.[0]?.coinObjectId;
+      if (!coinObjectId) {
+        console.error('No coin object found for type:', position.coinType);
+        return;
+      }
+      const tx = await marketClient.buildSellTx({
+        marketId: position.marketId,
+        outcome: position.outcome,
+        deltaShares: Number(sellAmount) * Math.pow(10, 9),
+        minCoinOut: 0,
+      });
+      console.log(tx)
+      await executeTransaction(tx, false);
+      toast.success(t('predictions.saleSuccess'));
+      onClose && onClose();
+      setTimeout(() => refresh(), 2000);
+    } catch (error) {
+      toast.error(t('predictions.saleError'));
+      console.log(error);
+    } finally {
+      store.dispatch(hideLoading());
+    }
+  };
+
+  const cashOut = useMemo(() => {
+    return sellAmount ? Number(positionList[sellOutcome].marketPrice) * Number(sellAmount) : 0
+  }, [positionList, sellOutcome, sellAmount])
 
   return (
     <div className="mt-[16px] mx-[12px] p-[12px] bg-[#010A2C] rounded-[16px]">
@@ -320,43 +424,40 @@ export default function TradingForm({
             <div className="bg-[#051A3D] h-[56px] border border-white/20 rounded-[8px] relative">
               {positionList.length > 0 ? (
                 <div className="flex items-center p-[8px] cursor-pointer" onClick={() => setShowCheckPosition(!showCheckPosition)}>
-                  {sellOutcome === 'yes' && (
-                    <>
-                      <Image src="/images/icon/icon-yes.png" alt="" width={40} height={40} />
-                      <div className="flex-1 ml-[12px]">
-                        <div className="h-[14px] leading-[14px] text-[14px] text-white">Yes</div>
-                        <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white">37.12%  Shares</div>
-                      </div>
-                    </>
+                  {sellOutcome ? (
+                    <Image src="/images/icon/icon-no.png" alt="" width={40} height={40} />
+                  ) : (
+                    <Image src="/images/icon/icon-yes.png" alt="" width={40} height={40} />
                   )}
-                  {sellOutcome === 'no' && (
-                    <>
-                      <Image src="/images/icon/icon-no.png" alt="" width={40} height={40} />
-                      <div className="flex-1 ml-[12px]">
-                        <div className="h-[14px] leading-[14px] text-[14px] text-white">No</div>
-                        <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white">37.12%  Shares</div>
-                      </div>
-                    </>
-                  )}
+                  <div className="flex-1 ml-[12px]">
+                    <div className="h-[14px] leading-[14px] text-[14px] text-white">{positionList[sellOutcome].outcomeName}</div>
+                    <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={positionList[sellOutcome].shares} decimals={9} precision={2}/>  Shares</div>
+                  </div>
                   <ArrowDownIcon className={`text-white text-[16px] mr-[4px] transition-transform duration-300 ease-out ${showCheckPosition ? 'rotate-180' : ''}`} />
                   {showCheckPosition && (
                     <div className="w-full absolute left-0 top-[64px] z-20 border border-white/20 rounded-[8px] bg-[#010A2C] p-[12px] space-y-[8px]">
                       {positionList.map((item, i) => (
                         <div
-                          key={item.id}
+                          key={item.marketId}
                           className="h-[56px] bg-[rgba(5,26,61,0.8)] rounded-[8px] flex items-center p-[8px] cursor-pointer"
                           onClick={() => {
-                            setSellOutcome(item.type)
+                            setSellOutcome(item.outcome)
                             setShowCheckPosition(false)
+                            setSellAvailable(toDisplayDenomAmount(item.shares, 9).toString())
+                            setSellAmount('');
+                            setSellProgress(0);
                           }}
                         >
-                          {item.type === 'yes' && <Image src="/images/icon/icon-yes.png" alt="" width={40} height={40} />}
-                          {item.type === 'no' && <Image src="/images/icon/icon-no.png" alt="" width={40} height={40} />}
+                          {item.outcome ? (
+                            <Image src="/images/icon/icon-no.png" alt="" width={40} height={40} />
+                          ) : (
+                            <Image src="/images/icon/icon-yes.png" alt="" width={40} height={40} />
+                          )}
                           <div className="flex-1 ml-[12px]">
-                            <div className="h-[14px] leading-[14px] text-[14px] text-white">Yes</div>
-                            <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white">37.12%  Shares</div>
+                            <div className="h-[14px] leading-[14px] text-[14px] text-white">{item.outcomeName}</div>
+                            <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={item.shares} decimals={9} precision={2}/>  Shares</div>
                           </div>
-                          {item.type === sellOutcome && <CheckedIcon className="text-[#00AE66] text-[24px] mr-[4px]" />}
+                          {item.outcome === sellOutcome && <CheckedIcon className="text-[#00AE66] text-[24px] mr-[4px]" />}
                         </div>
                       ))}
                     </div>
@@ -379,10 +480,10 @@ export default function TradingForm({
               <div className="relative">
                 <Input
                   type="tel"
-                  value={amount}
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountInputChange(e.target.value)}
+                  value={sellAmount}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSellAmountInputChange(e.target.value)}
                   placeholder="0"
-                  className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20"
+                  className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                   min={0}
                   step={0.01}
                 />
@@ -390,7 +491,7 @@ export default function TradingForm({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addAmount(1)}
+                    onClick={() => addSellAmount(1)}
                     className="px-[8px] bg-[#051A3D] border-none rounded-[8px] text-white/60 text-[16px] font-bold hover:bg-[#E0E2E4] hover:text-black"
                   >
                     +1
@@ -398,7 +499,7 @@ export default function TradingForm({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={() => addAmount(10)}
+                    onClick={() => addSellAmount(10)}
                     className="px-[8px] bg-[#051A3D] border-none rounded-[8px] text-white/60 text-[16px] font-bold hover:bg-[#E0E2E4] hover:text-black"
                   >
                     +10
@@ -406,7 +507,7 @@ export default function TradingForm({
                   <Button
                     variant="outline"
                     size="sm"
-                    onClick={setMaxAmount}
+                    onClick={setMaxSellAmount}
                     className="px-[8px] bg-[#051A3D] border-none rounded-[8px] text-white/60 text-[16px] font-bold hover:bg-[#E0E2E4] hover:text-black"
                   >
                     MAX
@@ -416,37 +517,50 @@ export default function TradingForm({
             </div>
           </div>
 
-          {/* Balance 余额 */}
+          {/* 持仓数量 */}
           <div className="mt-[8px] flex items-center justify-between">
             <div className="h-[24px] leading-[24px] text-[16px] text-white/60 font-bold flex items-center gap-[8px]">
               <span className="inline-block">Available</span>
-              <span className="inline-block">{usdhBalance}</span>
+              <span className="inline-block">{fix(sellAvailable.toString(), 2)}</span>
             </div>
             <div className="w-[140px]">
               <ProgressBar
-                initialValue={progress}
-                onChange={setProgress}
+                value={sellProgress}
+                step={0}
+                onChange={(value) => {
+                  const available = Math.round(value * Number(sellAvailable)) / 100;
+                  setSellProgress(value);
+                  setSellAmount(available);
+                }}
               />
             </div>
           </div>
 
-          <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
-            <span className="inline-block text-white/60">Cash Out</span>
-            <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
-            <span className="inline-block text-[#043FCA]">{usdhBalance}</span>
-          </div>
+          {!!sellAmount && (
+            <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
+              <span className="inline-block text-white/60">Cash Out</span>
+              <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
+              <span className="inline-block text-[#043FCA]">{Number(cashOut).toFixed(2)}</span>
+            </div>
+          )}
 
           {/* Sign In 按钮 */}
-          <Button
-            onClick={handleTrade}
-            disabled={!amount}
-            className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {amount
-              ? `Sell ${sellOutcome.toUpperCase()}`
-              : 'Sign In'
-            }
-          </Button>
+          {zkLoginData || currentAccount ? (
+            <Button
+              onClick={handleSale}
+              disabled={!sellAmount}
+              className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {`Sell ${sellOutcome ? 'NO' : 'YES'}`}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => dispatch(setSigninOpen(true))}
+              className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Sign In
+            </Button>
+          )}
         </>
       )}
     </div>

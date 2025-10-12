@@ -86,8 +86,6 @@ export default function PredictionDetailsClient() {
     (async () => {
       try {
         const {data} = await apiService.getMarketDetail(marketId);
-        console.log('************222 marketDetail')
-        console.log(data);
         // setPredictionData(data.item)
       } catch (e) {
         console.error(e);
@@ -473,6 +471,7 @@ export default function PredictionDetailsClient() {
             coinType=''
             pProbsJson={['0.5', '0.5']}
             outcomeYields={{YES: '', NO: ''}}
+            buyFee=''
           />
 
           {/* 使用可复用的服务条款组件 */}

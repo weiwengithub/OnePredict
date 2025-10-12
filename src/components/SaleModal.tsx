@@ -9,7 +9,7 @@ import Image from "next/image";
 import CloseIcon from "@/assets/icons/close.svg";
 import CopyIcon from "@/assets/icons/copy.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
-import { useUsdhBalance } from "@/hooks/useUsdhBalance";
+import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
 import {store, showLoading, hideLoading, setSigninOpen} from '@/store';
 import SettingsIcon from "@/assets/icons/setting.svg";
@@ -30,16 +30,15 @@ interface WelcomeModalProps {
 export default function DepositModal({ open, position, onOpenChange }: WelcomeModalProps) {
   const { t } = useLanguage();
   const [amount, setAmount] = useState<number | string>('');
-  const [address, setAddress] = useState("");
   const [progress, setProgress] = useState(0);
   const suiClient = useSuiClient() as any;
   const executeTransaction = useExecuteTransaction();
   const available = position ? toDisplayDenomAmount(position.shares, 9).toString() : '';
   const dispatch = useDispatch();
 
-  const packageId = "0x73037fa778458d2b7ef946d854640bbdbe50bc228668d7d05d0f8bba391fb2f9";
-  const coinType = "0x72eba41c73c4c2ce2bcfc6ec1dc0896ba1b5c17bfe7ae7c6c779943f84912b41::usdh::USDH";
-  const sellOutcome = "";
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
+  const { refresh } = useUsdhBalanceFromStore();
   // 禁止背景滚动
   useEffect(() => {
     if (open) {
@@ -81,8 +80,8 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
     store.dispatch(showLoading('Processing transaction...'));
     try {
       const marketClient = new MarketClient(suiClient, {
-        packageId: packageId,
-        coinType: coinType
+        packageId: position.packageId,
+        coinType: position.coinType
       });
       // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
       const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
@@ -90,10 +89,10 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
         console.error('No wallet connected');
         return;
       }
-      const coins = await suiClient.getCoins({ owner, coinType: coinType });
+      const coins = await suiClient.getCoins({ owner, coinType: position.coinType });
       const coinObjectId = coins?.data?.[0]?.coinObjectId;
       if (!coinObjectId) {
-        console.error('No coin object found for type:', coinType);
+        console.error('No coin object found for type:', position.coinType);
         return;
       }
       const tx = await marketClient.buildSellTx({
@@ -106,6 +105,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
       await executeTransaction(tx, false);
       toast.success(t('predictions.saleSuccess'));
       onOpenChange(false);
+      setTimeout(() => refresh(), 2000);
     } catch (error) {
       toast.error(t('predictions.saleError'));
       console.log(error);
@@ -113,12 +113,6 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
       store.dispatch(hideLoading());
     }
   };
-
-  const currentAccount = useCurrentAccount();
-  const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
-  const { balance: usdhBalance } = useUsdhBalance({
-    pollMs: 0, // 可选：例如 5000 开启 5s 轮询
-  });
 
   const [ownerAddress, setOwnerAddress] = useState("");
   useEffect(() => {

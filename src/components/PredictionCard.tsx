@@ -82,7 +82,7 @@ export default function PredictionCard({
                   className="group h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={(e) => handleButtonClick(e, 'yes')}
                 >
-                  <span className="group-hover:hidden">Yes</span>
+                  <span className="group-hover:hidden">{prediction.metaJson.outcomes[0]}</span>
                   <span className="hidden group-hover:inline">{`${chance}%`}</span>
                 </Button>
               </Tooltip.Trigger>
@@ -108,8 +108,8 @@ export default function PredictionCard({
                   className="group h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={(e) => handleButtonClick(e, 'no')}
                 >
-                  <span className="group-hover:hidden">No</span>
-                  <span className="hidden group-hover:inline">{`${100 - chance}%`}</span>
+                  <span className="group-hover:hidden">{prediction.metaJson.outcomes[1]}</span>
+                  <span className="hidden group-hover:inline">{`${(10000 - 100 * chance) / 100}%`}</span>
                 </Button>
               </Tooltip.Trigger>
 
@@ -131,7 +131,7 @@ export default function PredictionCard({
           {/* Footer with volume and deadline */}
           <div className="flex items-center justify-between text-[13px] text-white/60">
             <div className="flex items-center space-x-1">
-              <span className="inline-block leading-[24px]">{'New'}</span>
+              <span className="inline-block leading-[24px]">{prediction.volumeFormatted ? `${Number(prediction.volumeFormatted).toFixed(2)}Vol.` : 'NEW'}</span>
             </div>
             <div className="flex items-center space-x-[12px]">
               <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />

@@ -14,6 +14,13 @@ export const hideLoading = createAction('hideLoading')
 export const setSigninOpen = createAction<boolean>('signin/setOpen')
 export const setSigninLoading = createAction<boolean>('signin/setOpenLoading')
 
+// USDH Balance actions
+export const setUsdhBalance = createAction<{
+  balance: string
+  rawBalance: string
+}>('usdh/setBalance')
+export const clearUsdhBalance = createAction('usdh/clearBalance')
+
 export type AuthState = {
   connect: boolean
   account: string
@@ -27,6 +34,10 @@ export type AuthState = {
   signinModal: {
     open: boolean
     openLoading: boolean
+  }
+  usdhBalance: {
+    balance: string
+    rawBalance: string
   }
 }
 
@@ -43,6 +54,10 @@ const initialState: AuthState = {
   signinModal: {
     open: false,
     openLoading: false,
+  },
+  usdhBalance: {
+    balance: '0.00',
+    rawBalance: '0',
   },
 }
 
@@ -90,6 +105,14 @@ const reducer = createReducer(initialState, (builder) =>
     })
     .addCase(setSigninLoading, (state, action: PayloadAction<boolean>) => {
       state.signinModal.openLoading = action.payload
+    })
+    .addCase(setUsdhBalance, (state, action: PayloadAction<{ balance: string; rawBalance: string }>) => {
+      state.usdhBalance.balance = action.payload.balance
+      state.usdhBalance.rawBalance = action.payload.rawBalance
+    })
+    .addCase(clearUsdhBalance, (state) => {
+      state.usdhBalance.balance = '0.00'
+      state.usdhBalance.rawBalance = '0'
     })
 )
 

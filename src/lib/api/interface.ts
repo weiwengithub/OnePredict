@@ -61,6 +61,8 @@ export interface MarketOption {
   txCreated: string;
   updatedMs: number;
   vault: string;
+  volume: string;
+  volumeFormatted: string;
   winner: null;
 }
 
@@ -74,6 +76,7 @@ export interface ResMarketList {
 export interface MarketPositionOption {
   bet: string;
   buyPrice: string;
+  coinType: string;
   entryPrice: string;
   eventMs: number;
   marketId: string;
@@ -82,6 +85,7 @@ export interface MarketPositionOption {
   marketPrice: string;
   outcome: number;
   outcomeName: string;
+  packageId: string;
   pnl: string;
   positionValue: string;
   shares: string;

@@ -15,7 +15,7 @@ import {store} from "@/store";
 import GoogleIcon from "@/assets/icons/google.svg";
 import AppleIcon from "@/assets/icons/apple.svg";
 import WalletIcon from "@/assets/icons/walletIcon.svg";
-import { useUsdhBalance } from "@/hooks/useUsdhBalance";
+import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
 import {addPoint, onCopyToText, timeAgoEn} from "@/lib/utils";
 import { TabSkeleton } from "@/components/SkeletonScreens";
@@ -62,11 +62,7 @@ export default function PredictionIntegralModal({
 
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
-  const { balance: usdhBalance } = useUsdhBalance({
-    pollMs: 0, // 可选：例如 5000 开启 5s 轮询
-  });
-  console.log('*************123')
-  console.log(currentAccount);
+  const { balance: usdhBalance } = useUsdhBalanceFromStore();
 
   // 组件加载时的初始化效果
   useEffect(() => {
@@ -87,7 +83,6 @@ export default function PredictionIntegralModal({
     }
   }, [isOpen]);
 
-  // 优化getMarketPosition函数，添加错误处理和加载状态
   const getMarketPosition = useCallback(async () => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
@@ -100,8 +95,6 @@ export default function PredictionIntegralModal({
       setLoading(true);
       setError(null);
       const res = await apiService.getMarketPosition(owner);
-      console.log('**************** market position');
-      console.log(res);
 
       // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
@@ -118,7 +111,6 @@ export default function PredictionIntegralModal({
     }
   }, [currentAccount?.address, zkLoginData]);
 
-  // 优化getMarketTradeHistory函数，添加错误处理和加载状态
   const getMarketTradeHistory = useCallback(async () => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
@@ -131,8 +123,6 @@ export default function PredictionIntegralModal({
       setLoading(true);
       setError(null);
       const res = await apiService.getMarketTradeHistory(owner);
-      console.log('**************** market trade history');
-      console.log(res);
 
       // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
@@ -165,8 +155,6 @@ export default function PredictionIntegralModal({
 
       // 调用交易历史API
       const res = await apiService.getTransactionHistory(owner);
-      console.log('**************** transaction history');
-      console.log(res);
 
       if (res && res.data) {
         setTransactionList(res.data.items);

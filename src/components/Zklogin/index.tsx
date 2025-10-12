@@ -75,14 +75,12 @@ const Zklogin = ({onJump}: {onJump: () => void}) => {
         Number(epoch) + 10,
         randomness
       );
-      console.log('*************---', nonce);
       setNonce(nonce)
     }
     init()
   }, [suiClient])
   const handleGoogleLogin = useCallback(() => {
     //插件钱包断开链接
-    console.log('谷歌登录 ***********************1')
     console.log(CLIENT_ID)
     console.log(REDIRECT_URI)
     console.log(nonce)

@@ -69,6 +69,7 @@ export default function PredictionTradingModal({
           coinType={prediction.coinType}
           pProbsJson={prediction.pProbsJson}
           outcomeYields={prediction.outcomeYields}
+          buyFee={prediction.paramsJson.buy_fee_bps}
           onClose={onClose}
         />
 

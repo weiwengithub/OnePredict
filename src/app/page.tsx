@@ -53,8 +53,6 @@ export default function Home() {
     (async () => {
       try {
         const {data} = await apiService.getMarketList();
-        console.log('************111')
-        console.log(data);
         setPredictionData(data.item)
       } catch (e) {
         console.error(e);

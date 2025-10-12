@@ -194,21 +194,13 @@ export default function CustomCarousel({
             : false
         }
         breakpoints={effect === 'slide' || effect === 'coverflow' ? {
-          320: {
+          1020: {
             slidesPerView: 1,
-            spaceBetween: 10,
+            spaceBetween: 72,
           },
-          640: {
-            slidesPerView: effect === 'coverflow' ? 1.5 : 1.2,
-            spaceBetween: 20,
-          },
-          768: {
-            slidesPerView: effect === 'coverflow' ? 2.2 : 2,
-            spaceBetween: 25,
-          },
-          1024: {
-            slidesPerView: 1.7, // effectConfig.slidesPerView,
-            spaceBetween: effectConfig.spaceBetween,
+          1648: {
+            slidesPerView: 1.597, // effectConfig.slidesPerView,
+            spaceBetween: -55,
           },
         } : undefined}
         className="w-full"
@@ -229,9 +221,7 @@ export default function CustomCarousel({
               <img
                 src={item.image}
                 alt={item.title}
-                className={`w-full h-full object-cover transition-transform duration-500 ${
-                  effect === 'slide' || effect === 'coverflow' ? 'group-hover:scale-105' : ''
-                }`}
+                className="w-full h-full object-cover transition-transform duration-500"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
 
@@ -302,11 +292,11 @@ export default function CustomCarousel({
         }
 
         .swiper-slide-active .group {
-          transform: scale(1.05);
+          transform: scale(1);
         }
 
         .swiper-slide:not(.swiper-slide-active) .group {
-          transform: scale(0.85);
+          transform: scale(0.75);
           opacity: 0.6;
         }
 

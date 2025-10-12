@@ -1,4 +1,4 @@
-import {Transaction} from "@onelabs/sui/transactions";
+import {Transaction, type TransactionArgument} from "@onelabs/sui/transactions";
 import {SuiClient, SuiObjectResponse} from "@onelabs/sui/client";
 
 export interface MarketClientOptions {
@@ -26,6 +26,7 @@ export interface MetaInput {
 export interface CreateMarketArgs {
   marketAdminCapId: string;     // &marketAdminCap
   seedLiquidityCoinId: string;  // Coin<COIN> for seeding
+  seedLiquidityAmount?: number | string | bigint;
   initProbsBps: number[];       // vector<u64>, should sum to 10000
   params: ParamsInput;
   meta: MetaInput;
@@ -92,11 +93,105 @@ export interface MarketView {
   protocolVaultValue: string;
 }
 
+const BPS_SCALE = 10_000n;
+
+function toBigIntNonNegative(value: number | string | bigint, label: string): bigint {
+  let result: bigint;
+  if (typeof value === 'bigint') {
+    result = value;
+  } else if (typeof value === 'number') {
+    if (!Number.isFinite(value) || !Number.isInteger(value)) {
+      throw new Error(`${label} must be a finite integer`);
+    }
+    result = BigInt(value);
+  } else if (typeof value === 'string') {
+    const trimmed = value.trim();
+    if (!trimmed) throw new Error(`${label} must be provided`);
+    if (!/^-?\d+$/.test(trimmed)) {
+      throw new Error(`${label} must be an integer string`);
+    }
+    result = BigInt(trimmed);
+  } else {
+    throw new Error(`${label} has unsupported type`);
+  }
+  if (result < 0n) {
+    throw new Error(`${label} must be non-negative`);
+  }
+  return result;
+}
+
+function normalizeFeeBps(feeBps: number | string | bigint): bigint {
+  const fee = toBigIntNonNegative(feeBps, 'feeBps');
+  return fee > BPS_SCALE ? BPS_SCALE : fee;
+}
+
+export function calcFeeAmount(base: number | string | bigint, feeBps: number | string | bigint): bigint {
+  const amount = toBigIntNonNegative(base, 'base');
+  if (amount === 0n) return 0n;
+  const fee = normalizeFeeBps(feeBps);
+  if (fee === 0n) return 0n;
+  return (amount * fee) / BPS_SCALE;
+}
+
+export function calcTotalFromCost(cost: number | string | bigint, feeBps: number | string | bigint): bigint {
+  const pureCost = toBigIntNonNegative(cost, 'cost');
+  const fee = calcFeeAmount(pureCost, feeBps);
+  return pureCost + fee;
+}
+
+export function calcCostFromTotal(total: number | string | bigint, feeBps: number | string | bigint): bigint {
+  const totalAmount = toBigIntNonNegative(total, 'total');
+  if (totalAmount === 0n) return 0n;
+  const fee = normalizeFeeBps(feeBps);
+  const denom = BPS_SCALE + fee;
+  if (denom === 0n) return 0n;
+  return (totalAmount * BPS_SCALE) / denom;
+}
+
+export function calcNetFromGross(gross: number | string | bigint, feeBps: number | string | bigint): bigint {
+  const grossAmount = toBigIntNonNegative(gross, 'gross');
+  if (grossAmount === 0n) return 0n;
+  const fee = calcFeeAmount(grossAmount, feeBps);
+  return grossAmount > fee ? grossAmount - fee : 0n;
+}
+
+export function calcGrossFromNet(net: number | string | bigint, feeBps: number | string | bigint): bigint {
+  const netAmount = toBigIntNonNegative(net, 'net');
+  if (netAmount === 0n) return 0n;
+  const fee = normalizeFeeBps(feeBps);
+  if (fee >= BPS_SCALE) {
+    throw new Error('feeBps must be less than 10_000 to recover gross amount');
+  }
+  const denom = BPS_SCALE - fee;
+  const numerator = netAmount * BPS_SCALE;
+  return (numerator + denom - 1n) / denom;
+}
+
 export class MarketClient {
   public readonly clockId: string;
 
   constructor(public readonly client: SuiClient, public readonly opts: MarketClientOptions) {
     this.clockId = opts.clockId ?? '0x6';
+  }
+
+  static calcFeeAmount(base: number | string | bigint, feeBps: number | string | bigint): bigint {
+    return calcFeeAmount(base, feeBps);
+  }
+
+  static calcTotalFromCost(cost: number | string | bigint, feeBps: number | string | bigint): bigint {
+    return calcTotalFromCost(cost, feeBps);
+  }
+
+  static calcCostFromTotal(total: number | string | bigint, feeBps: number | string | bigint): bigint {
+    return calcCostFromTotal(total, feeBps);
+  }
+
+  static calcNetFromGross(gross: number | string | bigint, feeBps: number | string | bigint): bigint {
+    return calcNetFromGross(gross, feeBps);
+  }
+
+  static calcGrossFromNet(net: number | string | bigint, feeBps: number | string | bigint): bigint {
+    return calcGrossFromNet(net, feeBps);
   }
 
   // helpers
@@ -166,7 +261,7 @@ export class MarketClient {
     const tx = new Transaction();
 
     const amount = this.normalizeAmount(a.amount);
-    if (amount <= 0) {
+    if (amount <= 0n) {
       throw new Error('amount must be positive');
     }
 
@@ -218,11 +313,21 @@ export class MarketClient {
   async buildCreateMarketEntryTx(a: CreateMarketArgs): Promise<Transaction> {
     const tx = new Transaction();
 
+    const adminCap = tx.object(a.marketAdminCapId);
+    const seedSource = tx.object(a.seedLiquidityCoinId);
+    const seedLiquidity: TransactionArgument = (() => {
+      if (a.seedLiquidityAmount === undefined) {
+        return seedSource;
+      }
+      const [splitCoin] = tx.splitCoins(seedSource, [this.u64(tx, a.seedLiquidityAmount)]);
+      return splitCoin;
+    })();
+
     tx.moveCall({
       target: `${this.opts.packageId}::market::create_market`,
       typeArguments: [this.opts.coinType],
       arguments: [
-        tx.object(a.marketAdminCapId),
+        adminCap,
         this.u128(tx, a.params.b),
         this.u64(tx, a.params.buyFeeBps),
         this.u64(tx, a.params.sellFeeBps),
@@ -233,7 +338,7 @@ export class MarketClient {
         this.str(tx, a.meta.imageUrl),
         this.vecStr(tx, a.meta.outcomes),
         this.u64(tx, a.meta.endTimeMs),
-        tx.object(a.seedLiquidityCoinId),
+        seedLiquidity,
         this.vecU64(tx, a.initProbsBps),
         tx.object(this.clockId),
       ],
