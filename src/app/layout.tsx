@@ -69,22 +69,6 @@ export default async function RootLayout({
 }) {
   return (
     <html lang="en">
-      <head>
-        {/* PWA Meta Tags */}
-        <meta name="theme-color" content="#1f2937" />
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-        <meta name="apple-mobile-web-app-title" content="OnePredict" />
-        <meta name="mobile-web-app-capable" content="yes" />
-
-        {/* Additional Mobile Optimizations */}
-        <meta name="format-detection" content="telephone=no" />
-        <meta name="msapplication-tap-highlight" content="no" />
-
-        {/* Preload critical resources */}
-        <link rel="preload" href="/icon.svg" as="image" type="image/svg+xml" />
-        <title></title>
-      </head>
       <body className={dmSans.className}>
         <LanguageProvider>
           <ThemeProvider>

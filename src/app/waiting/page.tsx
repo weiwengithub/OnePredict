@@ -1,6 +1,5 @@
 "use client";
 
-import './index.scss'
 import { useEffect, useState } from 'react'
 import { Ed25519Keypair } from "@onelabs/sui/keypairs/ed25519";
 import { CLIENT_ID, GET_SALT_URL, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, OCT_PROVER_ENDPOINT, RANDOMNESS_SESSION_STORAGE_KEY, REDIRECT_URI, USER_SALT_LOCAL_STORAGE_KEY } from '@/assets/config/constant';
@@ -177,23 +176,18 @@ const WaitingPage = () => {
   }, [])
 
   return (
-    <div className='waiting-page'>
-      <div className='waiting-page-content'>
-        <div className='waiting-page-content-title  flex flex-center flex-middle w100'>
-          <span className='fz-18 fwb cf ta w100 flex flex-col items-center gap-[10px] flex-column'>
-            <Loading type='spinner'/>
-            <div className="text-white text-[24px]">
-              {oauthParams?.state === 'google' ? <GoogleIcon /> : <AppleIcon />}
-            </div>
-            <div className="text-white text-[18px] font-bold">
-              {t('waiting.title', {name: oauthParams?.state === 'google' ? 'Google' : 'Apple'})}
-            </div>
-          </span>
+    <div className='w-screen h-screen flex flex-col items-center justify-center fixed left-0 top-0 bg-black z-100'>
+      <div className='flex flex-col items-center gap-[10px]'>
+        <Loading type='spinner'/>
+        <div className="text-white text-[24px]">
+          {oauthParams?.state === 'google' ? <GoogleIcon /> : <AppleIcon />}
         </div>
-        <div className='waiting-page-content-title ta'>
-        <span className='text-[14px] text-white/60'>{t('waiting.subtitle', {name: oauthParams?.state === 'google' ? 'Google' : 'Apple'})}
-        </span>
+        <div className="text-white text-[18px] font-bold">
+          {t('waiting.title', {name: oauthParams?.state === 'google' ? 'Google' : 'Apple'})}
         </div>
+      </div>
+      <div className='text-[14px] text-white/60'>
+        {t('waiting.subtitle', {name: oauthParams?.state === 'google' ? 'Google' : 'Apple'})}
       </div>
     </div>
   );

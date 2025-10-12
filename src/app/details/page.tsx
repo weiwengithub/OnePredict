@@ -472,6 +472,7 @@ export default function PredictionDetailsClient() {
             packageId=''
             coinType=''
             pProbsJson={['0.5', '0.5']}
+            outcomeYields={{YES: '', NO: ''}}
           />
 
           {/* 使用可复用的服务条款组件 */}

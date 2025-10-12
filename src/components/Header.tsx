@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect, useCallback} from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Image from 'next/image';
@@ -9,7 +9,6 @@ import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
 import DepositModal from "@/components/DepositModal";
 import WithdrawModal from "@/components/WithdrawModal";
-import SaleModal from "@/components/SaleModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchModal from "@/components/SearchModal";
 import Signin from "@/components/Signin";
@@ -24,18 +23,21 @@ import WalletIcon from "@/assets/icons/walletIcon.svg";
 import {addPoint} from "@/lib/utils";
 import ProfileIcon from "@/assets/icons/profile.svg";
 import SettingsIcon from "@/assets/icons/settings.svg";
-import {clearLoginData} from "@/store";
+import { setSigninOpen } from "@/store";
 import LogoutIcon from "@/assets/icons/logout.svg";
+import {useCurrentAccount} from "@onelabs/dapp-kit";
+import { useDispatch, useSelector } from 'react-redux';
+import {RootState} from "@/lib/interface";
 
 interface HeaderProps {
   currentPage?: 'home' | 'leaderboard' | 'rewards' | 'details';
 }
 
 export default function Header({ currentPage }: HeaderProps) {
+  const dispatch = useDispatch();
   const [showIntegralModal, setShowIntegralModal] = useState(false);
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
-  const [showSale, setShowSale] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -43,6 +45,9 @@ export default function Header({ currentPage }: HeaderProps) {
   const { language, setLanguage, t } = useLanguage();
   const router = useRouter();
   const [showTheme, setShowTheme] = useState(false);
+
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
 
   const { balance: usdhBalance } = useUsdhBalance({
     // address: userAddress, // 可选：不传则自动解析
@@ -81,9 +86,14 @@ export default function Header({ currentPage }: HeaderProps) {
 
   const handleButtonClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    setShowIntegralModal(true);
+    if (zkLoginData || currentAccount) {
+      setShowIntegralModal(true);
+    } else {
+      dispatch(setSigninOpen(true))
+    }
   };
 
+  const showMenu = false;
   return (
     <>
       <header
@@ -105,44 +115,43 @@ export default function Header({ currentPage }: HeaderProps) {
             </div>
 
             {/* Center - Navigation (绝对居中) */}
-            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-              <nav className="flex gap-[40px] items-center justify-center">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={`
+            {showMenu && (
+              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+                <nav className="flex gap-[40px] items-center justify-center">
+                  {navigationItems.map((item) => (
+                    <Link
+                      key={item.key}
+                      href={item.href}
+                      className={`
                     h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200
                     hover:text-[#477CFC] relative group whitespace-nowrap
                     ${activePage === item.key
-                      ? 'text-[#477CFC] font-medium'
-                      : 'text-white'
-                    }
+                        ? 'text-[#477CFC] font-medium'
+                        : 'text-white'
+                      }
                   `}
-                  >
-                    {item.label}
+                    >
+                      {item.label}
 
-                    {/* 活跃页面下划线 */}
-                    {/*{activePage === item.key && (*/}
-                    {/*  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />*/}
-                    {/*)}*/}
+                      {/* 活跃页面下划线 */}
+                      {/*{activePage === item.key && (*/}
+                      {/*  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />*/}
+                      {/*)}*/}
 
-                    {/* 悬停效果 */}
-                    {/*<div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />*/}
-                  </Link>
-                ))}
-              </nav>
-            </div>
+                      {/* 悬停效果 */}
+                      {/*<div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />*/}
+                    </Link>
+                  ))}
+                </nav>
+              </div>
+            )}
 
             {/* Right side - User menu */}
             <div className="flex items-center gap-[8px] z-10">
               {/* USDH Balance */}
-              <div className="group mr-[40px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
-                <div className="h-[16px] leading-[16px] text-[12px] text-white/40 group-hover:text-white">USDH</div>
-                <div className="mt-[4px] flex items-center space-x-[2px]">
-                  <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                  <span className="inline-block h-[16px] leading-[16px] text-[16px] font-bold text-white/60 group-hover:text-white">{usdhBalance}</span>
-                </div>
+              <div className="flex items-center mr-[40px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
+                <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
+                <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[24px] font-bold text-white/60 hover:text-white">{usdhBalance}</span>
               </div>
 
               {/* Search Button */}
@@ -242,7 +251,6 @@ export default function Header({ currentPage }: HeaderProps) {
         onClose={() => setShowIntegralModal(false)}
         onShowDeposit={() => setShowDeposit(true)}
         onShowWithdraw={() => setShowWithdraw(true)}
-        onShowSale={() => setShowSale(true)}
         prediction={{
           question: 'string',
           chance: 0,
@@ -257,9 +265,6 @@ export default function Header({ currentPage }: HeaderProps) {
 
       {/* Withdraw Modal */}
       <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
-
-      {/* Sale Modal */}
-      <SaleModal open={showSale} onOpenChange={setShowSale}></SaleModal>
 
       {/* Search Modal */}
       <SearchModal

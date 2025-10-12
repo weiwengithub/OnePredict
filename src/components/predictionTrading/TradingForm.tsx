@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useEffect, useState} from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { ProgressBar } from '@/components/ProgressBar';
@@ -11,12 +11,16 @@ import RefreshIcon from "@/assets/icons/refresh.svg";
 import SettingsIcon from "@/assets/icons/setting.svg";
 import ArrowDownIcon from "@/assets/icons/arrowDown.svg";
 import CheckedIcon from "@/assets/icons/circle-checked.svg";
+import WarningIcon from "@/assets/icons/warning_2.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
 import { useUsdhBalance } from "@/hooks/useUsdhBalance";
 import { useExecuteTransaction } from '@/hooks/useExecuteTransaction';
 import { ZkLoginData } from "@/lib/interface";
-import {store} from "@/store";
+import {hideLoading, setSigninOpen, showLoading, store} from "@/store";
 import {MarketClient} from "@/lib/market";
+import { useDispatch } from 'react-redux';
+import {useLanguage} from "@/contexts/LanguageContext";
+import { toast } from "sonner";
 
 interface TradingFormProps {
   initialOutcome: 'yes' | 'no';
@@ -24,6 +28,10 @@ interface TradingFormProps {
   packageId: string;
   coinType: string;
   pProbsJson: string[];
+  outcomeYields: {
+    YES: string;
+    NO: string;
+  }
   onClose?: () => void;
 }
 
@@ -33,57 +41,80 @@ export default function TradingForm({
   packageId,
   coinType,
   pProbsJson,
+  outcomeYields,
   onClose
 }: TradingFormProps) {
+  const { t } = useLanguage();
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [buyOutcome, setBuyOutcome] = useState<'yes' | 'no'>(initialOutcome);
   const [sellOutcome, setSellOutcome] = useState<'yes' | 'no'>('yes');
-  const [amount, setAmount] = useState<number>(0);
+  const [amount, setAmount] = useState<number | string>('');
   const yesPrice = new BigNumber(pProbsJson[0]).shiftedBy(-12);
   const noPrice = new BigNumber(pProbsJson[1]).shiftedBy(-12);
-  const [progress, setProgress] = useState(25);
+  const [progress, setProgress] = useState(0);
   const suiClient = useSuiClient() as any;
   const executeTransaction = useExecuteTransaction();
+  const dispatch = useDispatch();
+  const [tradeDeadlineTime, setTradeDeadlineTime] = useState('');
+  const [showTradeDeadline, setShowTradeDeadline] = useState<boolean>(false);
 
   const handleAmountInputChange = (value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setAmount(Math.max(0, numValue));
+    const max = Number(usdhBalance);
+    const newAmount = value ? Math.min(parseFloat(value), max) : '';
+    setAmount(newAmount);
+    const progress = newAmount ? 100 * Number(newAmount) / max : 0;
+    setProgress(progress);
   };
 
   const addAmount = (value: number) => {
-    setAmount(Math.max(0, amount + value));
+    const max = Number(usdhBalance);
+    const newAmount = Math.min(amount ? Number(amount) + value : value, max);
+    setAmount(newAmount);
+    const progress = 100 * Number(newAmount) / max
+    setProgress(progress);
   };
 
   const setMaxAmount = () => {
-    setAmount(Number(usdhBalance));
+    setAmount(usdhBalance);
+    setProgress(100);
   };
 
   const handleTrade = async () => {
-    const marketClient = new MarketClient(suiClient, {
-      packageId: packageId,
-      coinType: coinType
-    });
-    // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
-    const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
-    if (!owner) {
-      console.error('No wallet connected');
-      return;
+    store.dispatch(showLoading('Processing transaction...'));
+    try {
+      const marketClient = new MarketClient(suiClient, {
+        packageId: packageId,
+        coinType: coinType
+      });
+      // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
+      const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+      if (!owner) {
+        console.error('No wallet connected');
+        return;
+      }
+      const coins = await suiClient.getCoins({ owner, coinType: coinType });
+      const coinObjectId = coins?.data?.[0]?.coinObjectId;
+      if (!coinObjectId) {
+        console.error('No coin object found for type:', coinType);
+        return;
+      }
+      const tx = await marketClient.buildBuyByAmountTx({
+        marketId: marketId,
+        outcome: buyOutcome === 'yes' ? 0 : 1,
+        amount: Number(amount) * Math.pow(10, 9),
+        paymentCoinId: coinObjectId,
+        minSharesOut: 0,
+      });
+      console.log(tx)
+      await executeTransaction(tx, false);
+      toast.success(t('predictions.buySuccess'));
+      onClose && onClose();
+    } catch (error) {
+      toast.error(t('predictions.buyError'));
+      console.error(error);
+    } finally {
+      store.dispatch(hideLoading());
     }
-    const coins = await suiClient.getCoins({ owner, coinType: coinType });
-    const coinObjectId = coins?.data?.[0]?.coinObjectId;
-    if (!coinObjectId) {
-      console.error('No coin object found for type:', coinType);
-      return;
-    }
-    const tx = await marketClient.buildBuyTx({
-      marketId: marketId,
-      outcome: buyOutcome === 'yes' ? 1 : 0,
-      deltaShares: amount*Math.pow(10, 9),
-      paymentCoinId: coinObjectId,
-    });
-    console.log(tx)
-    await executeTransaction(tx, false);
-    onClose && onClose();
   };
 
   const currentAccount = useCurrentAccount();
@@ -100,6 +131,11 @@ export default function TradingForm({
   const [positionList, setPositionList] = useState<Array<{type: 'yes' | 'no'; id: number;}>>([{type: 'yes', id: 1}, {type: 'no', id: 2}]);
   const [showCheckPosition, setShowCheckPosition] = useState(false);
 
+  const toWin = useMemo(() => {
+    const _yield = buyOutcome === 'yes' ? outcomeYields.YES : outcomeYields.NO;
+    return amount ? Number(_yield) * Number(amount) : 0
+  }, [buyOutcome, amount])
+
   return (
     <div className="mt-[16px] mx-[12px] p-[12px] bg-[#010A2C] rounded-[16px]">
       {/* Buy/Sell 选项卡 */}
@@ -112,7 +148,7 @@ export default function TradingForm({
               : 'text-white/60 hover:text-white border-transparent'
           }`}
         >
-          Buy
+          {t('predictions.buy')}
         </div>
         <div
           onClick={() => setTradeType('sell')}
@@ -122,7 +158,7 @@ export default function TradingForm({
               : 'text-white/60 hover:text-white border-transparent'
           }`}
         >
-          Sell
+          {t('predictions.sell')}
         </div>
       </div>
 
@@ -131,7 +167,7 @@ export default function TradingForm({
           {/* Outcomes 选择 */}
           <div className="mt-[24px]">
             <div className="flex items-center justify-between h-[24px] leading-[24px] text-[16px] font-bold text-white/60 mb-[12px]">
-              <span>Outcomes</span>
+              <span>{t('predictions.outcomes')}</span>
               <RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" />
             </div>
             <div className="grid grid-cols-2 gap-3">
@@ -162,8 +198,26 @@ export default function TradingForm({
           {/* Amount 输入 */}
           <div className="mt-[24px]">
             <div className="flex items-center justify-between h-[24px] leading-[24px] text-[16px] font-bold text-white/60 mb-[12px]">
-              <span>Amount</span>
-              <SettingsIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" />
+              <span>{t('predictions.amount')}</span>
+              {/*<div className="relative">*/}
+              {/*  <SettingsIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" />*/}
+              {/*  <div className="absolute top-[16px] right-0 w-[192px] bg-[#010A2C] border border-white/20 rounded-[8px] px-[24px] py-[16px] z-20">*/}
+              {/*    <div className="h-[24px] flex items-center gap-2">*/}
+              {/*      <span className="leading-[24px] text-[12px] text-white/60">Trade deadline</span>*/}
+              {/*      <WarningIcon className="text-[#999DAB] text-[10px]" />*/}
+              {/*    </div>*/}
+              {/*    <div className="h-[32px] border border-white/20 rounded-[24px] px-[14px] flex items-center">*/}
+              {/*      <Input*/}
+              {/*        type="tel"*/}
+              {/*        value={tradeDeadlineTime}*/}
+              {/*        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setTradeDeadlineTime(e.target.value)}*/}
+              {/*        placeholder="0"*/}
+              {/*        className="flex-1 h-[24px] leading-[24px] p-0 text-white text-[12px] placeholder:text-white/60 bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"*/}
+              {/*      />*/}
+              {/*      <span className="inline-block leading-[24px] text-[12px] text-white/60">minutes</span>*/}
+              {/*    </div>*/}
+              {/*  </div>*/}
+              {/*</div>*/}
             </div>
             <div className="space-y-3">
               {/* 金额输入框 */}
@@ -173,7 +227,7 @@ export default function TradingForm({
                   value={amount}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountInputChange(e.target.value)}
                   placeholder="0"
-                  className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20"
+                  className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                   min={0}
                   step={0.01}
                 />
@@ -210,35 +264,48 @@ export default function TradingForm({
           {/* Balance 余额 */}
           <div className="mt-[8px] flex items-center justify-between">
             <div className="h-[24px] leading-[24px] text-[16px] text-white/60 font-bold flex items-center gap-[8px]">
-              <span className="inline-block">Balance</span>
+              <span className="inline-block">{t('predictions.balance')}</span>
               <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
               <span className="inline-block">{usdhBalance}</span>
             </div>
             <div className="w-[140px]">
               <ProgressBar
-                initialValue={progress}
-                onChange={setProgress}
+                value={progress}
+                step={0}
+                onChange={(value) => {
+                  const amount = Math.round(value * Number(usdhBalance)) / 100;
+                  setProgress(value);
+                  setAmount(amount);
+                }}
               />
             </div>
           </div>
 
-          <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
-            <span className="inline-block text-white/60">To win</span>
-            <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
-            <span className="inline-block text-[#043FCA]">{usdhBalance}</span>
-          </div>
+          {amount && (
+            <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
+              <span className="inline-block text-white/60">To win</span>
+              <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
+              <span className="inline-block text-[#043FCA]">{Number(toWin).toFixed(2)}</span>
+            </div>
+          )}
 
           {/* Sign In 按钮 */}
-          <Button
-            onClick={handleTrade}
-            disabled={amount <= 0}
-            className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {amount > 0
-              ? `Buy ${buyOutcome.toUpperCase()}`
-              : 'Sign In'
-            }
-          </Button>
+          {zkLoginData || currentAccount ? (
+            <Button
+              onClick={handleTrade}
+              disabled={!amount}
+              className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {`Buy ${buyOutcome.toUpperCase()}`}
+            </Button>
+          ) : (
+            <Button
+              onClick={() => dispatch(setSigninOpen(true))}
+              className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Sign In
+            </Button>
+          )}
         </>
       )}
 
@@ -372,10 +439,10 @@ export default function TradingForm({
           {/* Sign In 按钮 */}
           <Button
             onClick={handleTrade}
-            disabled={amount <= 0}
+            disabled={!amount}
             className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {amount > 0
+            {amount
               ? `Sell ${sellOutcome.toUpperCase()}`
               : 'Sign In'
             }

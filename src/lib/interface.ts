@@ -16,6 +16,10 @@ export interface CurrentAccount {
 
 export interface RootState {
   zkLoginData: ZkLoginData | null;
+  signinModal: {
+    open: boolean
+    openLoading: boolean
+  }
 }
 
 export interface ApiResult {

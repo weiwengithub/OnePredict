@@ -14,6 +14,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { toast } from "sonner";
 import * as Tooltip from "@radix-ui/react-tooltip";
+import BigNumber from "bignumber.js";
 
 interface PredictionCardProps {
   key: number;
@@ -28,12 +29,8 @@ export default function PredictionCard({
   const [showTradingModal, setShowTradingModal] = useState(false);
   const [selectedOutcome, setSelectedOutcome] = useState<'yes' | 'no'>('yes');
 
-  const chance = 30;
-  const [percentage, setPercentage] = React.useState(25);
-
-  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPercentage(Number(e.target.value));
-  };
+  const yes = new BigNumber(prediction.pProbsJson[0]).shiftedBy(-10)
+  const chance = Number(yes.toFixed(2))
 
   const handleCardClick = () => {
     if (prediction.marketId) {
@@ -52,15 +49,12 @@ export default function PredictionCard({
   return (
     <>
       <Card
-        className="bg-[#010A2C] border border-[#26282E] hover:shadow-lg rounded-[16px] transition-all duration-300 hover:border-[#467DFF] group">
+        className="bg-[#010A2C] border border-[#26282E] hover:shadow-lg rounded-[16px] transition-all duration-300 hover:border-[#467DFF]">
         <CardContent className="p-[24px]">
           {/* Header with avatar and question */}
           <div className="flex items-start space-x-[19px] mb-[20px]">
             <Avatar className="w-[48px] h-[48px] rounded-[8px] transition-all">
               <AvatarImage src={prediction.metaJson.image_url} alt="avatar" />
-              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-gray-700 font-semibold">
-                loading...
-              </AvatarFallback>
             </Avatar>
             <div
               className="flex-1 min-w-0 h-[96px] leading-[24px] text-white text-[20px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:4] [-webkit-box-orient:vertical] cursor-pointer"
@@ -85,10 +79,11 @@ export default function PredictionCard({
               <Tooltip.Trigger asChild>
                 <Button
                   variant="outline"
-                  className="h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="group h-[48px] bg-[rgba(40,192,78,0.5)] border-none text-[#089C2B] text-[16px] hover:bg-[#29C041] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={(e) => handleButtonClick(e, 'yes')}
                 >
-                  Yes
+                  <span className="group-hover:hidden">Yes</span>
+                  <span className="hidden group-hover:inline">{`${chance}%`}</span>
                 </Button>
               </Tooltip.Trigger>
 
@@ -100,7 +95,7 @@ export default function PredictionCard({
                   className="z-50 rounded-[8px] bg-[#5E6064] px-[15px] py-[11px] text-[16px] text-white shadow-lg backdrop-blur
                      border border-[#26282E]"
                 >
-                  To win:1.96 x
+                  To win:{prediction.outcomeYields.YES} x
                   <Tooltip.Arrow className="fill-[#5E6064]" />
                 </Tooltip.Content>
               </Tooltip.Portal>
@@ -110,10 +105,11 @@ export default function PredictionCard({
               <Tooltip.Trigger asChild>
                 <Button
                   variant="outline"
-                  className="h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
+                  className="group h-[48px] bg-[rgba(249,93,93,0.5)] border-none text-[#F95C5C] text-[16px] hover:bg-[#F95D5D] hover:text-white font-semibold transition-all duration-200 shadow-sm hover:shadow-md"
                   onClick={(e) => handleButtonClick(e, 'no')}
                 >
-                  No
+                  <span className="group-hover:hidden">No</span>
+                  <span className="hidden group-hover:inline">{`${100 - chance}%`}</span>
                 </Button>
               </Tooltip.Trigger>
 
@@ -125,7 +121,7 @@ export default function PredictionCard({
                   className="z-50 rounded-[8px] bg-[#5E6064] px-[15px] py-[11px] text-[16px] text-white shadow-lg backdrop-blur
                      border border-[#26282E]"
                 >
-                  To win:    x
+                  To win:{prediction.outcomeYields.NO} x
                   <Tooltip.Arrow className="fill-[#5E6064]" />
                 </Tooltip.Content>
               </Tooltip.Portal>
@@ -135,13 +131,13 @@ export default function PredictionCard({
           {/* Footer with volume and deadline */}
           <div className="flex items-center justify-between text-[13px] text-white/60">
             <div className="flex items-center space-x-1">
-              <span className="inline-block leading-[24px]">{'volume'}</span>
+              <span className="inline-block leading-[24px]">{'New'}</span>
             </div>
             <div className="flex items-center space-x-[12px]">
               <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
               <span className="inline-block leading-[24px]">{formatShortDate(Number(prediction.metaJson.end_time_ms))}</span>
-              <Image src="/images/icon/icon-tag.png" alt="" width={12} height={12} onClick={() => {toast.success('分享成功111')}} />
-              <Image src="/images/icon/icon-export.png" alt="" width={12} height={12} />
+              {/*<Image src="/images/icon/icon-tag.png" alt="" width={12} height={12} onClick={() => {toast.success('分享成功111')}} />*/}
+              {/*<Image src="/images/icon/icon-export.png" alt="" width={12} height={12} />*/}
             </div>
           </div>
         </CardContent>

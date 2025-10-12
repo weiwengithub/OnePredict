@@ -280,3 +280,38 @@ export function formatShortDate(
     timeZone,
   }).format(new Date(ms));
 }
+
+export function timeAgoEn(
+  input: number | string | Date,
+  baseNow: number = Date.now() // 方便单元测试：可传一个“现在”的时间
+): string {
+  const target = toDate(input).getTime();
+  let diff = baseNow - target;           // >0 过去；<0 未来
+  const future = diff < 0;
+  diff = Math.abs(diff);
+
+  const HOUR = 3600_000;
+  const DAY = 24 * HOUR;
+
+  const hours = Math.floor(diff / HOUR);
+  if (hours < 24) {
+    const n = hours;
+    const unit = n === 1 ? "hour" : "hours";
+    return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+  }
+
+  const days = Math.floor(diff / DAY);
+  const unit = days === 1 ? "day" : "days";
+  return future ? `in ${days} ${unit}` : `${days} ${unit} ago`;
+}
+
+function toDate(v: number | string | Date): Date {
+  if (v instanceof Date) return v;
+  if (typeof v === "number") {
+    // 自适应秒/毫秒级时间戳
+    const ms = v < 1e12 ? v * 1000 : v;
+    return new Date(ms);
+  }
+  return new Date(v);
+}
+

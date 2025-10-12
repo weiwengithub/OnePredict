@@ -53,9 +53,6 @@ export default function PredictionTradingModal({
           <div className="flex-1 flex items-center overflow-hidden">
             <Avatar className="w-[24px] h-[24px] rounded-[8px] transition-all">
               <AvatarImage src={prediction.metaJson.image_url} alt="avatar" />
-              <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-gray-700 font-semibold">
-                loading...
-              </AvatarFallback>
             </Avatar>
             <h2 className="truncate h-[24px] leading-[24px] text-[20px] font-bold text-white px-[12px]">
               {prediction.metaJson.title}
@@ -71,6 +68,7 @@ export default function PredictionTradingModal({
           packageId={prediction.packageId}
           coinType={prediction.coinType}
           pProbsJson={prediction.pProbsJson}
+          outcomeYields={prediction.outcomeYields}
           onClose={onClose}
         />
 

@@ -46,6 +46,10 @@ export interface MarketOption {
   finalMs: number;
   marketId: string;
   metaJson: MarketMeta;
+  outcomeYields: {
+    YES: string;
+    NO: string;
+  }
   pProbsJson: string[];
   packageId: string;
   paramsJson: MarketParams;
@@ -68,20 +72,21 @@ export interface ResMarketList {
 }
 
 export interface MarketPositionOption {
+  bet: string;
   buyPrice: string;
+  entryPrice: string;
   eventMs: number;
   marketId: string;
+  marketImage: string;
+  marketName: string;
+  marketPrice: string;
   outcome: number;
+  outcomeName: string;
+  pnl: string;
+  positionValue: string;
   shares: string;
   userAddr: string;
-  question: string;
-  price: string;
-  entryPrice: string;
-  marketPrice: string;
-  betAmount: string;
-  currentValue: string;
-  pnl: string;
-  toWin: string;
+  winProfit: string;
 }
 
 export interface ResMarketPosition {
@@ -100,34 +105,27 @@ export interface MarketTradeOption {
   fee: string;
   kind: number;
   marketId: string;
+  marketImage: string;
+  marketName: string;
   outcome: number;
   payloadJson: {
-    change: string;
-    cost: string;
     delta: string;
     fee_trade: string;
+    gross: string;
     kind: number;
     market_id: string;
-    min_shares_out: string;
     outcome: string;
-    pay_in: string;
     probs: string[];
     protocol_vault_value: string;
+    refund: string;
     t_ms: string;
-    total: string;
     vault_value: string;
     who: string;
-  };
+  }
   side: string;
   total: string;
   txDigest: string;
   userAddr: string;
-  question: string;
-  price: string;
-  type: string;
-  tradePrice: string;
-  value: string;
-  date: string;
 }
 
 export interface ResMarketTradeHistory {

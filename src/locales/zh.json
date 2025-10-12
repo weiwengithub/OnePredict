@@ -10,7 +10,10 @@
     "copyAddress": "复制地址",
     "menu": "钱包",
     "disconnect": "断开连接",
-    "connectingGoogle": "正在通过 Google 连接…"
+    "connectingGoogle": "正在通过 Google 连接…",
+    "profile": "个人资料",
+    "settings": "设置",
+    "logout": "退出登录"
   },
   "categories": {
     "trending": "热门",
@@ -92,6 +95,17 @@
     "trySearching": "尝试搜索“{query}”"
   },
   "predictions": {
+    "buy": "买入",
+    "sell": "卖出",
+    "outcomes": "结果",
+    "amount": "金额",
+    "balance": "余额",
+    "trading": "进行交易即表示你同意",
+    "terms": "使用条款",
+    "buySuccess": "购买成功",
+    "buyError": "购买失败",
+    "saleSuccess": "卖出成功",
+    "saleError": "卖出失败",
     "questions": {
       "shanghaiMicroelectronics": "上海微电子会上市吗？",
       "ethBreakAth": "ETH 会在 2025 年创下历史新高吗？",
@@ -105,6 +119,37 @@
       "australiaPalestine": "澳大利亚会在今年正式承认巴勒斯坦国吗？",
       "earthquake9": "今年全球会发生 9.0 级地震吗？",
       "bricsNewMember": "金砖国家会在 12 月 31 日前新增成员吗？"
+    },
+    "integralModal": {
+      "balance": "余额",
+      "deposit": "充值",
+      "withdraw": "提现",
+      "positions": "持仓",
+      "trades": "交易",
+      "transaction": "交易记录",
+      "sale": "卖出",
+      "entryPrice": "入场价",
+      "marketPrice": "市价",
+      "bet": "下注",
+      "current": "当前",
+      "pnl": "盈亏",
+      "toWin": "可赢",
+      "loaded": "已加载全部内容。",
+      "nothing": "暂无内容",
+      "type": "类型",
+      "price": "价格",
+      "value": "金额",
+      "date": "日期"
     }
+  },
+  "send": {
+    "send": "发送代币",
+    "amount": "金额",
+    "balance": "余额",
+    "to": "收款地址",
+    "warning": "请注意，这是 OneChain 网络。通过其他网络发送可能导致你的加密资产丢失。",
+    "continue": "继续",
+    "sendSuccess": "发送成功",
+    "sendError": "发送失败"
   }
 }

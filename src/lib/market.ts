@@ -50,6 +50,7 @@ export interface BuyByAmountArgs {
   marketId: string;
   outcome: number;
   paymentCoinId: string;   // Coin<COIN>
+  amount: number | string | bigint; // Coin amount (u64)
   minSharesOut: number;    // u64
 }
 
@@ -117,6 +118,24 @@ export class MarketClient {
     return tx.pure.string(s);
   }
 
+  private normalizeAmount(value: number | string | bigint): bigint {
+    if (typeof value === 'bigint') return value;
+    if (typeof value === 'number') {
+      if (!Number.isFinite(value) || !Number.isInteger(value)) {
+        throw new Error('amount must be a finite integer');
+      }
+      return BigInt(value);
+    }
+    if (typeof value === 'string') {
+      const trimmed = value.trim();
+      if (!trimmed) {
+        throw new Error('amount must be provided');
+      }
+      return BigInt(trimmed);
+    }
+    throw new Error('invalid amount');
+  }
+
   private vecU64(tx: Transaction, arr: Array<number | string | bigint>) {
     return tx.pure.vector('u64', arr.map(x => (typeof x === 'bigint' ? x : BigInt(x))));
   }
@@ -145,13 +164,22 @@ export class MarketClient {
 
   async buildBuyByAmountTx(a: BuyByAmountArgs): Promise<Transaction> {
     const tx = new Transaction();
+
+    const amount = this.normalizeAmount(a.amount);
+    if (amount <= 0) {
+      throw new Error('amount must be positive');
+    }
+
+    const paymentSource = tx.object(a.paymentCoinId);
+    const [paymentBudget] = tx.splitCoins(paymentSource, [this.u64(tx, amount)]);
+
     tx.moveCall({
       target: `${this.opts.packageId}::market::buy_by_amount`,
       typeArguments: [this.opts.coinType],
       arguments: [
         tx.object(a.marketId),
         this.u64(tx, a.outcome),
-        tx.object(a.paymentCoinId),
+        paymentBudget,
         this.u64(tx, a.minSharesOut),
         tx.object(this.clockId),
       ],

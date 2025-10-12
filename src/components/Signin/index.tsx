@@ -24,7 +24,7 @@ import Zklogin from '../Zklogin';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ConnectWallet from '../ConnectWallet';
 import Loading from '../Loading';
-import { store, clearLoginData, setIsWalletLogin, disconnect } from '@/store';
+import { store, clearLoginData, setSigninOpen, setSigninLoading } from '@/store';
 import { useDispatch, useSelector } from 'react-redux';
 import GoogleIcon from '@/assets/icons/google.svg';
 import AppleIcon from '@/assets/icons/apple.svg';
@@ -42,8 +42,8 @@ const Signin = () => {
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
   const [openDown, setOpenDropdown] = useState(false);
-  const [open, setOpen] = useState(false);
-  const [openLoading, setOpenLoading] = useState(false);
+  const open = useSelector((s: RootState) => s.signinModal.open)
+  const openLoading = useSelector((s: RootState) => s.signinModal.openLoading)
   const { isConnecting } = useCurrentWallet();
   const { mutate: disconnect } = useDisconnectWallet();
   const { mutate: signPersonalMessage } = useSignPersonalMessage();
@@ -153,8 +153,8 @@ const Signin = () => {
 
   useEffect(()=>{
     if(zkLoginData || currentAccount){
-      setOpen(false)
-      setOpenLoading(false)
+      dispatch(setSigninOpen(false))
+      dispatch(setSigninLoading(false))
     }
   },[zkLoginData, currentAccount])
   // 检测当前网络
@@ -214,25 +214,25 @@ const Signin = () => {
               }
             }}>
               {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
-              {(zkLoginData && (zkLoginData as any)?.email) ?(addPoint((zkLoginData as any)?.email,3)): addPoint(currentAccount?.address as string)}
+              {(zkLoginData && zkLoginData?.email) ?(addPoint(zkLoginData?.email,3)): addPoint(currentAccount?.address || zkLoginData?.zkloginUserAddress as string,3)}
               <ArrowDownIcon className="text-[16px] text-white/60" />
             </button>
             {
               openDown ? (
                 <div className="absolute top-[36px] w-full pt-[14px]">
                   <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
-                    <Link href="/profile" className="inline-block w-full">
-                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
-                        <ProfileIcon />
-                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">Profile</span>
-                      </div>
-                    </Link>
-                    <Link href="/setting" className="inline-block w-full">
-                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
-                        <SettingsIcon />
-                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">Settings</span>
-                      </div>
-                    </Link>
+                    {/*<Link href="/profile" className="inline-block w-full">*/}
+                    {/*  <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">*/}
+                    {/*    <ProfileIcon />*/}
+                    {/*    <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.profile')}</span>*/}
+                    {/*  </div>*/}
+                    {/*</Link>*/}
+                    {/*<Link href="/setting" className="inline-block w-full">*/}
+                    {/*  <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">*/}
+                    {/*    <SettingsIcon />*/}
+                    {/*    <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.settings')}</span>*/}
+                    {/*  </div>*/}
+                    {/*</Link>*/}
                     <Link href="#" className="inline-block w-full">
                       <div
                         className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
@@ -247,7 +247,7 @@ const Signin = () => {
                         }}
                       >
                         <LogoutIcon />
-                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">Logout</span>
+                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.logout')}</span>
                       </div>
                     </Link>
                   </div>
@@ -255,7 +255,7 @@ const Signin = () => {
               ) : ''
             }
           </div>
-        ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-50 hover:opacity-100 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => setOpen(true)}>
+        ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-50 hover:opacity-100 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => dispatch(setSigninOpen(true))}>
           {t('header.signIn')}
         </button>
       }
@@ -264,13 +264,13 @@ const Signin = () => {
         <DialogContent className="max-w-[400px] w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[16px] shadow-2xl shadow-black/50">
           <div className="flex items-center justify-between">
             <span className='inline-block h-[16px] leading-[16px] text-[24px] text-white font-bold'>{t('header.signIn')}</span>
-            <CloseIcon className="text-[16px] text-white/40 hover:text-white cursor-pointer" onClick={() => setOpen(false)} />
+            <CloseIcon className="text-[16px] text-white/40 hover:text-white cursor-pointer" onClick={() => dispatch(setSigninOpen(false))} />
           </div>
           <div className="mt-[24px] h-[16px] leading-[16px] text-[12px] text-white/60">{t('header.desc')}</div>
           <div className="mt-[24px]">
             <Zklogin onJump={() => {
-              setOpen(false)
-              setOpenLoading(true)
+              dispatch(setSigninOpen(false))
+              dispatch(setSigninLoading(true))
             }}/>
 
             <div className="my-[12px] h-[16px] leading-[16px] text-[16px] text-white text-center">{t('header.or')}</div>

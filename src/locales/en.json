@@ -10,7 +10,10 @@
     "copyAddress": "Copy address",
     "menu": "Wallet",
     "disconnect": "Disconnect",
-    "connectingGoogle": "Connecting with Google..."
+    "connectingGoogle": "Connecting with Google...",
+    "profile": "Profile",
+    "settings": "Settings",
+    "logout": "Logout"
   },
   "categories": {
     "trending": "Trending",
@@ -92,6 +95,17 @@
     "trySearching": "Try searching for \"{query}\""
   },
   "predictions": {
+    "buy": "Buy",
+    "sell": "Sell",
+    "outcomes": "Outcomes",
+    "amount": "Amount",
+    "balance": "Balance",
+    "trading": "By trading, you agree to the",
+    "terms": "Terms of Use",
+    "buySuccess": "Successful purchase",
+    "buyError": "Purchase failed",
+    "saleSuccess": "Successful sale",
+    "saleError": "Sale failed",
     "questions": {
       "shanghaiMicroelectronics": "Will Shanghai Microelectronics go public?",
       "ethBreakAth": "Will ETH Break ATH in 2025?",
@@ -105,6 +119,36 @@
       "australiaPalestine": "Australia to officially recognize the State of Palestine this year?",
       "earthquake9": "9.0 magnitude earthquake anywhere this year?",
       "bricsNewMember": "Will BRICS add a new member by December 31?"
+    },
+    "integralModal": {
+      "deposit": "Deposit",
+      "withdraw": "Withdraw",
+      "positions": "Positions",
+      "trades": "Trades",
+      "transaction": "Transaction",
+      "sale": "Sale",
+      "entryPrice": "Entry Price",
+      "marketPrice": "Market Price",
+      "bet": "Bet",
+      "current": "Current",
+      "pnl": "Pnl",
+      "toWin": "To win",
+      "loaded": "All items Loaded.",
+      "nothing": "Nothing yet",
+      "type": "Type",
+      "price": "Price",
+      "value": "Value",
+      "date": "Date"
     }
+  },
+  "send": {
+    "send": "Send Token",
+    "amount": "Amount",
+    "balance": "Balance",
+    "to": "To",
+    "warning": "Please, pay attention that this is OneChain network. Sending via another network could lead to the loss of your crypto.",
+    "continue": "Continue",
+    "sendSuccess": "Successful send",
+    "sendError": "Send failed"
   }
 }

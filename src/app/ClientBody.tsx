@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@onelabs/dapp-kit';
 import { getFullnodeUrl, type SuiClientOptions } from '@onelabs/sui/client';
 import InitAuth from '@/components/InitAuth'
+import GlobalLoading from '@/components/GlobalLoading'
 import {store} from '@/store'
 import '@onelabs/dapp-kit/dist/index.css';
 
@@ -53,6 +54,8 @@ export default function ClientBody({
               <div className="antialiased">{children}</div>
               {/* 客户端挂载后恢复登录态/本地数据 */}
               <InitAuth />
+              {/* 全局Loading组件 */}
+              <GlobalLoading />
             </WalletProvider>
           ) : null}
         </SuiClientProvider>

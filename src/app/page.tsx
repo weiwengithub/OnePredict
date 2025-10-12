@@ -158,9 +158,6 @@ export default function Home() {
       {/* PWA Install Prompt */}
       <PWAInstallPrompt />
 
-      {/* Floating Theme Toggle */}
-      <FloatingThemeToggle />
-
       {/* Footer */}
       <Footer />
     </div>

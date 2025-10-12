@@ -16,7 +16,7 @@ export default function Footer() {
 
   return (
     <footer className="bg-[#04122B] border-t border-white/10 mt-[70px]">
-      <div className="max-w-[1728px] mx-auto px-[40px] py-12">
+      <div className="max-w-[1728px] mx-auto px-[40px] py-[37px]">
         {/* Main Footer Content */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-8">
           {/* Company Info */}
@@ -26,7 +26,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div className="lg:col-span-1 flex justify-center gap-[56px]">
+          <div className="lg:col-span-1 flex justify-center gap-[56px] pt-[18px]">
             {/* Privacy */}
             <Link href="/" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
               {t('footer.privacy')}
@@ -48,7 +48,7 @@ export default function Footer() {
             </Link>
           </div>
 
-          <div className="lg:col-span-1 flex flex-col items-center lg:items-end">
+          <div className="lg:col-span-1 flex flex-col items-center lg:items-end pt-[18px]">
             {/* Social Media */}
             <div className="flex items-center space-x-[8px]">
               <a

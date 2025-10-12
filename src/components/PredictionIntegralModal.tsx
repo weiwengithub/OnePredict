@@ -17,16 +17,19 @@ import AppleIcon from "@/assets/icons/apple.svg";
 import WalletIcon from "@/assets/icons/walletIcon.svg";
 import { useUsdhBalance } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
-import {addPoint, onCopyToText} from "@/lib/utils";
+import {addPoint, onCopyToText, timeAgoEn} from "@/lib/utils";
 import { TabSkeleton } from "@/components/SkeletonScreens";
 import { MarketPositionOption, MarketTradeOption, TransactionOption } from "@/lib/api/interface";
+import SaleModal from "@/components/SaleModal";
+import { TooltipAmount } from "@/components/TooltipAmount";
+import {useRouter} from "next/navigation";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 interface PredictionIntegralModalProps {
   isOpen: boolean;
   onClose: () => void;
   onShowDeposit: () => void;
   onShowWithdraw: () => void;
-  onShowSale: () => void;
   prediction: {
     question: string;
     chance: number;
@@ -41,15 +44,17 @@ export default function PredictionIntegralModal({
   onClose,
   onShowDeposit,
   onShowWithdraw,
-  onShowSale,
   prediction,
 }: PredictionIntegralModalProps) {
-  const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
+  const { t } = useLanguage();
+  const router = useRouter();
   const [amount, setAmount] = useState<number>(0);
   const [currentTab, setCurrentTab] = useState<'positions' | 'trades' | 'transaction'>('positions');
   const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [tradeList, setTradeList] = useState<MarketTradeOption[]>([]);
   const [transactionList, setTransactionList] = useState<TransactionOption[]>([]);
+  const [showSale, setShowSale] = useState(false);
+  const [salePosition, setSalePosition] = useState<MarketPositionOption | null>(null);
 
   // 添加加载状态管理
   const [loading, setLoading] = useState<boolean>(false);
@@ -57,11 +62,11 @@ export default function PredictionIntegralModal({
 
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
-  console.log('************** 123');
-  console.log(zkLoginData);
   const { balance: usdhBalance } = useUsdhBalance({
     pollMs: 0, // 可选：例如 5000 开启 5s 轮询
   });
+  console.log('*************123')
+  console.log(currentAccount);
 
   // 组件加载时的初始化效果
   useEffect(() => {
@@ -81,28 +86,6 @@ export default function PredictionIntegralModal({
       };
     }
   }, [isOpen]);
-
-  const yesPrice = prediction.chance / 100;
-  const noPrice = (100 - prediction.chance) / 100;
-
-  const handleAmountChange = (value: string) => {
-    const numValue = parseFloat(value) || 0;
-    setAmount(Math.max(0, numValue));
-  };
-
-  const addAmount = (value: number) => {
-    setAmount(prev => Math.max(0, prev + value));
-  };
-
-  const setMaxAmount = () => {
-    setAmount(Number(usdhBalance));
-  };
-
-  const handleTrade = () => {
-    // 这里将来会实现实际的交易逻辑
-    console.log('Trade:', { tradeType, amount, prediction });
-    onClose();
-  };
 
   // 优化getMarketPosition函数，添加错误处理和加载状态
   const getMarketPosition = useCallback(async () => {
@@ -243,11 +226,11 @@ export default function PredictionIntegralModal({
             {zkLoginData ? (
               <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
             ) : (
-              <div className="leading-[20px] text-[18px] text-white font-bold">123456789@gmail.com</div>
+              <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
             ) }
             <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
-              <span>{zkLoginData ? addPoint(zkLoginData.zkloginUserAddress) : ''}</span>
-              <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : '')} />
+              <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
+              <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
             </div>
           </div>
           <CloseIcon className="text-[24px] text-[#D2D1D1] hover:text-white cursor-pointer" onClick={onClose} />
@@ -255,7 +238,7 @@ export default function PredictionIntegralModal({
 
         {/* Balance */}
         <div className="flex-none mt-[35px] h-[220px] bg-[url(/images/card-bg.png)] bg-no-repeat bg-cover bg-center rounded-[16px] p-[16px]">
-          <div className="leading-[16px] text-[16px] text-white">Balance</div>
+          <div className="leading-[16px] text-[16px] text-white">{t('predictions.balance')}</div>
           <div className="flex items-end mt-[24px]">
             <span className="leading-[24px] text-[32px] text-white">{usdhBalance}</span>
             <span className="ml-[4px] leading-[19px] text-[20px] text-white/60">USDH</span>
@@ -268,7 +251,7 @@ export default function PredictionIntegralModal({
               <div className="size-[16px] bg-white rounded-full flex items-center justify-center">
                 <DownIcon className="text-[8px] text-black" />
               </div>
-              <div className="ml-[10px] leading-[24px] text-white text-[16px]">Deposit</div>
+              <div className="ml-[10px] leading-[24px] text-white text-[16px]">{t('predictions.integralModal.deposit')}</div>
             </div>
             <div
               className="flex-1 h-[56px] flex items-center justify-center bg-[#FAFAFA] rounded-[16px] cursor-pointer"
@@ -277,7 +260,7 @@ export default function PredictionIntegralModal({
               <div className="size-[16px] bg-black rounded-full flex items-center justify-center">
                 <UpIcon className="text-[8px] text-white" />
               </div>
-              <div className="ml-[10px] leading-[24px] text-black text-[16px]">Withdraw</div>
+              <div className="ml-[10px] leading-[24px] text-black text-[16px]">{t('predictions.integralModal.withdraw')}</div>
             </div>
           </div>
         </div>
@@ -289,20 +272,20 @@ export default function PredictionIntegralModal({
                 className={`leading-[24px] text-[20px] font-bold ${currentTab === 'positions' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
                 onClick={() => {setCurrentTab('positions');}}
               >
-                Positions
+                {t('predictions.integralModal.positions')}
               </span>
             <span
               className={`leading-[24px] text-[20px] font-bold ${currentTab === 'trades' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
               onClick={() => {setCurrentTab('trades');}}
             >
-                Trades
+                {t('predictions.integralModal.trades')}
               </span>
-            <span
-              className={`leading-[24px] text-[20px] font-bold ${currentTab === 'transaction' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
-              onClick={() => {setCurrentTab('transaction');}}
-            >
-                Transaction
-              </span>
+            {/*<span*/}
+            {/*  className={`leading-[24px] text-[20px] font-bold ${currentTab === 'transaction' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}*/}
+            {/*  onClick={() => {setCurrentTab('transaction');}}*/}
+            {/*>*/}
+            {/*    {t('predictions.integralModal.transaction')}*/}
+            {/*  </span>*/}
           </div>
 
           {/* 骨架屏加载状态 */}
@@ -319,75 +302,92 @@ export default function PredictionIntegralModal({
               {positionList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
                   {positionList.map((position, index) => (
-                    <div key={position.marketId || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                    <div
+                      key={`${position.marketId}_${index}`}
+                      className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20 cursor-pointer"
+                      onClick={() => {
+                        router.push(`/details?marketId=${position.marketId}`);
+                      }}
+                    >
                       <div className="flex items-center">
-                        <Image src="/images/demo.png" alt="" width={40} height={40} />
+                        <Image src={position.marketImage} alt="" width={40} height={40} />
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
-                            {position.question || "Will US–EU strike a tariff deal?"}
+                            {position.marketName}
                           </div>
                           <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
-                            {position.price || "37.15"} {position.outcome || "Yes"}
+                            <TooltipAmount
+                              shares={position.shares} // 最小单位
+                              decimals={9}             // 精度
+                              precision={2}            // 触发器上显示两位小数
+                              suffix={position.outcomeName}
+                              // 可选：自定义格式（加千分位等）
+                              // formatter={(s) => formatNumberWithSeparator(s)}
+                            />
                           </div>
                         </div>
                         <div className="text-white px-[12px] text-[12px] mx-[20px]">
                           <ExportIcon />
                         </div>
                         <div
-                          className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px]"
-                          onClick={onShowSale}
-                        >Sale</div>
+                          className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px] cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSalePosition(position)
+                            setShowSale(true)
+                          }}
+                        >{t('predictions.integralModal.sale')}</div>
                       </div>
                       <div className="mt-[24px] flex pt-[24px] border-t border-white/10">
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">Entry Price</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.entryPrice')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {position.entryPrice || "0.5"}
+                            <TooltipAmount shares={position.entryPrice} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">Market Price</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.marketPrice')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {position.marketPrice || "32.91"}
+                            <TooltipAmount shares={position.marketPrice} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">Bet</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.bet')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {position.betAmount || "32.91"}
+                            <TooltipAmount shares={position.bet} decimals={0} precision={2}/>
                           </div>
                         </div>
                       </div>
                       <div className="mt-[16px] flex">
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">Current</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.current')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {position.currentValue || "0.5"}
+                            <TooltipAmount shares={position.positionValue} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">Pnl</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.pnl')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {position.pnl || "32.91"}
+                            <TooltipAmount shares={position.pnl} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">To win</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.toWin')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {position.toWin || "32.91"}
+                            <TooltipAmount shares={position.winProfit} decimals={0} precision={2}/>
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
-                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">All items Loaded.</div>
+                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
                 </div>
               ) : (
                 <>
                   <div className="mt-[40px] mx-auto size-[48px]">
                     <Image src="/images/list-empty.png" alt="" width={48} height={48} />
                   </div>
-                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">Nothing yet</div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.nothing')}</div>
                 </>
               )}
             </>
@@ -397,54 +397,65 @@ export default function PredictionIntegralModal({
               {tradeList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
                   {tradeList.map((trade, index) => (
-                    <div key={trade.marketId || index} className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                    <div
+                      key={`${trade.marketId}_${index}`}
+                      className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20"
+                      onClick={() => {
+                        router.push(`/details?marketId=${trade.marketId}`);
+                      }}
+                    >
                       <div className="flex">
-                        <Image src="/images/demo.png" alt="" width={40} height={40} />
+                        <Image src={trade.marketImage} alt="" width={40} height={40} />
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
-                            {trade.question || "Will US–EU strike a tariff deal?"}
+                            {trade.marketName}
                           </div>
                           <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
-                            {trade.price || "37.15"} {trade.outcome || "Yes"}
+                            <TooltipAmount
+                              shares={trade.deltaShares}
+                              decimals={9}
+                              precision={2}
+                              suffix={trade.outcome ? 'NO' : 'YES'}
+                            />
                           </div>
                         </div>
                       </div>
                       <div className="mt-[24px] flex justify-between pt-[24px] border-t border-white/10">
                         <div>
-                          <div className="leading-[12px] text-[12px] text-white/60">Type</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.type')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white">
-                            {trade.type || "Buy"}
+                            {trade.side.replace(/^\p{L}/u, c => c.toLocaleUpperCase())}
                           </div>
                         </div>
                         <div>
-                          <div className="leading-[12px] text-[12px] text-white/60">Price</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.price')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {trade.tradePrice || "0.5"}
+                            <TooltipAmount shares={trade.amount} decimals={9} precision={2}/>
                           </div>
                         </div>
                         <div>
-                          <div className="leading-[12px] text-[12px] text-white/60">Value</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.value')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            {trade.value || "32.91"}
+                            <TooltipAmount shares={trade.amount} decimals={9} precision={2}/>
                           </div>
                         </div>
                         <div>
-                          <div className="leading-[12px] text-[12px] text-white/60">Date</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.date')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white">
-                            {trade.date || "4 days ago"}
+                            {timeAgoEn(trade.createdMs)}
                           </div>
                         </div>
                       </div>
                     </div>
                   ))}
-                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">All items Loaded.</div>
+                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
                 </div>
               ) : (
                 <div>
                   <div className="mt-[40px] mx-auto size-[48px]">
                     <Image src="/images/list-empty.png" alt="" width={48} height={48} />
                   </div>
-                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">Nothing yet</div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.nothing')}</div>
                 </div>
               )}
             </>
@@ -481,20 +492,23 @@ export default function PredictionIntegralModal({
                       </div>
                     ))}
                   </div>
-                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">All items Loaded.</div>
+                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
                 </div>
               ) : (
                 <div>
                   <div className="mt-[40px] mx-auto size-[48px]">
                     <Image src="/images/list-empty.png" alt="" width={48} height={48} />
                   </div>
-                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">Nothing yet</div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.nothing')}</div>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Sale Modal */}
+      <SaleModal open={showSale} position={salePosition} onOpenChange={setShowSale}></SaleModal>
     </>
   );
 }
