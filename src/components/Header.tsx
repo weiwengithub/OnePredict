@@ -93,7 +93,6 @@ export default function Header({ currentPage }: HeaderProps) {
     }
   };
 
-  const showMenu = false;
   return (
     <>
       <header
@@ -115,36 +114,34 @@ export default function Header({ currentPage }: HeaderProps) {
             </div>
 
             {/* Center - Navigation (绝对居中) */}
-            {showMenu && (
-              <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-                <nav className="flex gap-[40px] items-center justify-center">
-                  {navigationItems.map((item) => (
-                    <Link
-                      key={item.key}
-                      href={item.href}
-                      className={`
+            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
+              <nav className="flex gap-[40px] items-center justify-center">
+                {navigationItems.map((item) => (
+                  <Link
+                    key={item.key}
+                    href={item.href}
+                    className={`
                     h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200
                     hover:text-[#477CFC] relative group whitespace-nowrap
                     ${activePage === item.key
-                        ? 'text-[#477CFC] font-medium'
-                        : 'text-white'
-                      }
+                      ? 'text-[#477CFC] font-medium'
+                      : 'text-white'
+                    }
                   `}
-                    >
-                      {item.label}
+                  >
+                    {item.label}
 
-                      {/* 活跃页面下划线 */}
-                      {/*{activePage === item.key && (*/}
-                      {/*  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />*/}
-                      {/*)}*/}
+                    {/* 活跃页面下划线 */}
+                    {/*{activePage === item.key && (*/}
+                    {/*  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />*/}
+                    {/*)}*/}
 
-                      {/* 悬停效果 */}
-                      {/*<div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />*/}
-                    </Link>
-                  ))}
-                </nav>
-              </div>
-            )}
+                    {/* 悬停效果 */}
+                    {/*<div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />*/}
+                  </Link>
+                ))}
+              </nav>
+            </div>
 
             {/* Right side - User menu */}
             <div className="flex items-center gap-[8px] z-10">

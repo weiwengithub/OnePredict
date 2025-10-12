@@ -221,18 +221,18 @@ const Signin = () => {
               openDown ? (
                 <div className="absolute top-[36px] w-full pt-[14px]">
                   <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
-                    {/*<Link href="/profile" className="inline-block w-full">*/}
-                    {/*  <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">*/}
-                    {/*    <ProfileIcon />*/}
-                    {/*    <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.profile')}</span>*/}
-                    {/*  </div>*/}
-                    {/*</Link>*/}
-                    {/*<Link href="/setting" className="inline-block w-full">*/}
-                    {/*  <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">*/}
-                    {/*    <SettingsIcon />*/}
-                    {/*    <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.settings')}</span>*/}
-                    {/*  </div>*/}
-                    {/*</Link>*/}
+                    <Link href="/profile" className="inline-block w-full">
+                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
+                        <ProfileIcon />
+                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.profile')}</span>
+                      </div>
+                    </Link>
+                    <Link href="/setting" className="inline-block w-full">
+                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
+                        <SettingsIcon />
+                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.settings')}</span>
+                      </div>
+                    </Link>
                     <Link href="#" className="inline-block w-full">
                       <div
                         className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
