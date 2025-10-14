@@ -127,6 +127,7 @@
       "trades": "Trades",
       "transaction": "Transaction",
       "sale": "Sale",
+      "claim": "Claim",
       "entryPrice": "Entry Price",
       "marketPrice": "Market Price",
       "bet": "Bet",
@@ -143,6 +144,7 @@
   },
   "send": {
     "send": "Send Token",
+    "select": "Select Token",
     "amount": "Amount",
     "balance": "Balance",
     "to": "To",
@@ -150,5 +152,29 @@
     "continue": "Continue",
     "sendSuccess": "Successful send",
     "sendError": "Send failed"
+  },
+  "detail": {
+    "options": "Options",
+    "chance": "Chance",
+    "currentPrice": "Current Price"
+  },
+  "time": {
+    "justNow": "just now",
+    "second_past_one": "{{count}} second ago",
+    "second_past_other": "{{count}} seconds ago",
+    "second_future_one": "in {{count}} second",
+    "second_future_other": "in {{count}} seconds",
+    "minute_past_one": "{{count}} minute ago",
+    "minute_past_other": "{{count}} minutes ago",
+    "minute_future_one": "in {{count}} minute",
+    "minute_future_other": "in {{count}} minutes",
+    "hour_past_one": "{{count}} hour ago",
+    "hour_past_other": "{{count}} hours ago",
+    "hour_future_one": "in {{count}} hour",
+    "hour_future_other": "in {{count}} hours",
+    "day_past_one": "{{count}} day ago",
+    "day_past_other": "{{count}} days ago",
+    "day_future_one": "in {{count}} day",
+    "day_future_other": "in {{count}} days"
   }
 }

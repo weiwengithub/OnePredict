@@ -3,7 +3,7 @@ import { Transaction } from "@onelabs/sui/transactions";
 import { Ed25519Keypair } from "@onelabs/sui/keypairs/ed25519";
 import { getZkLoginSignature, genAddressSeed } from "@onelabs/sui/zklogin";
 // import { post } from "@/http";
-import apiClient from "@/lib/api/client";
+import {apiClient} from "@/lib/api/client";
 import { jwtDecode } from 'jwt-decode';
 import {store} from "@/store";
 import currentNetwork from "@/assets/config";

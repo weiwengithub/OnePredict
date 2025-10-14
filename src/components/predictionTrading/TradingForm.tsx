@@ -26,38 +26,22 @@ import {TooltipAmount} from "@/components/TooltipAmount";
 import {fix, toDisplayDenomAmount} from "@/lib/numbers";
 
 interface TradingFormProps {
-  initialOutcome: 'yes' | 'no';
-  marketId: string;
-  packageId: string;
-  coinType: string;
-  pProbsJson: string[];
-  outcomeYields: {
-    YES: string;
-    NO: string;
-  }
-  buyFee: string;
+  prediction: MarketOption;
+  initialOutcome: number;
+  outcomeChange?: (next: number) => void;
   onClose?: () => void;
 }
 
-export default function TradingForm({
-  initialOutcome,
-  marketId,
-  packageId,
-  coinType,
-  pProbsJson,
-  outcomeYields,
-  buyFee,
-  onClose
-}: TradingFormProps) {
+export default function TradingForm({prediction, initialOutcome, outcomeChange, onClose}: TradingFormProps) {
   const { t } = useLanguage();
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [buyOutcome, setBuyOutcome] = useState<'yes' | 'no'>(initialOutcome);
+  const [buyOutcome, setBuyOutcome] = useState<number>(0);
   const [sellOutcome, setSellOutcome] = useState(0);
   const [amount, setAmount] = useState<number | string>('');
   const [sellAmount, setSellAmount] = useState<number | string>('');
-  const [sellAvailable, setSellAvailable] = useState<number | string>('');
-  const yesPrice = new BigNumber(pProbsJson[0]).shiftedBy(-12);
-  const noPrice = new BigNumber(pProbsJson[1]).shiftedBy(-12);
+  const [sellAvailable, setSellAvailable] = useState<number | string>(0);
+  const yesPrice = new BigNumber(prediction.pProbsJson[0]).shiftedBy(-12);
+  const noPrice = new BigNumber(prediction.pProbsJson[1]).shiftedBy(-12);
   const [progress, setProgress] = useState(0);
   const [sellProgress, setSellProgress] = useState(0);
   const suiClient = useSuiClient() as any;
@@ -65,6 +49,10 @@ export default function TradingForm({
   const dispatch = useDispatch();
   const [tradeDeadlineTime, setTradeDeadlineTime] = useState('');
   const [showTradeDeadline, setShowTradeDeadline] = useState<boolean>(false);
+
+  useEffect(() => {
+    setBuyOutcome(initialOutcome)
+  }, [initialOutcome]);
 
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
@@ -116,8 +104,8 @@ export default function TradingForm({
     store.dispatch(showLoading('Processing transaction...'));
     try {
       const marketClient = new MarketClient(suiClient, {
-        packageId: packageId,
-        coinType: coinType
+        packageId: prediction.packageId,
+        coinType: prediction.coinType
       });
       // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
       const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
@@ -125,22 +113,23 @@ export default function TradingForm({
         console.error('No wallet connected');
         return;
       }
-      const coins = await suiClient.getCoins({ owner, coinType: coinType });
+      const coins = await suiClient.getCoins({ owner, coinType: prediction.coinType });
       const coinObjectId = coins?.data?.[0]?.coinObjectId;
       if (!coinObjectId) {
-        console.error('No coin object found for type:', coinType);
+        console.error('No coin object found for type:', prediction.coinType);
         return;
       }
-      const payAmount = MarketClient.calcTotalFromCost(Number(amount) * Math.pow(10, 9), buyFee);
+      const payAmount = MarketClient.calcTotalFromCost(Number(amount) * Math.pow(10, 9), prediction.paramsJson.buy_fee_bps);
       const tx = await marketClient.buildBuyByAmountTx({
-        marketId: marketId,
-        outcome: buyOutcome === 'yes' ? 0 : 1,
+        marketId: prediction.marketId,
+        outcome: buyOutcome,
         amount: payAmount,
         paymentCoinId: coinObjectId,
         minSharesOut: 0,
       });
       console.log(tx)
       await executeTransaction(tx, false);
+      setAmount('')
       toast.success(t('predictions.buySuccess'));
       onClose && onClose();
       setTimeout(() => refresh(), 2000);
@@ -157,7 +146,6 @@ export default function TradingForm({
     setOwnerAddress(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')
   }, [currentAccount, zkLoginData])
 
-  // const [positionList, setPositionList] = useState<Array<{type: 'yes' | 'no'; id: number;}>>([{type: 'yes', id: 1}, {type: 'no', id: 2}]);
   const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [showCheckPosition, setShowCheckPosition] = useState(false);
   const getMarketPosition = useCallback(async () => {
@@ -172,7 +160,7 @@ export default function TradingForm({
 
       // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
-        const list = res.data.items.filter(item => item.marketId === marketId);
+        const list = res.data.items.filter(item => item.marketId === prediction.marketId);
         list.sort((a, b) => a.outcome > b.outcome ? 1 : -1);
         if (list.length > 0) {
           setSellOutcome(list[0].outcome)
@@ -193,7 +181,7 @@ export default function TradingForm({
   }, []);
 
   const toWin = useMemo(() => {
-    const _yield = buyOutcome === 'yes' ? outcomeYields.YES : outcomeYields.NO;
+    const _yield = prediction.outcomeYields[prediction.metaJson.outcomes[buyOutcome]];
     return amount ? Number(_yield) * Number(amount) : 0
   }, [buyOutcome, amount])
 
@@ -276,25 +264,31 @@ export default function TradingForm({
             </div>
             <div className="grid grid-cols-2 gap-3">
               <button
-                onClick={() => setBuyOutcome('yes')}
+                onClick={() => {
+                  setBuyOutcome(0)
+                  outcomeChange && outcomeChange(0)
+                }}
                 className={`h-[48px] rounded-[8px] border-none text-[16px] font-bold transition-all ${
-                  buyOutcome === 'yes'
+                  buyOutcome === 0
                     ? 'bg-[#29C04E] hover:bg-[#29C04E] text-white'
                     : 'bg-[#34503B] hover:bg-[#29C04E] text-[#089C2B] hover:text-white'
                 }`}
               >
-                YES {yesPrice.toFixed(2)}
+                {prediction.metaJson.outcomes[0]} {yesPrice.toFixed(2)}
               </button>
 
               <button
-                onClick={() => setBuyOutcome('no')}
+                onClick={() => {
+                  setBuyOutcome(1)
+                  outcomeChange && outcomeChange(1)
+                }}
                 className={`h-[48px] rounded-[8px] border-none text-[16px] font-bold transition-all ${
-                  buyOutcome === 'no'
+                  buyOutcome === 1
                     ? 'bg-[#F95D5D] hover:bg-[#F95D5D] text-white'
                     : 'bg-[rgba(249,93,93,0.5)] hover:bg-[#F95D5D] text-[#E04646] hover:text-white'
                 }`}
               >
-                NO {noPrice.toFixed(2)}
+                {prediction.metaJson.outcomes[1]} {noPrice.toFixed(2)}
               </button>
             </div>
           </div>
@@ -400,7 +394,7 @@ export default function TradingForm({
               disabled={!amount}
               className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {`Buy ${buyOutcome.toUpperCase()}`}
+              {`Buy ${prediction.metaJson.outcomes[buyOutcome]}`}
             </Button>
           ) : (
             <Button
@@ -551,7 +545,7 @@ export default function TradingForm({
               disabled={!sellAmount}
               className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {`Sell ${sellOutcome ? 'NO' : 'YES'}`}
+              {`Sell ${prediction.metaJson.outcomes[sellOutcome]}`}
             </Button>
           ) : (
             <Button

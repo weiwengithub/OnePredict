@@ -128,6 +128,7 @@
       "trades": "交易",
       "transaction": "交易记录",
       "sale": "卖出",
+      "claim": "领取",
       "entryPrice": "入场价",
       "marketPrice": "市价",
       "bet": "下注",
@@ -144,6 +145,7 @@
   },
   "send": {
     "send": "发送代币",
+    "select": "选择代币",
     "amount": "金额",
     "balance": "余额",
     "to": "收款地址",
@@ -151,5 +153,16 @@
     "continue": "继续",
     "sendSuccess": "发送成功",
     "sendError": "发送失败"
+  },
+  "time": {
+    "justNow": "刚刚",
+    "second_past": "{{count}} 秒前",
+    "second_future": "{{count}} 秒后",
+    "minute_past": "{{count}} 分钟前",
+    "minute_future": "{{count}} 分钟后",
+    "hour_past": "{{count}} 小时前",
+    "hour_future": "{{count}} 小时后",
+    "day_past": "{{count}} 天前",
+    "day_future": "{{count}} 天后"
   }
 }

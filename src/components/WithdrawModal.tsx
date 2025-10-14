@@ -130,7 +130,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
               />
             </div>
           </div>
-          <div className="mt-[28px] h-[16px] leading-[16px] text-[16px] text-white/60">{t('send.send')}</div>
+          <div className="mt-[28px] h-[16px] leading-[16px] text-[16px] text-white/60">{t('send.select')}</div>
           <div className="mt-[8px]">
             <Select value={token} onValueChange={(v) => console.log(v)}>
               <SelectTrigger className="h-[48px] w-full bg-white/10 border-none rounded-[8px] text-white text-[14px] px-[12px]">

@@ -44,21 +44,27 @@ export default function Home() {
     }
   }, [isMobile]);
 
-  const didFetchRef = useRef(false);
   const [predictionData, setPredictionData] = useState<MarketOption[]>([]);
+  const [predictionPageNumber, setPredictionPageNumber] = useState(1);
+  const [predictionPageSize, setPredictionPageSize] = useState(10);
+  const abortRef = useRef<AbortController | null>(null);
   useEffect(() => {
-    if (didFetchRef.current) return;   // 防止 StrictMode 下的第二次执行
-    didFetchRef.current = true;
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     (async () => {
-      try {
-        const {data} = await apiService.getMarketList();
-        setPredictionData(data.item)
-      } catch (e) {
-        console.error(e);
-      }
-    })();
-  }, []);
+      const {data} = await apiService.getMarketList({
+        limit: predictionPageSize,
+        offset: predictionPageNumber
+      }, { signal: controller.signal });
+      data.item[0].startedMs = Date.now() + 38*3600*1000;
+      setPredictionData(data.item)
+    })().catch((e) => {
+      if (e?.name !== "AbortError") console.error(e);
+    });
+    return () => controller.abort();
+  }, [predictionPageNumber, predictionPageSize]);
 
   const carouselData = [
     {

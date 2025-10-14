@@ -5,6 +5,7 @@ import { bcs, fromHEX, toHEX } from '@onelabs/bcs';
 import { toast } from "sonner";
 import BigNumber from 'bignumber.js';
 import i18n from '@/lib/i18n'
+import { TFunction } from "i18next";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -283,26 +284,42 @@ export function formatShortDate(
 
 export function timeAgoEn(
   input: number | string | Date,
-  baseNow: number = Date.now() // 方便单元测试：可传一个“现在”的时间
+  baseNow: number = Date.now()
 ): string {
-  const target = toDate(input).getTime();
-  let diff = baseNow - target;           // >0 过去；<0 未来
+  const target = new Date(input).getTime(); // 假设你的 toDate 做的也是这件事
+  let diff = baseNow - target;              // >0 过去；<0 未来
   const future = diff < 0;
   diff = Math.abs(diff);
 
-  const HOUR = 3600_000;
-  const DAY = 24 * HOUR;
+  const SECOND = 5_000;
+  const MINUTE = 60 * SECOND;
+  const HOUR   = 60 * MINUTE;
+  const DAY    = 24 * HOUR;
 
-  const hours = Math.floor(diff / HOUR);
-  if (hours < 24) {
-    const n = hours;
+  // 小于 5 秒：直接 just now / in 0 seconds
+  if (diff < SECOND) return future ? "in 0 seconds" : "just now";
+
+  if (diff < MINUTE) {
+    const n = Math.floor(diff / SECOND);
+    const unit = n === 1 ? "second" : "seconds";
+    return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+  }
+
+  if (diff < HOUR) {
+    const n = Math.floor(diff / MINUTE);
+    const unit = n === 1 ? "minute" : "minutes";
+    return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+  }
+
+  if (diff < DAY) {
+    const n = Math.floor(diff / HOUR);
     const unit = n === 1 ? "hour" : "hours";
     return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
   }
 
-  const days = Math.floor(diff / DAY);
-  const unit = days === 1 ? "day" : "days";
-  return future ? `in ${days} ${unit}` : `${days} ${unit} ago`;
+  const n = Math.floor(diff / DAY);
+  const unit = n === 1 ? "day" : "days";
+  return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
 }
 
 function toDate(v: number | string | Date): Date {
@@ -314,4 +331,13 @@ function toDate(v: number | string | Date): Date {
   }
   return new Date(v);
 }
+
+export function capitalizeFirst(str = "") {
+  return str ? str[0].toUpperCase() + str.slice(1) : str;
+}
+
+export function capitalizeFirstLowerRest(str = "") {
+  return str ? str[0].toUpperCase() + str.slice(1).toLowerCase() : str;
+}
+
 

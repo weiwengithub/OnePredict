@@ -1,4 +1,6 @@
-import axios, { AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+import axios, { AxiosRequestConfig, AxiosInstance, AxiosResponse, AxiosError } from 'axios';
+
+export type ApiConfig = Omit<AxiosRequestConfig, "url" | "method" | "data">;
 
 // API基础配置
 const API_CONFIG = {
@@ -64,15 +66,15 @@ api.interceptors.response.use(
 );
 
 // 通用API方法
-const apiClient = {
+export const apiClient = {
   // GET请求
   get: <T = unknown>(url: string, params?: Record<string, unknown>): Promise<AxiosResponse<T>> => {
     return api.get(url, { params });
   },
 
   // POST请求
-  post: <T = unknown>(url: string, data?: Record<string, unknown>): Promise<AxiosResponse<T>> => {
-    return api.post(url, data);
+  post: <T = unknown>(url: string, data?: Record<string, unknown>, config?: ApiConfig): Promise<AxiosResponse<T>> => {
+    return api.post(url, data, config);
   },
 
   // PUT请求
@@ -90,5 +92,3 @@ const apiClient = {
     return api.patch(url, data);
   },
 };
-
-export default apiClient;

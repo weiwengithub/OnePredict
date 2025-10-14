@@ -1,5 +1,14 @@
-import apiClient from "@/lib/api/client";
-import {ResultData, ResMarketList, ResMarketPosition, ResMarketTradeHistory, ResTransactionHistory} from "@/lib/api/interface";
+import {apiClient, type ApiConfig} from "@/lib/api/client";
+import {
+  ResPage,
+  ResMarketList,
+  ResMarketPosition,
+  ResMarketTradeHistory,
+  ResTransactionHistory,
+  ResContractRedeem,
+  MarketOption,
+  MarketDetailTradesOption
+} from "@/lib/api/interface";
 
 // 具体的API接口方法
 export const apiService = {
@@ -19,13 +28,18 @@ export const apiService = {
   },
 
   // 获取市场列表
-  getMarketList: () => {
-    return apiClient.post<ResMarketList>('/api/market/list');
+  getMarketList: (data: {limit: number; offset: number},config?: ApiConfig) => {
+    return apiClient.post<ResMarketList>('/api/market/list', data, config);
   },
 
   // 获取市场详情
   getMarketDetail: (marketId: string) => {
-    return apiClient.post<ResMarketList>('/api/market/detail', {marketId});
+    return apiClient.post<MarketOption>('/api/market/detail', {marketId});
+  },
+
+  // 获取市场交易记录
+  getMarketDetailTrades: (data: {marketId: string; limit: number; offset: number}, config?: ApiConfig) => {
+    return apiClient.post<ResPage<MarketDetailTradesOption>>('/api/market/detail/trades', data, config);
   },
 
   // 获取用户持仓
@@ -41,6 +55,11 @@ export const apiService = {
   // 获取用户交易历史记录
   getTransactionHistory: (userAddr: string) => {
     return apiClient.post<ResTransactionHistory>('/api/user/transaction/history', {userAddr});
+  },
+
+  // 提取奖励
+  contractRedeem: (data: {coinType: string; marketId: string}) => {
+    return apiClient.post<ResContractRedeem>('/api/contract/redeem', data);
   },
 
   // 示例：获取预测详情

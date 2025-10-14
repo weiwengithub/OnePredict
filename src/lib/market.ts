@@ -94,6 +94,166 @@ export interface MarketView {
 }
 
 const BPS_SCALE = 10_000n;
+export const LMSR_SCALE = 1_000_000_000_000n; // 1e12 precision
+const LN2_SCALED = 693_147_180_560n; // ≈ ln(2) * 1e12
+
+function mulDivNearest(a: bigint, b: bigint, d: bigint): bigint {
+  if (d === 0n || a === 0n || b === 0n) return 0n;
+  const product = a * b;
+  const half = d / 2n;
+  if (product >= 0n) {
+    return (product + half) / d;
+  }
+  return (product - half) / d;
+}
+
+function mulScaleNearest(a: bigint, b: bigint): bigint {
+  return mulDivNearest(a, b, LMSR_SCALE);
+}
+
+function expScaled(x: bigint): bigint {
+  if (x <= 0n) return LMSR_SCALE;
+  const k = x / LN2_SCALED;
+  const r = x - k * LN2_SCALED;
+
+  const r1 = r;
+  const r2 = mulScaleNearest(r1, r);
+  const r3 = mulScaleNearest(r2, r);
+  const r4 = mulScaleNearest(r3, r);
+  const r5 = mulScaleNearest(r4, r);
+  const r6 = mulScaleNearest(r5, r);
+  const r7 = mulScaleNearest(r6, r);
+  const r8 = mulScaleNearest(r7, r);
+
+  let s = LMSR_SCALE;
+  s += r1;
+  s += r2 / 2n;
+  s += r3 / 6n;
+  s += r4 / 24n;
+  s += r5 / 120n;
+  s += r6 / 720n;
+  s += r7 / 5040n;
+  s += r8 / 40320n;
+
+  if (k <= 0n) return s;
+
+  let out = s;
+  let i = 0n;
+  while (i < k) {
+    out *= 2n;
+    i += 1n;
+  }
+  return out;
+}
+
+function lnSeriesAbs(t: bigint): bigint {
+  if (t === 0n) return 0n;
+  const t2 = mulScaleNearest(t, t);
+  const t3 = mulScaleNearest(t2, t);
+  const t5 = mulScaleNearest(t3, t2);
+  const t7 = mulScaleNearest(t5, t2);
+  const t9 = mulScaleNearest(t7, t2);
+  const t11 = mulScaleNearest(t9, t2);
+
+  let sum = t;
+  sum += t3 / 3n;
+  sum += t5 / 5n;
+  sum += t7 / 7n;
+  sum += t9 / 9n;
+  sum += t11 / 11n;
+  return sum * 2n;
+}
+
+function ln1pNegAbs(u: bigint): bigint {
+  if (u <= 0n) return 0n;
+  let clamped = u;
+  if (clamped >= LMSR_SCALE) {
+    clamped = LMSR_SCALE - 1n;
+  }
+  const denom = (2n * LMSR_SCALE) - clamped;
+  if (denom <= 0n) return 0n;
+  const t = mulDivNearest(clamped, LMSR_SCALE, denom);
+  return lnSeriesAbs(t);
+}
+
+export function lmsrRefundSell(
+  b: number | string | bigint,
+  prob: number | string | bigint,
+  deltaShares: number | string | bigint,
+): bigint {
+  const bBig = toBigIntNonNegative(b, 'b');
+  const probBig = toBigIntNonNegative(prob, 'prob');
+  const delta = toBigIntNonNegative(deltaShares, 'deltaShares');
+  if (bBig === 0n || probBig === 0n || probBig >= LMSR_SCALE || delta === 0n) return 0n;
+
+  const x = mulDivNearest(delta, LMSR_SCALE, bBig);
+  if (x <= 0n) return 0n;
+  const z = expScaled(x);
+  if (z <= 0n) return 0n;
+  const invZ = mulDivNearest(LMSR_SCALE, LMSR_SCALE, z);
+  const oneMinusInvZ = LMSR_SCALE - (invZ > LMSR_SCALE ? LMSR_SCALE : invZ);
+  if (oneMinusInvZ <= 0n) return 0n;
+  const u = mulDivNearest(probBig, oneMinusInvZ, LMSR_SCALE);
+  const lnabs = ln1pNegAbs(u);
+  if (lnabs <= 0n) return 0n;
+  return mulDivNearest(bBig, lnabs, LMSR_SCALE);
+}
+
+export interface PositionMetricsInput {
+  b: number | string | bigint;
+  prob: number | string | bigint;
+  shares: number | string | bigint;
+  totalSpent: number | string | bigint;
+  totalReceived: number | string | bigint;
+}
+
+export interface PositionMetrics {
+  positionValue: bigint;
+  pnl: bigint;
+  netExposure: bigint;
+  averageEntryPrice: bigint | null;
+}
+
+export function computePositionMetrics(input: PositionMetricsInput): PositionMetrics {
+  const shares = toBigIntNonNegative(input.shares, 'shares');
+  const positionValue = lmsrRefundSell(input.b, input.prob, shares);
+  const spent = toBigIntNonNegative(input.totalSpent, 'totalSpent');
+  const received = toBigIntNonNegative(input.totalReceived, 'totalReceived');
+
+  const pnl = positionValue + received - spent;
+  const netExposure = spent > received ? spent - received : 0n;
+  const averageEntryPrice = shares > 0n && netExposure > 0n ? netExposure / shares : null;
+
+  return {
+    positionValue,
+    pnl,
+    netExposure,
+    averageEntryPrice,
+  };
+}
+
+export interface SellQuoteInput {
+  b: number | string | bigint;
+  prob: number | string | bigint;
+  deltaShares: number | string | bigint;
+  sellFeeBps: number | string | bigint;
+}
+
+export interface SellQuote {
+  gross: bigint;
+  fee: bigint;
+  net: bigint;
+}
+
+export function calcSellQuote(input: SellQuoteInput): SellQuote {
+  const gross = lmsrRefundSell(input.b, input.prob, input.deltaShares);
+  if (gross === 0n) {
+    return { gross: 0n, fee: 0n, net: 0n };
+  }
+  const fee = calcFeeAmount(gross, input.sellFeeBps);
+  const net = gross > fee ? gross - fee : 0n;
+  return { gross, fee, net };
+}
 
 function toBigIntNonNegative(value: number | string | bigint, label: string): bigint {
   let result: bigint;
@@ -104,15 +264,19 @@ function toBigIntNonNegative(value: number | string | bigint, label: string): bi
       throw new Error(`${label} must be a finite integer`);
     }
     result = BigInt(value);
-  } else if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) throw new Error(`${label} must be provided`);
-    if (!/^-?\d+$/.test(trimmed)) {
-      throw new Error(`${label} must be an integer string`);
-    }
-    result = BigInt(trimmed);
   } else {
-    throw new Error(`${label} has unsupported type`);
+    {
+      const trimmed = value.trim();
+      {
+        if (!trimmed) throw new Error(`${label} must be provided`);
+        {
+          if (!/^-?\d+$/.test(trimmed)) {
+            throw new Error(`${label} must be an integer string`);
+          }
+          result = BigInt(trimmed);
+        }
+      }
+    }
   }
   if (result < 0n) {
     throw new Error(`${label} must be non-negative`);
@@ -221,13 +385,11 @@ export class MarketClient {
       }
       return BigInt(value);
     }
-    if (typeof value === 'string') {
-      const trimmed = value.trim();
-      if (!trimmed) {
-        throw new Error('amount must be provided');
-      }
-      return BigInt(trimmed);
+    const trimmed = value.trim();
+    if (!trimmed) {
+      throw new Error('amount must be provided');
     }
+    return BigInt(trimmed);
     throw new Error('invalid amount');
   }
 

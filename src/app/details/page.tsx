@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect, useRef} from "react";
+import React, {useState, useEffect, useRef, useCallback} from "react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
@@ -22,7 +22,7 @@ import ExportIcon from "@/assets/icons/export.svg";
 import ExchangeIcon from "@/assets/icons/exchange.svg";
 import SettingIcon from "@/assets/icons/setting.svg";
 import RefreshIcon from "@/assets/icons/refresh.svg";
-import ArrowDownIcon from "@/assets/icons/arrow-down.svg";
+
 import ArrowLeftIcon from "@/assets/icons/arrow-left.svg";
 import ArrowRightIcon from "@/assets/icons/arrow-right.svg";
 import OutcomeProposed from "@/assets/icons/outcomeProposed.svg";
@@ -30,7 +30,13 @@ import DisputeWindow from "@/assets/icons/disputeWindow.svg";
 import FinalOutcome from "@/assets/icons/finalOutcome.svg";
 import WechatIcon from "@/assets/icons/wechat.svg";
 import Image from "next/image";
-import {MarketOption} from "@/lib/api/interface";
+import {MarketOption, MarketDetailTradesOption} from "@/lib/api/interface";
+import {capitalizeFirst, formatShortDate, timeAgoEn} from "@/lib/utils";
+import {useLanguage} from "@/contexts/LanguageContext";
+import BigNumber from "bignumber.js";
+import { HoverTooltipButton } from "@/components/HoverTooltipButton";
+import { ClampableText } from "@/components/ClampableText";
+import {TooltipAmount} from "@/components/TooltipAmount";
 
 interface PredictionDetail {
   id: string;
@@ -51,20 +57,23 @@ interface PredictionDetail {
 }
 
 export default function PredictionDetailsClient() {
+  const { t } = useLanguage();
   const searchParams = useSearchParams();
   const marketId = searchParams.get("marketId") as string;
   const [isMobile, setIsMobile] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
 
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [userVote, setUserVote] = useState<'yes' | 'no'>('yes');
+  const [outcome, setOutcome] = useState(0);
   const [amount, setAmount] = useState<number>(0);
   const [balance] = useState<number>(0);
 
-  const handleTrade = () => {
-    // 这里将来会实现实际的交易逻辑
-    console.log('Trade:', { tradeType, userVote, amount, prediction });
-  };
+  const handleOutcomeChange = useCallback(
+    (next: number | ((prev: number) => number)) => {
+      setOutcome((prev) => (typeof next === "function" ? (next as any)(prev) : next));
+    },
+    []
+  );
 
   // Detect mobile viewport
   useEffect(() => {
@@ -78,7 +87,7 @@ export default function PredictionDetailsClient() {
   }, []);
 
   const didFetchRef = useRef(false);
-  const [predictionData, setPredictionData] = useState<MarketOption[]>([]);
+  const [predictionDetail, setPredictionDetail] = useState<MarketOption | null>(null);
   useEffect(() => {
     if (didFetchRef.current) return;   // 防止 StrictMode 下的第二次执行
     didFetchRef.current = true;
@@ -86,7 +95,7 @@ export default function PredictionDetailsClient() {
     (async () => {
       try {
         const {data} = await apiService.getMarketDetail(marketId);
-        // setPredictionData(data.item)
+        setPredictionDetail(data)
       } catch (e) {
         console.error(e);
       }
@@ -150,10 +159,6 @@ export default function PredictionDetailsClient() {
 
   const prediction = getPredictionData(marketId);
 
-  const handleVote = (vote: 'yes' | 'no') => {
-    setUserVote(vote);
-  };
-
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('en-US', {
       year: 'numeric',
@@ -175,14 +180,15 @@ export default function PredictionDetailsClient() {
 
   const timeframes = ['1H', '1D', '1W', '1M', '3M', '1Y'];
 
+  const yes = predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-10) : 0;
+  const chance = Number(yes.toFixed(2))
   // Mock chart data points for the line chart
   const generateChartData = () => {
     const points = [];
-    const baseValue = prediction.chance;
     for (let i = 0; i < 50; i++) {
       const x = (i / 49) * 100;
       const variance = (Math.random() - 0.5) * 10;
-      const y = Math.max(10, Math.min(90, baseValue + variance));
+      const y = Math.max(10, Math.min(90, chance + variance));
       points.push({ x, y });
     }
     return points;
@@ -198,18 +204,47 @@ export default function PredictionDetailsClient() {
     }, '');
   };
 
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const totalPages = 57;
+  const [tradesList, setTradesList] = useState<MarketDetailTradesOption[]>([]);
+  const [tradesPageNumber, setTradesPageNumber] = useState(1);
+  const [tradesPageSize, setTradesPageSize] = useState(10);
+  const [tradesTotalPages, setTradesTotalPages] = useState(0);
+
+  const abortRef = useRef<AbortController | null>(null);
+  useEffect(() => {
+    if (abortRef.current) abortRef.current.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    (async () => {
+      try {
+        const {data} = await apiService.getMarketDetailTrades({
+          marketId,
+          limit: tradesPageSize,
+          offset: tradesPageNumber
+        }, { signal: controller.signal });
+        setTradesList(data.items ?? []);
+        setTradesTotalPages(Math.ceil(data.total / tradesPageSize));
+      } catch (e) {
+        console.log(e)
+      }
+    })().catch((e) => {
+      if (e?.name !== "AbortError") console.error(e);
+    });
+    return () => controller.abort();
+  }, [marketId, tradesPageNumber, tradesPageSize]);
 
   const handlePageChange = (page: number) => {
-    setCurrentPage(page);
+    setTradesPageNumber(page);
   };
 
   const handleItemsPerPageChange = (newItemsPerPage: number) => {
-    setItemsPerPage(newItemsPerPage);
-    setCurrentPage(1);
+    setTradesPageSize(newItemsPerPage);
+    setTradesPageNumber(1);
   };
+
+  if(!predictionDetail) {
+    return ''
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-20 md:pb-0">
@@ -240,17 +275,16 @@ export default function PredictionDetailsClient() {
           <div className="mt-[24px]">
             <div className="flex gap-3">
               <Avatar className="w-[100px] h-[100px] rounded-[12px]">
-                <AvatarImage src={prediction.avatar} alt="Prediction" />
-                <AvatarFallback className="bg-blue-600 text-white">?</AvatarFallback>
+                <AvatarImage src={predictionDetail?.metaJson.image_url} alt="Prediction" />
               </Avatar>
               <div className="ml-[24px] flex flex-col gap-[12px]">
-                <div className="h-[24px] leading-[24px] text-[24px] text-white font-bold">{prediction.question}</div>
+                <div className="h-[24px] leading-[24px] text-[24px] text-white font-bold">{predictionDetail?.metaJson.title}</div>
                 <div className="flex items-center gap-1 h-[24px] text-white/60">
                   <span>Volume:</span>
                   <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                  <span>9430.17  Traders:147</span>
+                  <span>{predictionDetail?.volumeFormatted ? Number(predictionDetail.volumeFormatted).toFixed(2) : 0}  Traders:147</span>
                   <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
-                  <span>Jan 1, 2026 7:59 AM</span>
+                  <span>{predictionDetail?.metaJson.end_time_ms ? formatShortDate(Number(predictionDetail.metaJson.end_time_ms)) : ''}</span>
                 </div>
                 <div className="flex gap-[12px]">
                   <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[16px] font-bold px-[12px] text-white"><EditIcon className="text-[12px]" />Say something</div>
@@ -338,48 +372,60 @@ export default function PredictionDetailsClient() {
           <div className="mt-[48px] border border-white/40 rounded-[24px] overflow-hidden">
             <div className="h-[60px] bg-white/40 flex text-[16px] text-white">
               <div className="flex-1 flex items-center px-[24px]">
-                <span>Options</span>
+                <span>{t('detail.options')}</span>
               </div>
               <div className="flex-1 flex items-center justify-center px-[24px]">
-                <span>Chance</span>
+                <span>{t('detail.chance')}</span>
                 <RefreshIcon className="ml-[4px]" />
               </div>
               <div className="flex-1 flex items-center justify-end px-[24px]">
-                <span>Current Price</span>
+                <span>{t('detail.currentPrice')}</span>
               </div>
             </div>
             <div className="h-[96px] flex text-[18px] text-white font-bold">
               <div className="flex-1 flex items-center px-[24px]">
                 <Image src="/images/icon/icon-yes.png" alt="" width={36} height={36} />
-                <span className="ml-[12px]">Yes</span>
+                <span className="ml-[12px]">{predictionDetail?.metaJson.outcomes[0]}</span>
               </div>
               <div className="flex-1 flex items-center justify-center px-[24px]">
-                <span>62.87%</span>
+                <span>{`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-10).toFixed(2) : 0}%`}</span>
               </div>
               <div className="flex-1 flex items-center justify-end px-[24px]">
-                <Button
-                  className={`h-[48px] w-[162px] ${userVote === 'yes' ? 'bg-[#29C04E] hover:bg-[#29C04E] text-white' : 'bg-[#34503B] hover:bg-[#29C04E] text-[#089C2B] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
-                  onClick={() => handleVote('yes')}
-                >
-                  Buy 0.56
-                </Button>
+                <HoverTooltipButton
+                  label={`Buy ${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-12).toFixed(2) : 0}`}
+                  hoverLabel={`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-10).toFixed(2) : 0}%`}
+                  tooltip={
+                    <>
+                      To win: {predictionDetail.outcomeYields[predictionDetail.metaJson.outcomes[0]]} x
+                    </>
+                  }
+                  onClick={() => setOutcome(0)}
+                  className={`group h-[48px] w-[162px] ${outcome === 0 ? 'bg-[#29C04E] hover:bg-[#29C04E] text-white' : 'bg-[#34503B] hover:bg-[#29C04E] text-[#089C2B] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
+                  buttonProps={{ variant: "outline" }}
+                />
               </div>
             </div>
             <div className="h-[96px] flex text-[18px] text-white font-bold border-t border-white/40">
               <div className="flex-1 flex items-center px-[24px]">
                 <Image src="/images/icon/icon-no.png" alt="" width={36} height={36} />
-                <span className="ml-[12px]">No</span>
+                <span className="ml-[12px]">{predictionDetail?.metaJson.outcomes[1]}</span>
               </div>
               <div className="flex-1 flex items-center justify-center px-[24px]">
-                <span>62.87%</span>
+                <span>{`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[1]).shiftedBy(-10).toFixed(2) : 0}%`}</span>
               </div>
               <div className="flex-1 flex items-center justify-end px-[24px]">
-                <Button
-                  className={`h-[48px] w-[162px] ${userVote === 'no' ? 'bg-[#F95D5D] hover:bg-[#F95D5D] text-white' : 'bg-[rgba(249,93,93,0.5)] hover:bg-[#F95D5D] text-[#E04646] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
-                  onClick={() => handleVote('no')}
-                >
-                  Buy 0.44
-                </Button>
+                <HoverTooltipButton
+                  label={`Buy ${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[1]).shiftedBy(-12).toFixed(2) : 0}`}
+                  hoverLabel={`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[1]).shiftedBy(-10).toFixed(2) : 0}%`}
+                  tooltip={
+                    <>
+                      To win: {predictionDetail.outcomeYields[predictionDetail.metaJson.outcomes[1]]} x
+                    </>
+                  }
+                  onClick={() => setOutcome(1)}
+                  className={`group h-[48px] w-[162px] ${outcome === 1 ? 'bg-[#F95D5D] hover:bg-[#F95D5D] text-white' : 'bg-[rgba(249,93,93,0.5)] hover:bg-[#F95D5D] text-[#E04646] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
+                  buttonProps={{ variant: "outline" }}
+                />
               </div>
             </div>
           </div>
@@ -388,11 +434,12 @@ export default function PredictionDetailsClient() {
           <div className="mt-[48px]">
             <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">Rules</h3>
             <div className="border border-white/40 rounded-[24px] overflow-hidden p-[24px] pb-[12px]">
-              <p className="leading-[24px] text-[16px] text-white">This market resolves to “Yes” if, at any point between 00:00 UTC on January 1, 2025 and 23:59:59 UTC on December 31, 2025, the price of Ethereum (ETH) on the Binance ETH/USDT spot market strictly exceeds its previous all-time high of $4,868.00 USD.</p>
-              <p className="mt-[20px] leading-[24px] text-[16px] text-white">Intraday highs count — the moment ETH trades above $4,868.00 on Binance, the market resolves “Yes.”</p>
-              <div className="mt-[24px] h-[24px] flex items-center justify-center text-white text-[48px]">
-                <ArrowDownIcon />
-              </div>
+              <ClampableText
+                text={predictionDetail?.metaJson.description}
+                maxLines={5}
+                className="leading-[24px] text-[16px] text-white"
+                onToggle={(expanded) => console.log("expanded:", expanded)}
+              />
             </div>
           </div>
 
@@ -413,70 +460,61 @@ export default function PredictionDetailsClient() {
             </div>
           </div>
 
-          {/* Rules */}
+          {/* Trades */}
           <div className="mt-[48px]">
             <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">Trades</h3>
             <div className="border border-white/40 rounded-[24px] overflow-hidden  px-[28px] py-[37px] space-y-[16px]">
-              <div className="flex items-center gap-[12px] text-[16px] text-white">
-                <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
-                <div>Nicheng</div>
-                <div className="opacity-60">Buy</div>
-                <div className="h-[16px] leading-[16px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] px-[4px] rounded-[4px]">37.15 Yes</div>
-                <div className="opacity-60">at</div>
-                <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                <div>0.75</div>
-              </div>
-              <div className="flex items-center gap-[12px] text-[16px] text-white">
-                <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
-                <div>NichengNicheng</div>
-                <div className="opacity-60">Sell</div>
-                <div className="h-[16px] leading-[16px] bg-[rgba(249,93,93,0.5)] text-[#F95D5D] px-[4px] rounded-[4px]">37.15 Yes</div>
-                <div className="opacity-60">at</div>
-                <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                <div>0.75</div>
-              </div>
+              {tradesList.map((trades, index) => (
+                <div key={`${trades.marketId}_${index}`} className="flex items-center justify-between">
+                  <div className="flex items-center gap-[12px] text-[16px] text-white">
+                    <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
+                    <div>***</div>
+                    <div className="opacity-60">{capitalizeFirst(trades.side)}</div>
+                    <div className="h-[16px] leading-[16px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] px-[4px] rounded-[4px]"><TooltipAmount shares={trades.deltaShares} decimals={9} precision={2}/> {trades.outcomeName}</div>
+                    <div className="opacity-60">at</div>
+                    <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
+                    <div><TooltipAmount shares={trades.amount} decimals={9} precision={2}/></div>
+                  </div>
+                  <div className="text-white/60 text-[16px]">{timeAgoEn(trades.eventMs)}</div>
+                </div>
+              ))}
               {/*分页组件*/}
               <Pagination
-                currentPage={currentPage}
-                totalPages={totalPages}
+                currentPage={tradesPageNumber}
+                totalPages={tradesTotalPages}
                 onPageChange={handlePageChange}
-                itemsPerPage={itemsPerPage}
+                itemsPerPage={tradesPageSize}
                 onItemsPerPageChange={handleItemsPerPageChange}
-                itemsPerPageOptions={[5, 10, 20, 50]}
+                itemsPerPageOptions={[10, 20, 50, 100]}
               />
             </div>
           </div>
 
-          <div className="mt-[36px] h-[24px] leading-[24px] text-white text-[18px] font-bold">Opinions (0)</div>
+          {/*<div className="mt-[36px] h-[24px] leading-[24px] text-white text-[18px] font-bold">Opinions (0)</div>*/}
 
-          <div className="mt-[45px] bg-white/40 rounded-[12px] px-[24px] py-[14px]">
-            <div className="flex items-center justify-between">
-              <div className="size-[32px] bg-[#D9D9D9] rounded-full"></div>
-              <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white/60 px-[12px]">Say something</div>
-              <Edit1Icon className="text-white/60 text-[24px] cursor-pointer hover:text-white" />
-            </div>
-          </div>
+          {/*<div className="mt-[45px] bg-white/40 rounded-[12px] px-[24px] py-[14px]">*/}
+          {/*  <div className="flex items-center justify-between">*/}
+          {/*    <div className="size-[32px] bg-[#D9D9D9] rounded-full"></div>*/}
+          {/*    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white/60 px-[12px]">Say something</div>*/}
+          {/*    <Edit1Icon className="text-white/60 text-[24px] cursor-pointer hover:text-white" />*/}
+          {/*  </div>*/}
+          {/*</div>*/}
 
-          <div className="mt-[48px]">
-            <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>
-            <div className="mt-[12x] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">Nothing yet</div>
-          </div>
+          {/*<div className="mt-[48px]">*/}
+          {/*  <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>*/}
+          {/*  <div className="mt-[12x] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">Nothing yet</div>*/}
+          {/*</div>*/}
         </div>
-        <div className="w-[368px] sticky top-[80px]">
-          {/* 使用可复用的交易表单组件 */}
-          <TradingForm
-            initialOutcome='yes'
-            marketId=''
-            packageId=''
-            coinType=''
-            pProbsJson={['0.5', '0.5']}
-            outcomeYields={{YES: '', NO: ''}}
-            buyFee=''
-          />
-
-          {/* 使用可复用的服务条款组件 */}
-          <TermsAgreement />
-        </div>
+        {predictionDetail && (
+          <div className="w-[368px] sticky top-[80px]">
+            <TradingForm
+              prediction={predictionDetail}
+              initialOutcome={outcome}
+              outcomeChange={handleOutcomeChange}
+            />
+            <TermsAgreement />
+          </div>
+        )}
       </main>
 
       {/* Footer */}

@@ -17,8 +17,8 @@ export interface ReqPage {
 
 // paging response parameters
 export interface ResPage<T> {
-  item: T[];
-  count: number;
+  items: T[];
+  total: number;
   limit: number;
   offset: number;
 }
@@ -46,10 +46,7 @@ export interface MarketOption {
   finalMs: number;
   marketId: string;
   metaJson: MarketMeta;
-  outcomeYields: {
-    YES: string;
-    NO: string;
-  }
+  outcomeYields: Record<string, string>;
   pProbsJson: string[];
   packageId: string;
   paramsJson: MarketParams;
@@ -83,6 +80,7 @@ export interface MarketPositionOption {
   marketImage: string;
   marketName: string;
   marketPrice: string;
+  marketState: number;
   outcome: number;
   outcomeName: string;
   packageId: string;
@@ -155,4 +153,20 @@ export interface ResTransactionHistory {
   count: number;
   limit: number;
   offset: number;
+}
+
+export interface ResContractRedeem {
+  transaction: any
+}
+
+export interface MarketDetailTradesOption {
+  amount: string;
+  deltaShares: string;
+  eventMs: number;
+  marketId: string;
+  outcome: number;
+  outcomeName: string;
+  side: string;
+  txDigest: string;
+  userAddr: string;
 }

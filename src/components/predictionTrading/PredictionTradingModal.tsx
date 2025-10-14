@@ -11,14 +11,14 @@ interface PredictionTradingModalProps {
   isOpen: boolean;
   onClose: () => void;
   prediction: MarketOption;
-  initialOutcome?: 'yes' | 'no';
+  initialOutcome?: number;
 }
 
 export default function PredictionTradingModal({
   isOpen,
   onClose,
   prediction,
-  initialOutcome = 'yes'
+  initialOutcome = 0
 }: PredictionTradingModalProps) {
   useEffect(() => {
     if (isOpen) {
@@ -61,15 +61,9 @@ export default function PredictionTradingModal({
           <CloseIcon className="text-[24px] text-[#D2D1D1] hover:text-white cursor-pointer" onClick={onClose} />
         </div>
 
-        {/* 使用可复用的交易表单组件 */}
         <TradingForm
+          prediction={prediction}
           initialOutcome={initialOutcome}
-          marketId={prediction.marketId}
-          packageId={prediction.packageId}
-          coinType={prediction.coinType}
-          pProbsJson={prediction.pProbsJson}
-          outcomeYields={prediction.outcomeYields}
-          buyFee={prediction.paramsJson.buy_fee_bps}
           onClose={onClose}
         />
 

@@ -24,6 +24,6 @@
             "COIN_IN_OBJECT_ID": "0x1eb1fd62874b08dac008b3947d900b93ede4fb2ce924fbf89606902bba9a230a"
     },
     "useGasPool": 1,
-    "gasBudget": 500000000,
+    "gasBudget": 100000000,
     "reserveDurationSecs": 60
 }

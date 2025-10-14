@@ -10,7 +10,7 @@ import UpIcon from "@/assets/icons/up.svg";
 import DownIcon from "@/assets/icons/down.svg";
 import ExportIcon from "@/assets/icons/export.svg";
 import Image from "next/image";
-import { useCurrentAccount } from "@onelabs/dapp-kit";
+import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
 import {store} from "@/store";
 import GoogleIcon from "@/assets/icons/google.svg";
 import AppleIcon from "@/assets/icons/apple.svg";
@@ -24,6 +24,8 @@ import SaleModal from "@/components/SaleModal";
 import { TooltipAmount } from "@/components/TooltipAmount";
 import {useRouter} from "next/navigation";
 import {useLanguage} from "@/contexts/LanguageContext";
+import { MarketClient } from "@/lib/market";
+import { useExecuteTransaction } from "@/hooks/useExecuteTransaction";
 
 interface PredictionIntegralModalProps {
   isOpen: boolean;
@@ -63,6 +65,8 @@ export default function PredictionIntegralModal({
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
   const { balance: usdhBalance } = useUsdhBalanceFromStore();
+  const suiClient = useSuiClient() as any;
+  const executeTransaction = useExecuteTransaction();
 
   // 组件加载时的初始化效果
   useEffect(() => {
@@ -188,6 +192,29 @@ export default function PredictionIntegralModal({
         break;
     }
   }, [currentTab, isOpen, getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
+
+  const contractRedeem = async (position: MarketPositionOption) => {
+    try {
+      setLoading(true);
+      setError(null);
+      const marketClient = new MarketClient(suiClient, {
+        packageId: position.packageId,
+        coinType: position.coinType,
+      });
+      const tx = await marketClient.buildRedeemTx({
+        marketId: position.marketId,
+      });
+      await executeTransaction(tx, true);
+      setTimeout(() => {
+        getMarketPosition();
+      }, 2000);
+    } catch (e: any) {
+      console.error('redeem error:', e);
+      setError(e?.message || 'Redeem failed');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -317,14 +344,25 @@ export default function PredictionIntegralModal({
                         <div className="text-white px-[12px] text-[12px] mx-[20px]">
                           <ExportIcon />
                         </div>
-                        <div
-                          className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px] cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSalePosition(position)
-                            setShowSale(true)
-                          }}
-                        >{t('predictions.integralModal.sale')}</div>
+                        {position.marketState === 1 && (
+                          <div
+                            className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px] cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSalePosition(position)
+                              setShowSale(true)
+                            }}
+                          >{t('predictions.integralModal.sale')}</div>
+                        )}
+                        {(position.marketState === 3 || position.marketState === 4) && (
+                          <div
+                            className="h-[32px] leading-[32px] px-[16px] bg-[#29C04E] rounded-[8px] text-white text-[16px] cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              contractRedeem(position)
+                            }}
+                          >{t('predictions.integralModal.claim')}</div>
+                        )}
                       </div>
                       <div className="mt-[24px] flex pt-[24px] border-t border-white/10">
                         <div className="flex-1">
