@@ -4,16 +4,22 @@
     "leaderboard": "排行榜",
     "rewards": "奖励",
     "signIn": "登录",
-    "desc": "使用 Google 登录或连接已有钱包",
+    "desc": "使用 Google 登录或连接现有钱包",
     "or": "或",
     "language": "简体中文",
-    "copyAddress": "复制地址",
-    "menu": "钱包",
-    "disconnect": "断开连接",
-    "connectingGoogle": "正在通过 Google 连接…",
+    "connectingGoogle": "正在连接 Google...",
     "profile": "个人资料",
     "settings": "设置",
-    "logout": "退出登录"
+    "logout": "退出登录",
+    "notification": "通知",
+    "languages": "语言",
+    "darkMode": "深色模式",
+    "lightMode": "浅色模式",
+    "systemMode": "跟随系统",
+    "forYou": "为你推荐",
+    "search": "搜索",
+    "assets": "资产",
+    "more": "更多"
   },
   "categories": {
     "trending": "热门",
@@ -21,78 +27,63 @@
     "new": "最新",
     "politics": "政治",
     "economy": "经济",
-    "crypto": "加密",
+    "crypto": "加密货币",
     "entertainment": "娱乐",
     "society": "社会",
-    "sortBy": "排序方式",
-    "expireTime": "结束时间",
+    "expireTime": "到期时间",
     "watchlist": "关注列表",
-    "pickOne": "请选择",
+    "pickOne": "选择一个",
     "volume": "成交量"
   },
-  "welcome": {
-    "title": "欢迎使用 OnePredict",
-    "subtitle": "开始预测，开始赚钱。",
-    "features": {
-      "explore": {
-        "title": "浏览问题",
-        "description": "发现你关心的预测主题，例如“奥运会开幕当天会下雨吗？”"
-      },
-      "deposit": {
-        "title": "充值 USDH",
-        "description": "为你的钱包充值以开始进行预测。"
-      },
-      "trade": {
-        "title": "交易",
-        "description": "根据你的判断买入或卖出结果——价格反映群体的概率预估。"
-      },
-      "earn": {
-        "title": "赚取",
-        "description": "如果你的预测正确，你就会获胜！"
-      }
-    },
-    "cta": "领取 500 积分并立即预测",
-    "terms": "继续操作即表示你已年满 18 岁并接受我们的条款"
-  },
   "footer": {
-    "privacy": "隐私",
+    "privacy": "隐私政策",
     "termsOfUse": "使用条款",
-    "learn": "了解",
+    "learn": "学习",
     "FAQ": "常见问题",
-    "copyright": "© OnePredict 2025。保留所有权利"
+    "copyright": "© OnePredict 2025. 版权所有"
   },
   "common": {
     "loadMore": "加载更多",
-    "volume": "成交量",
-    "search": "搜索",
-    "connectWithGoogle": "Google",
-    "connectWithApple": "Apple ID",
-    "connectWithExistingWallet": "连接已有钱包",
-    "copy": "复制成功"
+    "volume": "交易量",
+    "connectWithGoogle": "Google 登录",
+    "connectWithApple": "Apple ID 登录",
+    "connectWithExistingWallet": "连接现有钱包",
+    "copy": "复制",
+    "copySuccessful": "复制成功",
+    "edit": "编辑",
+    "save": "保存",
+    "submit": "提交",
+    "max": "最大",
+    "new": "新增",
+    "page": "页",
+    "pagination": "第 {{currentPage}} 页 / 共 {{totalPages}} 页",
+    "tomorrow": "明天",
+    "afterTomorrow": "后天",
+    "in_days": "{{count}} 天后",
+    "finished": "已结束",
+    "nothing": "暂无内容"
   },
   "nav": {
     "home": "首页",
     "leaderboard": "排行榜",
     "rewards": "奖励",
-    "profile": "个人中心"
+    "profile": "个人资料"
   },
   "notFound": {
     "title": "页面未找到",
-    "description": "抱歉，你访问的页面不存在或已被移动。请检查 URL，或返回首页继续浏览。",
+    "description": "抱歉，你访问的页面不存在或已被移动。请检查网址或返回首页继续浏览。",
     "goHome": "返回首页",
     "goBack": "返回上一页",
-    "quickLinks": "或访问这些页面："
+    "quickLinks": "或访问以下页面："
   },
   "waiting": {
-    "title": "正在等待 {{name}} 连接…",
+    "title": "正在等待 {{name}} 连接...",
     "subtitle": "请稍候，我们正在与 {{name}} 建立连接"
   },
   "search": {
-    "placeholder": "搜索市场/合约地址",
-    "trending": "热门",
-    "contractAddress": "搜索市场/合约地址",
-    "noResults": "未找到相关结果",
-    "trySearching": "尝试搜索“{query}”"
+    "placeholder": "搜索市场或合约地址",
+    "trending": "热门搜索",
+    "noResults": "未找到相关结果"
   },
   "predictions": {
     "buy": "买入",
@@ -100,28 +91,22 @@
     "outcomes": "结果",
     "amount": "金额",
     "balance": "余额",
+    "toWin": "获胜",
     "trading": "进行交易即表示你同意",
     "terms": "使用条款",
     "buySuccess": "购买成功",
     "buyError": "购买失败",
     "saleSuccess": "卖出成功",
     "saleError": "卖出失败",
-    "questions": {
-      "shanghaiMicroelectronics": "上海微电子会上市吗？",
-      "ethBreakAth": "ETH 会在 2025 年创下历史新高吗？",
-      "keungToRelationship": "姜涛会在 2025 年前确认恋情或爆出绯闻吗？",
-      "klarnaIpo": "Klarna 将在 2025 年上市吗？",
-      "usFedRateHike": "美国联邦储备会在任何时间加息吗？",
-      "koreaHottestSummer": "韩国是否会报告 2025 年夏季为史上最热？",
-      "koreanGovItaewon": "韩国政府会发布有关梨泰院惨案的新官方调查结果吗？",
-      "cultItaewon": "是否会发现某个邪教在梨泰院惨案中发挥作用？",
-      "canadaPalestine": "加拿大会在九月前正式承认巴勒斯坦国吗？",
-      "australiaPalestine": "澳大利亚会在今年正式承认巴勒斯坦国吗？",
-      "earthquake9": "今年全球会发生 9.0 级地震吗？",
-      "bricsNewMember": "金砖国家会在 12 月 31 日前新增成员吗？"
-    },
+    "copyLink": "复制链接",
+    "position": "持仓",
+    "shares": "股份",
+    "available": "可用",
+    "noAvailablePositions": "暂无可用持仓。",
+    "cashOut": "套现",
+    "resultsOut": "结果公布：{{result}}",
+    "waitingResolution": "市场已关闭 - 等待结算",
     "integralModal": {
-      "balance": "余额",
       "deposit": "充值",
       "withdraw": "提现",
       "positions": "持仓",
@@ -129,19 +114,24 @@
       "transaction": "交易记录",
       "sale": "卖出",
       "claim": "领取",
-      "entryPrice": "入场价",
-      "marketPrice": "市价",
+      "entryPrice": "入场价格",
+      "marketPrice": "市场价格",
       "bet": "下注",
       "current": "当前",
       "pnl": "盈亏",
-      "toWin": "可赢",
       "loaded": "已加载全部内容。",
-      "nothing": "暂无内容",
       "type": "类型",
       "price": "价格",
       "value": "金额",
       "date": "日期"
     }
+  },
+  "deposit": {
+    "deposit": "充值",
+    "address": "地址",
+    "warning": "仅支持 OneChain 原生 USDH",
+    "gotIt": "我知道了",
+    "tip": "你的地址已复制到剪贴板"
   },
   "send": {
     "send": "发送代币",
@@ -149,20 +139,101 @@
     "amount": "金额",
     "balance": "余额",
     "to": "收款地址",
-    "warning": "请注意，这是 OneChain 网络。通过其他网络发送可能导致你的加密资产丢失。",
+    "onechainAddress": "OneChain 地址",
+    "warning": "请注意，这里仅支持 OneChain 网络。通过其他网络发送可能导致你的加密资产丢失。",
     "continue": "继续",
     "sendSuccess": "发送成功",
     "sendError": "发送失败"
   },
+  "detail": {
+    "options": "选项",
+    "chance": "概率",
+    "currentPrice": "当前价格",
+    "trade": "交易",
+    "volume": "成交量",
+    "traders": "交易者",
+    "saySomething": "发表见解",
+    "rules": "规则",
+    "outcomeProposed": "提议结果",
+    "disputeWindow": "争议期",
+    "finalOutcome": "最终结果",
+    "opinions": "意见"
+  },
   "time": {
     "justNow": "刚刚",
-    "second_past": "{{count}} 秒前",
-    "second_future": "{{count}} 秒后",
-    "minute_past": "{{count}} 分钟前",
-    "minute_future": "{{count}} 分钟后",
-    "hour_past": "{{count}} 小时前",
-    "hour_future": "{{count}} 小时后",
-    "day_past": "{{count}} 天前",
-    "day_future": "{{count}} 天后"
+    "second_past_one": "{{count}} 秒前",
+    "second_past_other": "{{count}} 秒前",
+    "second_future_one": "{{count}} 秒后",
+    "second_future_other": "{{count}} 秒后",
+    "minute_past_one": "{{count}} 分钟前",
+    "minute_past_other": "{{count}} 分钟前",
+    "minute_future_one": "{{count}} 分钟后",
+    "minute_future_other": "{{count}} 分钟后",
+    "hour_past_one": "{{count}} 小时前",
+    "hour_past_other": "{{count}} 小时前",
+    "hour_future_one": "{{count}} 小时后",
+    "hour_future_other": "{{count}} 小时后",
+    "day_past_one": "{{count}} 天前",
+    "day_past_other": "{{count}} 天前",
+    "day_future_one": "{{count}} 天后",
+    "day_future_other": "{{count}} 天后"
+  },
+  "profile": {
+    "followers": "关注者",
+    "following": "关注中",
+    "opinions": "意见",
+    "follow": "编辑资料",
+    "allMarkets": "所有市场",
+    "position": "名次",
+    "volume": "成交量",
+    "rank": "损益排名"
+  },
+  "settings": {
+    "profile": "个人资料",
+    "upload": "上传新图片",
+    "max": "最大{{count}}",
+    "username": "用户名称",
+    "bio": "个人简介",
+    "bioPlaceholder": "向别人介绍一下您自己",
+    "UID": "用户 ID",
+    "account": "账户",
+    "email": "电子邮箱",
+    "referral": "邀请",
+    "referralTips": "你是被朋友邀请的吗？输入他们的邀请码即可获得注册奖励！",
+    "inviteCode": "邀请码",
+    "inviteCodeTips": "是一个 6 位字符串",
+    "privateKey": "私钥",
+    "privateKeyWarning": "警告：切勿泄露私钥。",
+    "privateKeyWarningContent": "任何人拥有您的私钥都可以盗取您账户中的任何资产。您可以导出您的私钥并存放在安全的地方作为备份。",
+    "showPrivateKey": "显示私钥"
+  },
+  "leaderboard": {
+    "title": "OnePredict 预测平台表现最佳榜",
+    "all": "全部",
+    "daily": "每日",
+    "weekly": "每周",
+    "monthly": "每月",
+    "rank": "排名",
+    "trader": "交易者",
+    "pnL": "盈亏",
+    "volume": "成交量",
+    "trades": "交易笔数",
+    "me": "我"
+  },
+  "rewards": {
+    "myRewards": "我的奖励",
+    "onePredictPoints": "邀请好友参与预测，每次好友下注，你都可获得收益。",
+    "inviteToEarn": "邀请赚取奖励",
+    "rewardsCenter": "奖励中心",
+    "inviteEarn": "邀请与赚取",
+    "getRewarded": "好友使用你的邀请码注册即可获得奖励。",
+    "inviteCode": "邀请码",
+    "inviteFriends": "邀请好友",
+    "inviteFriendsCopyText": "加入 OnePredict —— 为所有人打造的次世代预测市场！使用我的邀请码 [{{code}}] 注册：https://poly.deltax.online/",
+    "inviteRecord": "邀请记录",
+    "totalPerson": "（共 {{count}} 人）",
+    "invitee": "被邀请人",
+    "date": "日期",
+    "allItemsLoaded": "所有内容已加载。"
   }
 }

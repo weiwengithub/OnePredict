@@ -31,9 +31,8 @@ export function ThemeToggle({ variant = 'simple', size = 'md' }: ThemeToggleProp
           <Button
             variant="ghost"
             size="sm"
-            className="flex items-center justify-center size-[36px] border-[1px] border-solid border-white/20 text-white/20
-                hover:border-white hover:text-white rounded-[20px] cursor-pointer transition-all duration-200
-                hover:bg-white/5 hover:scale-105"
+            className="flex items-center justify-center size-[36px] border-[1px] border-solid border-white/60 text-white
+                hover:border-white rounded-[20px] cursor-pointer transition-all duration-200 hover:scale-105"
           >
             <Sun className={`h-${iconSize/4} w-${iconSize/4} rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0`} />
             <Moon className={`absolute h-${iconSize/4} w-${iconSize/4} rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100`} />

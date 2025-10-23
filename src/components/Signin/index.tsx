@@ -36,11 +36,15 @@ import SettingsIcon from '@/assets/icons/settings.svg';
 import LogoutIcon from '@/assets/icons/logout.svg';
 import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
 import { ZkLoginData, CurrentAccount, RootState, ApiResult, LoginResponse } from "@/lib/interface";
+import CopyIcon from "@/assets/icons/copy_1.svg";
+import {useIsMobile} from "@/contexts/viewport";
 
 const Signin = () => {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
+
   const [openDown, setOpenDropdown] = useState(false);
   const open = useSelector((s: RootState) => s.signinModal.open)
   const openLoading = useSelector((s: RootState) => s.signinModal.openLoading)
@@ -53,12 +57,12 @@ const Signin = () => {
 
   const checkSignandSignin = useCallback(async (address: string) => {
     try {
-      if(localStorage.getItem('rwa-token-'+address)){
+      if(localStorage.getItem('predict-token-'+address)){
         return
       }
       const result: LoginResponse = await apiService.getLoginNonce({ address: address });
       console.log('result', result)
-      const signMessage = (result.data as { data: string }).data;
+      const signMessage = result.data as string;
       console.log('Message to sign:', signMessage);
       //zkLogin 签名交易兼容
       const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
@@ -80,22 +84,8 @@ const Signin = () => {
           maxEpoch: (zkLoginData as any).maxEpoch,
           userSignature:signature.signature
         });
-        // let address = await verifyPersonalMessageSignature(new TextEncoder().encode(signMessage), signature.signature);
-        // console.log('address', address.toSuiAddress())
 
-        // console.log('zkLoginSignature', zkLoginSignature)
-        // let r = parseZkLoginSignature(zkLoginSignature);
-        // console.log('r', r)
-        // transport.request({
-        //     method: 'sui_verifyZkLoginSignature',
-        //     params: [
-        //             toB64(new TextEncoder().encode(signMessage)),
-        //             zkLoginSignature,
-        //             'PersonalMessage',
-        //             address
-        //     ]
-        // });
-        const data: ApiResult = await apiService.zkLoginBySign({
+        const data: ApiResult = await apiService.memberLogin({
           address: address,
           zkLoginAccount: (zkLoginData as any).email,
           originalMessage: signMessage,
@@ -103,10 +93,11 @@ const Signin = () => {
           chain: 'onechain',
           chainNet: Number(process.env.NEXT_PUBLIC_IS_MAINNET) ? 'mainnet' : 'testnet'
         });
+        // debugger;
         console.log('data', data)
 
-        localStorage.setItem('rwa-token-'+address, (data.data as any).token);
-
+        localStorage.setItem('predict-token-'+address, (data.data as any).token);
+        localStorage.setItem('predict-token', (data.data as any).token);
 
       } else {
         signPersonalMessage({
@@ -116,9 +107,16 @@ const Signin = () => {
             onSuccess: async (result: { signature: string }) => {
               console.log('signature', result.signature);
               console.log('result', result);
-              const data: ApiResult = await apiService.loginBySign({ address: address, originalMessage: signMessage, signedMessage:result.signature });
+              const data: ApiResult = await apiService.memberLogin({
+                address: address, originalMessage: signMessage,
+                signedMessage:result.signature,
+                zkLoginAccount: null,
+                chain: 'onechain',
+                chainNet: Number(process.env.UMI_APP_IS_MAINNET) ? 'mainnet' : 'testnet'
+              });
               console.log('data', (data.data as any).token)
-              localStorage.setItem('rwa-token-'+address, (data.data as any).token);
+              localStorage.setItem('predict-token-'+address, (data.data as any).token);
+              localStorage.setItem('predict-token', (data.data as any).token);
             }
           });
       }
@@ -129,12 +127,12 @@ const Signin = () => {
   }, [signPersonalMessage]);
 
   // Check whitelist when wallet connects
-  // useEffect(() => {
-  //   const zkData = store.getState().zkLoginData as any;
-  //   if (currentAccount?.address || zkData?.zkloginUserAddress) {
-  //     checkSignandSignin(currentAccount?.address || zkData?.zkloginUserAddress);
-  //   }
-  // }, [currentAccount?.address, pathname, checkSignandSignin]);
+  useEffect(() => {
+    const zkData = store.getState().zkLoginData as any;
+    if (currentAccount?.address || zkData?.zkloginUserAddress) {
+      checkSignandSignin(currentAccount?.address || zkData?.zkloginUserAddress);
+    }
+  }, [currentAccount?.address, pathname, checkSignandSignin, zkLoginData]);
 
   // 禁止背景滚动
   useEffect(() => {
@@ -194,67 +192,88 @@ const Signin = () => {
     <div className="signin-area">
       {
         zkLoginData || currentAccount ? (
-          <div
-            onMouseEnter={() => {
-              if (currentAccount || zkLoginData) {
-                setOpenDropdown(true);
-              }
-            }}
-            onMouseLeave={() => {
-              setTimeout(() => {
-                setOpenDropdown(false)
-              }, 200)
-            }}
-          >
-            <button className="flex items-center gap-[12px] h-[36px] border border-white/60 text-white
-                  hover:border-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
-                  hover:bg-white/5" onClick={()=>{
-              if(currentAccount){
-                handleCopyAddress()
-              }
-            }}>
-              {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
-              {(zkLoginData && zkLoginData?.email) ?(addPoint(zkLoginData?.email,3)): addPoint(currentAccount?.address || zkLoginData?.zkloginUserAddress as string,3)}
-              <ArrowDownIcon className="text-[16px] text-white/60" />
-            </button>
-            {
-              openDown ? (
-                <div className="absolute top-[36px] w-full pt-[14px]">
-                  <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
-                    <Link href="/profile" className="inline-block w-full">
-                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
-                        <ProfileIcon />
-                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.profile')}</span>
-                      </div>
-                    </Link>
-                    <Link href="/setting" className="inline-block w-full">
-                      <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
-                        <SettingsIcon />
-                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.settings')}</span>
-                      </div>
-                    </Link>
-                    <Link href="#" className="inline-block w-full">
-                      <div
-                        className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
-                        onClick={() => {
-                          if(zkLoginData){
-                            dispatch(clearLoginData())
-                            disconnect()
-                            window.location.reload()
-                          }else{
-                            disconnect()
-                          }
-                        }}
-                      >
-                        <LogoutIcon />
-                        <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.logout')}</span>
-                      </div>
-                    </Link>
+          <>
+            {isMobile ? (
+              <div className="flex-none flex items-center justify-between gap-[12px]">
+                <div className="text-[48px]">
+                  {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
+                </div>
+                <div className="flex-1">
+                  {zkLoginData ? (
+                    <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
+                  ) : (
+                    <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
+                  ) }
+                  <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
+                    <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
+                    <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
                   </div>
                 </div>
-              ) : ''
-            }
-          </div>
+              </div>
+            ) : (
+              <div
+                onMouseEnter={() => {
+                  if (currentAccount || zkLoginData) {
+                    setOpenDropdown(true);
+                  }
+                }}
+                onMouseLeave={() => {
+                  setTimeout(() => {
+                    setOpenDropdown(false)
+                  }, 200)
+                }}
+              >
+                <button className="flex items-center gap-[12px] h-[36px] border border-white/60 text-white
+                  hover:border-white rounded-[20px] px-[16px] cursor-pointer transition-all duration-200
+                  hover:bg-white/5" onClick={()=>{
+                  if(currentAccount){
+                    handleCopyAddress()
+                  }
+                }}>
+                  {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
+                  {(zkLoginData && zkLoginData?.email) ?(addPoint(zkLoginData?.email,3)): addPoint(currentAccount?.address || zkLoginData?.zkloginUserAddress as string,3)}
+                  <ArrowDownIcon className="text-[16px] text-white/60" />
+                </button>
+                {
+                  openDown ? (
+                    <div className="absolute top-[36px] w-full pt-[14px]">
+                      <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
+                        <Link href="/profile" className="inline-block w-full">
+                          <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
+                            <ProfileIcon />
+                            <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.profile')}</span>
+                          </div>
+                        </Link>
+                        <Link href="/setting" className="inline-block w-full">
+                          <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
+                            <SettingsIcon />
+                            <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.settings')}</span>
+                          </div>
+                        </Link>
+                        <Link href="#" className="inline-block w-full">
+                          <div
+                            className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
+                            onClick={() => {
+                              if(zkLoginData){
+                                dispatch(clearLoginData())
+                                disconnect()
+                                window.location.reload()
+                              }else{
+                                disconnect()
+                              }
+                            }}
+                          >
+                            <LogoutIcon />
+                            <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.logout')}</span>
+                          </div>
+                        </Link>
+                      </div>
+                    </div>
+                  ) : ''
+                }
+              </div>
+            )}
+          </>
         ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-50 hover:opacity-100 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => dispatch(setSigninOpen(true))}>
           {t('header.signIn')}
         </button>

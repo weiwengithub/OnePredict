@@ -7,13 +7,19 @@
     "desc": "Sign in with Google or connect with existing wallet",
     "or": "Or",
     "language": "English",
-    "copyAddress": "Copy address",
-    "menu": "Wallet",
-    "disconnect": "Disconnect",
     "connectingGoogle": "Connecting with Google...",
     "profile": "Profile",
     "settings": "Settings",
-    "logout": "Logout"
+    "logout": "Logout",
+    "notification": "Notification",
+    "languages": "Languages",
+    "darkMode": "Dark mode",
+    "lightMode": "Light mode",
+    "systemMode": "System mode",
+    "forYou": "For You",
+    "search": "Search",
+    "assets": "Assets",
+    "more": "More"
   },
   "categories": {
     "trending": "Trending",
@@ -24,35 +30,10 @@
     "crypto": "Crypto",
     "entertainment": "Entertainment",
     "society": "Society",
-    "sortBy": "Sort by",
     "expireTime": "Expire Time",
     "watchlist": "Watchlist",
     "pickOne": "Pick one",
     "volume": "Volume"
-  },
-  "welcome": {
-    "title": "Welcome to OnePredict",
-    "subtitle": "Start Predicting. Start Earning.",
-    "features": {
-      "explore": {
-        "title": "Explore Questions",
-        "description": "Discover prediction topics you care about, like \"Will it rain on the Olympics opening day?\""
-      },
-      "deposit": {
-        "title": "Deposit USDH",
-        "description": "Fund your own wallet to start making predictions."
-      },
-      "trade": {
-        "title": "Trade",
-        "description": "Buy or sell outcomes based on your belief — prices reflect the crowd's probability estimate."
-      },
-      "earn": {
-        "title": "Earn",
-        "description": "If your prediction is correct, you win!"
-      }
-    },
-    "cta": "Claim 500 Points & Predict Now",
-    "terms": "By proceeding, you confirm you're at least 18 and accept our terms"
   },
   "footer": {
     "privacy": "Privacy",
@@ -64,11 +45,23 @@
   "common": {
     "loadMore": "Load more",
     "volume": "Vol.",
-    "search": "Search",
     "connectWithGoogle": "Google",
     "connectWithApple": "Apple ID",
     "connectWithExistingWallet": "Connect with Existing Wallet",
-    "copy": "Copy successful"
+    "copy": "Copy",
+    "copySuccessful": "Copy successful",
+    "edit": "Edit",
+    "save": "Save",
+    "submit": "Submit",
+    "max": "MAX",
+    "new": "NEW",
+    "page": "page",
+    "pagination": "Page {{currentPage}} of {{totalPages}}",
+    "tomorrow": "tomorrow",
+    "afterTomorrow": "In 2 days",
+    "in_days": "In {{count}} days",
+    "finished": "finished",
+    "nothing": "Nothing yet"
   },
   "nav": {
     "home": "Home",
@@ -90,9 +83,7 @@
   "search": {
     "placeholder": "Search Markets.contract address",
     "trending": "Trending",
-    "contractAddress": "Search Markets.contract address",
-    "noResults": "No results found",
-    "trySearching": "Try searching for \"{query}\""
+    "noResults": "No results found"
   },
   "predictions": {
     "buy": "Buy",
@@ -100,26 +91,21 @@
     "outcomes": "Outcomes",
     "amount": "Amount",
     "balance": "Balance",
+    "toWin": "To win",
     "trading": "By trading, you agree to the",
     "terms": "Terms of Use",
     "buySuccess": "Successful purchase",
     "buyError": "Purchase failed",
     "saleSuccess": "Successful sale",
     "saleError": "Sale failed",
-    "questions": {
-      "shanghaiMicroelectronics": "Will Shanghai Microelectronics go public?",
-      "ethBreakAth": "Will ETH Break ATH in 2025?",
-      "keungToRelationship": "Will Keung To confirm a romantic relationship or scandal by 2025?",
-      "klarnaIpo": "Klarna IPO 2025?",
-      "usFedRateHike": "Will the US Federal Reserve raise interest rates at any time?",
-      "koreaHottestSummer": "Will Korea report that 2025 summer was the hottest?",
-      "koreanGovItaewon": "Will Korean government publish new official findings on the Itaewon tragedy?",
-      "cultItaewon": "A cult is discovered to have played a role in the Itaewon tragedy?",
-      "canadaPalestine": "Canada to officially recognize the State of Palestine by September?",
-      "australiaPalestine": "Australia to officially recognize the State of Palestine this year?",
-      "earthquake9": "9.0 magnitude earthquake anywhere this year?",
-      "bricsNewMember": "Will BRICS add a new member by December 31?"
-    },
+    "copyLink": "Copy Link",
+    "position": "Position",
+    "shares": "Shares",
+    "available": "Available",
+    "noAvailablePositions": "No available positions.",
+    "cashOut": "Cash Out",
+    "resultsOut": "Results out: {{result}}",
+    "waitingResolution": "Market closed - waiting resolution",
     "integralModal": {
       "deposit": "Deposit",
       "withdraw": "Withdraw",
@@ -133,14 +119,19 @@
       "bet": "Bet",
       "current": "Current",
       "pnl": "Pnl",
-      "toWin": "To win",
       "loaded": "All items Loaded.",
-      "nothing": "Nothing yet",
       "type": "Type",
       "price": "Price",
       "value": "Value",
       "date": "Date"
     }
+  },
+  "deposit": {
+    "deposit": "Deposit",
+    "address": "Address",
+    "warning": "Supports only OneChain native USDH",
+    "gotIt": "I got it",
+    "tip": "Your address has been copied to clipboard"
   },
   "send": {
     "send": "Send Token",
@@ -148,6 +139,7 @@
     "amount": "Amount",
     "balance": "Balance",
     "to": "To",
+    "onechainAddress": "Onechain address",
     "warning": "Please, pay attention that this is OneChain network. Sending via another network could lead to the loss of your crypto.",
     "continue": "Continue",
     "sendSuccess": "Successful send",
@@ -156,7 +148,16 @@
   "detail": {
     "options": "Options",
     "chance": "Chance",
-    "currentPrice": "Current Price"
+    "currentPrice": "Current Price",
+    "trade": "Trade",
+    "volume": "Volume",
+    "traders": "Traders",
+    "saySomething": "Say something",
+    "rules": "Rules",
+    "outcomeProposed": "Outcome proposed",
+    "disputeWindow": "Dispute window",
+    "finalOutcome": "Final outcome",
+    "opinions": "Opinions"
   },
   "time": {
     "justNow": "just now",
@@ -176,5 +177,63 @@
     "day_past_other": "{{count}} days ago",
     "day_future_one": "in {{count}} day",
     "day_future_other": "in {{count}} days"
+  },
+  "profile": {
+    "followers": "Followers",
+    "following": "Following",
+    "opinions": "Opinions",
+    "follow": "Follow",
+    "allMarkets": "All Markets",
+    "position": "Position",
+    "volume": "Volume Traded",
+    "rank": "PnL Rank"
+  },
+  "settings": {
+    "profile": "Profile",
+    "upload": "Upload new image",
+    "max": "Max {{count}}",
+    "username": "Username",
+    "bio": "Bio",
+    "bioPlaceholder": "Tell people a bit more about you",
+    "UID": "UID",
+    "account": "Account",
+    "email": "Email",
+    "referral": "Referral",
+    "referralTips": "Were you invited by a friend? Please enter his invitation code.",
+    "inviteCode": "Invite Code",
+    "inviteCodeTips": "Is an 6-digit string",
+    "privateKey": "Private Key",
+    "privateKeyWarning": "Warning: Never disclose Private key.",
+    "privateKeyWarningContent": "Anyone with your private keys can steal any assets held in your account. You can export your private keys and store them in a secure location for backup.",
+    "showPrivateKey": "Show Private Key"
+  },
+  "leaderboard": {
+    "title": "Top performers on OnePredict prediction platform",
+    "all": "All",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "rank": "Rank",
+    "trader": "Trader",
+    "pnL": "PnL",
+    "volume": "Volume",
+    "trades": "Trades",
+    "me": "Me"
+  },
+  "rewards": {
+    "myRewards": "My Rewards",
+    "onePredictPoints": "Invite your friends to make predictions, and each time your friends place a bet, you can make a profit.",
+    "inviteToEarn": "Invite to Earn",
+    "rewardsCenter": "Rewards Center",
+    "inviteEarn": "Invite & Earn",
+    "getRewarded": "Get rewarded when your friend signs up with your invite code.",
+    "inviteCode": "Invite Code",
+    "inviteFriends": "Invite Friends",
+    "inviteFriendsCopyText": "Join OnePredict — the next-generation prediction market built for everyone! Sign up with my invite code [{{code}}] at https://poly.deltax.online/",
+    "inviteRecord": "Invite record",
+    "totalPerson": "（A total of {{count}} person）",
+    "invitee": "Invitee",
+    "date": "Date",
+    "allItemsLoaded": "All items Loaded."
   }
 }

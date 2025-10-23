@@ -1,40 +1,39 @@
 import {apiClient, type ApiConfig} from "@/lib/api/client";
 import {
   ResPage,
+  ReqMarketList,
   ResMarketList,
   ResMarketPosition,
   ResMarketTradeHistory,
   ResTransactionHistory,
   ResContractRedeem,
   MarketOption,
-  MarketDetailTradesOption
+  MarketDetailTradesOption,
+  MemberInfo,
+  PredictionDetailInfo,
+  ResRankList,
+  ResBannerList,
+  type SortBy,
+  type Direction, ReqRankList
 } from "@/lib/api/interface";
 
 // 具体的API接口方法
 export const apiService = {
-  // 示例：获取预测数据
-  getLoginNonce: (data: Record<string, unknown>) => {
-    return apiClient.post('/ext/member/loginNonce', data);
-  },
-
-  // 登录-签名认证登录
-  zkLoginBySign: (data: Record<string, unknown>) => {
-    return apiClient.post('/ext/member/zkLoginBySign', data);
-  },
-
-  // 示例：创建预测
-  loginBySign: (data: Record<string, unknown>) => {
-    return apiClient.post('/ext/member/loginBySign', data);
-  },
-
   // 获取市场列表
-  getMarketList: (data: {limit: number; offset: number},config?: ApiConfig) => {
-    return apiClient.post<ResMarketList>('/api/market/list', data, config);
+  getMarketList: (params: {
+    pageSize: number;
+    pageNum: number;
+    status?: 'UpComing' | 'OnGoing' | 'Resolved' | 'Completed';
+    orderByColumn?: SortBy;
+    orderDirection?: Direction;
+    projectName?: string;
+  }, config?: ApiConfig) => {
+    return apiClient.post<ResMarketList>('/api/ext/market/list', params, config);
   },
 
   // 获取市场详情
   getMarketDetail: (marketId: string) => {
-    return apiClient.post<MarketOption>('/api/market/detail', {marketId});
+    return apiClient.post<MarketOption>('/api/ext/market/detail', {marketId});
   },
 
   // 获取市场交易记录
@@ -52,19 +51,69 @@ export const apiService = {
     return apiClient.post<ResMarketTradeHistory>('/api/market/trade/history', {userAddr});
   },
 
-  // 获取用户交易历史记录
-  getTransactionHistory: (userAddr: string) => {
-    return apiClient.post<ResTransactionHistory>('/api/user/transaction/history', {userAddr});
-  },
-
   // 提取奖励
   contractRedeem: (data: {coinType: string; marketId: string}) => {
     return apiClient.post<ResContractRedeem>('/api/contract/redeem', data);
   },
 
-  // 示例：获取预测详情
-  getPredictionDetail: (id: string) => {
-    return apiClient.get(`/predictions/${id}`);
+  // 首页banner图查询
+  getBannerList: (params?: { pageSize?: number; pageNum?: number }, config?: ApiConfig) => {
+    return apiClient.post<ResBannerList>('/api/ext/banner/list', params, config);
+  },
+
+  // 获取用户信息
+  getMemberInfo: (data: Record<string, unknown>) => {
+    return apiClient.post<MemberInfo>('/api/ext/member/current', data);
+  },
+
+  // 修改用户信息
+  updateMemberInfo: (data: Record<string, unknown>) => {
+    return apiClient.post('/api/ext/member/updateInfo', data);
+  },
+
+  // 示例：获取预测数据
+  getLoginNonce: (data: Record<string, unknown>) => {
+    return apiClient.post('/api/ext/member/loginNonce', data);
+  },
+
+  // 登录-签名认证登录
+  memberLogin: (data: Record<string, unknown>) => {
+    return apiClient.post('/api/ext/member/login', data);
+  },
+
+  // 获取市场 K 线（概率曲线）
+  getMarketKline: (data: { marketId: string; level: string }, config?: ApiConfig) => {
+    return apiClient.post<{ data: Array<{ timestamp: string; outcomes: Array<{ outcomeName: string; prob: string; outcome: number }> }> }>('/api/market/detail/kline', data, config);
+  },
+
+  // 获取用户交易历史记录
+  getTransactionHistory: (userAddr: string) => {
+    return apiClient.post<ResTransactionHistory>('/api/user/transaction/history', {userAddr});
+  },
+
+  // 关注 人/项目
+  addMemberFollow: (followType: 'People' | 'Project', followId: number) => {
+    return apiClient.post('/api/ext/memberFollow/add', {followType, followId});
+  },
+
+  // 取消关注 人/项目
+  delMemberFollow: (followType: 'People' | 'Project', followId: number) => {
+    return apiClient.post('/api/ext/memberFollow/del', {followType, followId});
+  },
+
+  // 获取已关注项目
+  getMarketFollowList: (params: {pageSize: number; pageNum: number;}, config?: ApiConfig) => {
+    return apiClient.post('/api/ext/market/myFollowList', params, config);
+  },
+
+  // 排行榜
+  getRankList: (params: { pageSize: number; pageNum: number; type: string; }, config?: ApiConfig) => {
+    return apiClient.post<ResRankList>('/api/ext/rank/list', params, config);
+  },
+
+  // 图片上传
+  upload: (formData: FormData, config?: ApiConfig) => {
+    return apiClient.post<ResRankList>('/api/ext/common/upload', formData, config);
   },
 
   // 示例：更新预测

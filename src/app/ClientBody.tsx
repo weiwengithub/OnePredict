@@ -7,6 +7,7 @@ import { createNetworkConfig, SuiClientProvider, WalletProvider } from '@onelabs
 import { getFullnodeUrl, type SuiClientOptions } from '@onelabs/sui/client';
 import InitAuth from '@/components/InitAuth'
 import GlobalLoading from '@/components/GlobalLoading'
+import { ViewportProvider } from '@/contexts/viewport';
 import {store} from '@/store'
 import '@onelabs/dapp-kit/dist/index.css';
 
@@ -51,7 +52,9 @@ export default function ClientBody({
         }}>
           {autoConnectReady ? (
             <WalletProvider autoConnect={shouldAutoConnect}>
-              <div className="antialiased">{children}</div>
+              <ViewportProvider>
+                <div className="antialiased">{children}</div>
+              </ViewportProvider>
               {/* 客户端挂载后恢复登录态/本地数据 */}
               <InitAuth />
               {/* 全局Loading组件 */}

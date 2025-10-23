@@ -23,6 +23,10 @@ export interface ResPage<T> {
   offset: number;
 }
 
+export type SortBy = 'endTime' | 'tradeVolume' | '';
+
+export type Direction = 'ASC' | 'DESC' | '';
+
 export interface MarketMeta {
   description: string;
   end_time_ms: string;
@@ -40,7 +44,7 @@ export interface MarketParams {
   winner_rake_bps: string;
 }
 
-export interface MarketOption {
+export interface PredictionDetailInfo {
   coinType: string;
   createdMs: number;
   finalMs: number;
@@ -61,10 +65,56 @@ export interface MarketOption {
   volume: string;
   volumeFormatted: string;
   winner: null;
+  globalSequencerId: string;
+}
+
+export interface MarketOption {
+  buyFee: number;
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  coinType: string;
+  createBy: string;
+  createTime: string;
+  endTime: string;
+  id: number;
+  imageUrl: string;
+  isDelete: boolean;
+  marketDesc: string;
+  marketId: string;
+  marketName: string;
+  marketParamsB: string;
+  outcome: MarketOutcome[];
+  packageId: string;
+  sellFee: number;
+  startTime: string;
+  status: string;
+  tags: string[]
+  tradeVolume: string;
+  updateBy: string;
+  updateTime: string;
+  vault: string;
+  globalSequencerId: string;
+  winnerId: string;
+}
+
+export interface MarketOutcome {
+  name: string;
+  outcomeId: number;
+  prob: string;
+  roi: string;
+}
+
+export interface ReqMarketList {
+  pageSize: number;
+  pageNum: number;
+  status?: 'UpComing' | 'OnGoing' | 'Resolved' | 'Completed';
+  orderByColumn?: 'endTime' | 'tradeVolume';
+  orderDirection?: 'ASC' | 'DESC';
 }
 
 export interface ResMarketList {
-  item: MarketOption[];
+  rows: MarketOption[];
   count: number;
   limit: number;
   offset: number;
@@ -89,6 +139,7 @@ export interface MarketPositionOption {
   shares: string;
   userAddr: string;
   winProfit: string;
+  globalSequencerId: string;
 }
 
 export interface ResMarketPosition {
@@ -169,4 +220,73 @@ export interface MarketDetailTradesOption {
   side: string;
   txDigest: string;
   userAddr: string;
+}
+
+export interface MemberInfo {
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  createBy: string;
+  createTime: string;
+  followMeCount: number;
+  followProjectCount: number;
+  id: number;
+  isDelete: boolean;
+  loginAddress: string;
+  loginTime: string;
+  meFollowCount: number;
+  memberCode: string;
+  nickName: string;
+  registerTime: string;
+  status: string;
+  updateBy: string;
+  updateTime: string;
+  introduction: string;
+}
+
+export interface RankInfo {
+  address: string;
+  profit: number;
+  sort: number;
+  tradeCount: number;
+  volume: number;
+}
+
+export interface ReqRankList {
+  pageSize: number;
+  pageNum: number;
+  type: string;
+  address: string;
+}
+
+export interface ResRankList {
+  count: number;
+  rows: [{
+    loginUserRank: RankInfo;
+    rankList: RankInfo[];
+  }];
+}
+
+export interface BannerInfo {
+  adName: string;
+  bannerLink: string;
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  createBy: string;
+  createTime: string;
+  id: number;
+  imageUrl: string;
+  isDelete: boolean;
+  sort: number;
+  status: number;
+  updateBy: string;
+  updateTime: string;
+  title?: string;
+  description?: string;
+}
+
+export interface ResBannerList {
+  count: number;
+  rows: BannerInfo[];
 }

@@ -30,184 +30,78 @@ import DisputeWindow from "@/assets/icons/disputeWindow.svg";
 import FinalOutcome from "@/assets/icons/finalOutcome.svg";
 import WechatIcon from "@/assets/icons/wechat.svg";
 import Image from "next/image";
-import {MarketOption, MarketDetailTradesOption} from "@/lib/api/interface";
-import {capitalizeFirst, formatShortDate, timeAgoEn} from "@/lib/utils";
+import {PredictionDetailInfo, MarketDetailTradesOption, MarketOption} from "@/lib/api/interface";
+import {capitalizeFirst, formatShortDate, onCopyToText, timeAgoEn} from "@/lib/utils";
 import {useLanguage} from "@/contexts/LanguageContext";
 import BigNumber from "bignumber.js";
 import { HoverTooltipButton } from "@/components/HoverTooltipButton";
 import { ClampableText } from "@/components/ClampableText";
 import {TooltipAmount} from "@/components/TooltipAmount";
-
-interface PredictionDetail {
-  id: string;
-  question: string;
-  chance: number;
-  volume: string;
-  deadline: string;
-  category: string;
-  avatar: string;
-  isLive?: boolean;
-  description: string;
-  totalVotes: number;
-  yesVotes: number;
-  noVotes: number;
-  createdAt: string;
-  tags: string[];
-  relatedPredictions: string[];
-}
-
+import CopyIcon from "@/assets/icons/copy_1.svg";
+import SharePopover from "@/components/SharePopover";
+import {toDisplayDenomAmount} from "@/lib/numbers";
+import {useIsMobile} from "@/contexts/viewport";
+import { createChart, ColorType, LineSeries } from 'lightweight-charts';
+import { useInterval } from "@/hooks/useInterval";
+import { colors } from "@/assets/config";
+import {Skeleton} from "antd";
 export default function PredictionDetailsClient() {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const searchParams = useSearchParams();
   const marketId = searchParams.get("marketId") as string;
-  const [isMobile, setIsMobile] = useState(false);
   const [selectedTimeframe, setSelectedTimeframe] = useState('1D');
 
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
-  const [outcome, setOutcome] = useState(0);
+  const [currentOutcome, setCurrentOutcome] = useState(0);
   const [amount, setAmount] = useState<number>(0);
   const [balance] = useState<number>(0);
 
   const handleOutcomeChange = useCallback(
     (next: number | ((prev: number) => number)) => {
-      setOutcome((prev) => (typeof next === "function" ? (next as any)(prev) : next));
+      setCurrentOutcome((prev) => (typeof next === "function" ? (next as any)(prev) : next));
     },
     []
   );
 
-  // Detect mobile viewport
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const didFetchRef = useRef(false);
+  // const didFetchRef = useRef<string | null>(null); // 临时关闭首次请求缓存逻辑，待后续恢复
   const [predictionDetail, setPredictionDetail] = useState<MarketOption | null>(null);
+  const [prediction, setPrediction] = useState<MarketOption | null>(null);
   useEffect(() => {
-    if (didFetchRef.current) return;   // 防止 StrictMode 下的第二次执行
-    didFetchRef.current = true;
+    if (!marketId) return;
+    // if (!marketId || didFetchRef.current === marketId) return; // 临时注释：防止预取阶段跳过真实 marketId
+    // didFetchRef.current = marketId!;
+    let cancelled = false;
 
     (async () => {
       try {
         const {data} = await apiService.getMarketDetail(marketId);
+        if (cancelled) return;
         setPredictionDetail(data)
       } catch (e) {
         console.error(e);
       }
     })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [marketId]);
-  // Mock prediction data based on ID
-  const getPredictionData = (id: string): PredictionDetail => {
-    const predictionMap: { [key: string]: PredictionDetail } = {
-      "0": {
-        id: "0",
-        question: "Will Ethereum Merge be delayed?",
-        chance: 31.78,
-        volume: "14611.13",
-        deadline: "Sep 30, 2025",
-        category: "crypto",
-        avatar: "https://ext.same-assets.com/1155254500/403630554.png",
-        description: "The Ethereum Merge represents a significant transition from Proof of Work to Proof of Stake. Market participants are predicting whether technical challenges or unforeseen issues might cause delays in the timeline.",
-        totalVotes: 2847,
-        yesVotes: 904,
-        noVotes: 1943,
-        createdAt: "2024-12-15",
-        tags: ["Ethereum", "Merge", "Cryptocurrency", "Technical"],
-        relatedPredictions: []
-      },
-      "1": {
-        id: "1",
-        question: "Will ETH Break ATH in 2025?",
-        chance: 56.74,
-        volume: "6008.89",
-        deadline: "Dec 31, 2025",
-        category: "crypto",
-        avatar: "https://ext.same-assets.com/1155254500/2433125264.png",
-        description: "Ethereum's potential to break its all-time high in 2025 depends on several factors including ETF adoption, network upgrades, and overall crypto market sentiment.",
-        totalVotes: 1854,
-        yesVotes: 1052,
-        noVotes: 802,
-        createdAt: "2024-12-10",
-        tags: ["Ethereum", "ATH", "Cryptocurrency", "DeFi"],
-        relatedPredictions: []
-      },
-      "2": {
-        id: "2",
-        question: "Will Keung To confirm a romantic relationship or scandal by 2025?",
-        chance: 55.53,
-        volume: "377.65",
-        deadline: "Dec 31, 2025",
-        category: "entertainment",
-        avatar: "https://ext.same-assets.com/1155254500/4107709064.png",
-        description: "姜濤作為香港當紅偶像，其感情生活一直備受關注。隨著事業發展和年齡增長，市場預測他可能在2025年公開戀情或面臨感情相關話題。",
-        totalVotes: 956,
-        yesVotes: 531,
-        noVotes: 425,
-        createdAt: "2024-12-08",
-        tags: ["姜濤", "娛樂圈", "戀情", "香港"],
-        relatedPredictions: []
-      }
-    };
-
-    return predictionMap[id] || predictionMap["0"];
-  };
-
-  const prediction = getPredictionData(marketId);
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      crypto: 'bg-orange-500/20 text-orange-400 border-orange-400/30',
-      entertainment: 'bg-pink-500/20 text-pink-400 border-pink-400/30',
-      economy: 'bg-green-500/20 text-green-400 border-green-400/30',
-      politics: 'bg-blue-500/20 text-blue-400 border-blue-400/30',
-      science: 'bg-purple-500/20 text-purple-400 border-purple-400/30'
-    };
-    return colors[category as keyof typeof colors] || colors.crypto;
-  };
 
   const timeframes = ['1H', '1D', '1W', '1M', '3M', '1Y'];
-
-  const yes = predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-10) : 0;
-  const chance = Number(yes.toFixed(2))
-  // Mock chart data points for the line chart
-  const generateChartData = () => {
-    const points = [];
-    for (let i = 0; i < 50; i++) {
-      const x = (i / 49) * 100;
-      const variance = (Math.random() - 0.5) * 10;
-      const y = Math.max(10, Math.min(90, chance + variance));
-      points.push({ x, y });
-    }
-    return points;
-  };
-
-  const chartData = generateChartData();
-
-  // SVG Path for the chart line
-  const createChartPath = (data: { x: number; y: number }[]) => {
-    return data.reduce((path, point, index) => {
-      const command = index === 0 ? 'M' : 'L';
-      return `${path} ${command} ${point.x * 4} ${(100 - point.y) * 1.5}`;
-    }, '');
-  };
 
   const [tradesList, setTradesList] = useState<MarketDetailTradesOption[]>([]);
   const [tradesPageNumber, setTradesPageNumber] = useState(1);
   const [tradesPageSize, setTradesPageSize] = useState(10);
   const [tradesTotalPages, setTradesTotalPages] = useState(0);
+
+  // ---- Chart state ----
+  const chartRef = useRef<any>(null);
+  const seriesMapRef = useRef<Map<number, any>>(new Map());
+  const outcomeNamesRef = useRef<Map<number, string>>(new Map());
+  const [klineData, setKlineData] = useState<Array<{ time: number; outcomes: Array<{ outcome: number; name: string; percent: number }> }>>([]);
+  const [hoverInfo, setHoverInfo] = useState<{ time: number; lines: { name: string; value: number }[] } | null>(null);
+  const [hoverPos, setHoverPos] = useState<{ x: number; y: number } | null>(null);
 
   const abortRef = useRef<AbortController | null>(null);
   useEffect(() => {
@@ -220,7 +114,7 @@ export default function PredictionDetailsClient() {
         const {data} = await apiService.getMarketDetailTrades({
           marketId,
           limit: tradesPageSize,
-          offset: tradesPageNumber
+          offset: tradesPageNumber-1
         }, { signal: controller.signal });
         setTradesList(data.items ?? []);
         setTradesTotalPages(Math.ceil(data.total / tradesPageSize));
@@ -232,6 +126,131 @@ export default function PredictionDetailsClient() {
     });
     return () => controller.abort();
   }, [marketId, tradesPageNumber, tradesPageSize]);
+  // 拉取 kline 数据（简化：只拉数据并渲染曲线）
+  useEffect(() => {
+    if (!marketId) return;
+    getKlineData();
+  }, [marketId, selectedTimeframe]);
+
+  useInterval(() => {
+    getKlineData();
+  }, 1000*4, true);
+
+  const getKlineData = useCallback(async () => {
+    try {
+      const res = await apiService.getMarketKline({ marketId, level: selectedTimeframe });
+      const list: any[] = (res as any)?.data ?? (res as any) ?? [];
+      const normalized = list.map((pt: any) => {
+        const total = (pt.outcomes || []).reduce((acc: bigint, o: any) => acc + BigInt(o.prob), 0n) || 1n;
+        const outcomes = (pt.outcomes || []).map((o: any) => ({
+          outcome: Number(o.outcome),
+          name: String(o.outcomeName ?? ''),
+          percent: Number(((Number(BigInt(o.prob) * 10000n / total) / 100)).toFixed(4)),
+        }));
+        return { time: Number(pt.timestamp), outcomes };
+      });
+      console.log('normalized:', normalized);
+      setKlineData(normalized);
+    } catch (e: any) {
+      if (e?.name === 'AbortError' || e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED') return;
+      console.error('kline error:', e);
+      setKlineData([]);
+    }
+  }, [marketId, selectedTimeframe]);
+
+  // 渲染曲线（每个 outcome 一条线），无灰度/无 tooltip
+  useEffect(() => {
+    const container = document.getElementById('container') as HTMLDivElement | null;
+    if (!container) return;
+    // 重建图表，简单可靠
+    if (chartRef.current) {
+      try { chartRef.current.remove(); } catch {}
+      seriesMapRef.current.clear();
+      chartRef.current = null;
+    }
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: container.clientHeight,
+      layout: { textColor: 'white', background: { type: ColorType.Solid, color: 'transparent' } },
+      rightPriceScale: { visible: true },
+      timeScale: { borderVisible: false },
+      grid: { horzLines: { color: 'rgba(255,255,255,0.12)' }, vertLines: { visible: false, color: 'transparent' } },
+    });
+    chartRef.current = chart;
+    // 尝试隐藏 TV logo（水印）
+    try { (chart as any).applyOptions({ watermark: { visible: false } }); } catch {}
+
+    // 颜色
+    const palette = colors; //给8个颜色;
+    // 统计 outcome 列表
+    const outcomeSet = new Set<number>();
+    klineData.forEach((pt) => pt.outcomes.forEach((o) => outcomeSet.add(o.outcome)));
+    const outcomes = Array.from(outcomeSet.values()).sort((a, b) => a - b);
+    // 组装每条线的数据
+    const seriesData = new Map<number, Array<{ time: any; value: number }>>();
+    outcomes.forEach((o) => seriesData.set(o, []));
+    klineData.forEach((pt) => {
+      const t = (pt.time as number) as any; // 秒级时间戳
+      pt.outcomes.forEach((o) => {
+        const arr = seriesData.get(o.outcome)!;
+        // 使用 0~1 的值并设置百分比格式
+        arr.push({ time: t, value: o.percent });
+        if (!outcomeNamesRef.current.has(o.outcome)) {
+          outcomeNamesRef.current.set(o.outcome, o.name);
+        }
+      });
+    });
+    // 创建并渲染（固定纵轴 0~1）
+    outcomes.forEach((o, idx) => {
+      const series = chart.addSeries(LineSeries, {
+        color: palette[idx % palette.length],
+        lineWidth: 2,
+        priceFormat: { type: 'percent', precision: 2 },
+        autoscaleInfoProvider: () => ({ priceRange: { minValue: 0, maxValue: 100 } }),
+      });
+      series.setData(seriesData.get(o) ?? []);
+      seriesMapRef.current.set(o, series);
+    });
+    chart.timeScale().fitContent();
+
+    // 自适应
+    const ro = new ResizeObserver(() => {
+      const w = container.clientWidth; const h = container.clientHeight;
+      if (w && h) chart.applyOptions({ width: w, height: h });
+    });
+    ro.observe(container);
+
+    // 悬停信息（时间 + outcome 百分比）
+    const onMove = (param: any) => {
+      if (!param?.time) { setHoverInfo(null); return; }
+      const lines: { name: string; value: number }[] = [];
+      seriesMapRef.current.forEach((series, outcomeIdx) => {
+        const sd = (param.seriesData as any)?.get(series);
+        const v = sd?.value ?? sd?.close;
+        if (v != null) {
+          lines.push({ name: outcomeNamesRef.current.get(outcomeIdx) || String(outcomeIdx), value: Number(v) * 100 });
+        }
+      });
+      setHoverInfo({ time: Number(param.time), lines });
+      // 同步记录像素位置用于浮层跟随鼠标
+      try {
+        const point = param.point as { x: number; y: number } | undefined;
+        if (point && typeof point.x === 'number' && typeof point.y === 'number') {
+          setHoverPos({ x: point.x, y: point.y });
+        }
+      } catch {}
+    };
+    chart.subscribeCrosshairMove(onMove);
+
+    return () => {
+      try { ro.disconnect(); } catch {}
+      try { chart.unsubscribeCrosshairMove(onMove); } catch {}
+      try { chart.remove(); } catch {}
+      seriesMapRef.current.clear();
+      chartRef.current = null;
+      
+    };
+  }, [klineData , selectedTimeframe]);
 
   const handlePageChange = (page: number) => {
     setTradesPageNumber(page);
@@ -246,50 +265,77 @@ export default function PredictionDetailsClient() {
     return ''
   }
 
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-20 md:pb-0">
-      {/* Desktop Header */}
-      <Header currentPage="details" />
-
-      {/* Mobile Navigation */}
-      <MobileNavigation
-        activeCategory=""
-        onCategoryChange={() => {}}
-      />
+      {/* Header */}
+      {isMobile ? (
+        <MobileNavigation
+          activeCategory=""
+          onCategoryChange={() => {}}
+        />
+      ) : (
+        <Header currentPage="details" />
+      )}
 
       {/* Main Content */}
-      <main className="max-w-[1312px] mx-auto pt-[114px] flex gap-[64px]">
-        <div className="flex-1">
+      <main className={isMobile ? 'px-[16px] py-[24px]' : 'max-w-[1312px] mx-auto pt-[50px] flex gap-[64px]'}>
+        <div className="flex-1 relative">
           {/* Back Button */}
           <div className="flex items-center">
             <Link href="/">
               <div className="flex items-center text-white/40 hover:text-white">
-                <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">Home</span>
+                <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">{t('nav.home')}</span>
               </div>
             </Link>
             <ArrowRightIcon className="mx-[16px] text-white/40" />
-            <div className="h-[18px] leading-[18px] text-[14px] text-white">Trade</div>
+            <div className="h-[18px] leading-[18px] text-[14px] text-white">{t('detail.trade')}</div>
           </div>
 
           {/* Header */}
           <div className="mt-[24px]">
-            <div className="flex gap-3">
+            <div className="flex">
               <Avatar className="w-[100px] h-[100px] rounded-[12px]">
-                <AvatarImage src={predictionDetail?.metaJson.image_url} alt="Prediction" />
+                <AvatarImage src={predictionDetail.imageUrl} alt="Prediction" />
               </Avatar>
-              <div className="ml-[24px] flex flex-col gap-[12px]">
-                <div className="h-[24px] leading-[24px] text-[24px] text-white font-bold">{predictionDetail?.metaJson.title}</div>
-                <div className="flex items-center gap-1 h-[24px] text-white/60">
-                  <span>Volume:</span>
-                  <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                  <span>{predictionDetail?.volumeFormatted ? Number(predictionDetail.volumeFormatted).toFixed(2) : 0}  Traders:147</span>
-                  <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
-                  <span>{predictionDetail?.metaJson.end_time_ms ? formatShortDate(Number(predictionDetail.metaJson.end_time_ms)) : ''}</span>
-                </div>
+              <div className={`${isMobile ? 'ml-[16px]' : 'ml-[24px]'} flex flex-col gap-[12px]`}>
+                <div className={`text-white font-bold line-clamp-3 ${isMobile ? 'leading-[24px] text-[16px]' : 'leading-[28px] text-[24px]'}`}>{predictionDetail.marketName}</div>
+                {!isMobile && (
+                  <div className="flex items-center gap-2 h-[24px] text-white/60 text-[16px]">
+                    <span>{t('detail.volume')}:</span>
+                    <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
+                    <span>{0}</span>
+                    <span>{t('detail.traders')}:</span>
+                    <span>{''}</span>
+                    <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
+                    <span>{formatShortDate(new Date(predictionDetail.endTime))}</span>
+                  </div>
+                )}
                 <div className="flex gap-[12px]">
-                  <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[16px] font-bold px-[12px] text-white"><EditIcon className="text-[12px]" />Say something</div>
-                  <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[12px] font-bold px-[12px] text-white"><NoteIcon /></div>
-                  <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[12px] font-bold px-[12px] text-white"><ExportIcon /></div>
+                  {!isMobile && (
+                    <div className="h-[36px] flex items-center gap-[8px] rounded-[32px] border border-white/20 text-[16px] font-bold px-[12px] text-white"><EditIcon className="text-[12px]" />{t('detail.saySomething')}</div>
+                  )}
+                  <div className={`h-[36px] flex items-center gap-[8px] text-[12px] font-bold px-[12px] text-white ${isMobile ? 'absolute -top-[9px] right-[36px]' : 'rounded-[32px] border border-white/20'}`}><NoteIcon /></div>
+                  <SharePopover
+                    className={isMobile ? 'absolute -top-[9px] right-0' : ''}
+                    trigger={<div className={`h-[36px] flex items-center gap-[8px] text-[12px] font-bold px-[12px] text-white ${isMobile ? '' : 'rounded-[32px] border border-white/20'}`}><ExportIcon /></div>}
+                    content={
+                      <div className="max-w-[260px] text-sm leading-5">
+                        <div
+                          className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] whitespace-nowrap cursor-pointer"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onCopyToText(`${window.location.origin}/details?marketId=${predictionDetail.marketId}`)
+                          }}
+                        >
+                          <CopyIcon />
+                          {t('predictions.copyLink')}
+                        </div>
+                      </div>
+                    }
+                    offset={10}
+                    lockScroll
+                  />
                 </div>
               </div>
             </div>
@@ -298,7 +344,7 @@ export default function PredictionDetailsClient() {
           {/* Chart Section */}
           <div className="mt-[40px]">
             {/* Chart Controls */}
-            <div className="flex items-center justify-between mb-[40px]">
+            <div className="flex items-center justify-between mb-[40px] overflow-x-auto overflow-y-hidden">
               <div className="flex gap-[8px]">
                 {timeframes.map((tf) => (
                   <button
@@ -314,172 +360,158 @@ export default function PredictionDetailsClient() {
                   </button>
                 ))}
               </div>
-              <div className="flex gap-[8px]">
+              {/* <div className="flex gap-[8px]">
                 <div className="p-[12px] text-white text-[12px] cursor-pointer"><ExchangeIcon /></div>
                 <div className="p-[12px] text-white text-[12px] cursor-pointer"><SettingIcon /></div>
-              </div>
+              </div> */}
             </div>
 
             {/* Chart */}
-            <div className="relative h-[300px] bg-gradient-to-b from-white/5 to-transparent rounded-lg p-4 mb-6">
-              <div className="absolute inset-4">
-                <svg width="100%" height="100%" className="overflow-visible">
-                  {/* Grid lines */}
-                  {[20, 40, 60, 80].map((y) => (
-                    <line
-                      key={y}
-                      x1="0"
-                      y1={`${y}%`}
-                      x2="100%"
-                      y2={`${y}%`}
-                      stroke="rgba(255,255,255,0.1)"
-                      strokeWidth="1"
-                    />
-                  ))}
-
-                  {/* Chart line */}
-                  <path
-                    d={createChartPath(chartData)}
-                    fill="none"
-                    stroke="#22c55e"
-                    strokeWidth="2"
-                    className="drop-shadow-sm"
-                  />
-
-                  {/* Current price indicator */}
-                  <circle
-                    cx={`${chartData[chartData.length - 1]?.x * 4 || 0}`}
-                    cy={`${(100 - (chartData[chartData.length - 1]?.y || 50)) * 1.5}`}
-                    r="4"
-                    fill="#22c55e"
-                    className="drop-shadow-lg"
-                  />
-                </svg>
-
-                {/* Price label */}
-                <div className="absolute top-4 left-4">
-                  <div className="text-2xl font-bold text-white">{prediction.chance.toFixed(1)}¢</div>
-                  <div className="text-sm text-green-400 flex items-center gap-1">
-                    <TrendingUp className="w-3 h-3" />
-                    +2.1% today
-                  </div>
-                </div>
+            <div className="relative h-[300px] rounded-lg p-4 mb-6">
+              <div id="container" className="absolute inset-0 flex items-center gap-[12px] flex-col justify-center">
+                    {!klineData.length && <span className="text-[14px] text-white opacity-60">Loading...</span>}  
               </div>
+              {hoverInfo && (
+                <div
+                  className="absolute bg-black/60 text-white text-xs rounded p-2 space-y-1 pointer-events-none"
+                  style={{
+                    left: typeof window !== 'undefined' && hoverPos ? Math.min(hoverPos.x + 12, (document.getElementById('container')?.clientWidth || 0) - 160) : 8,
+                    top: typeof window !== 'undefined' && hoverPos ? Math.max(hoverPos.y - 40, 8) : 8,
+                  }}
+                >
+                  <div>{new Date(hoverInfo.time * 1000).toLocaleString()}</div>
+                  {hoverInfo.lines.map((ln, i) => (
+                    <div key={i} className="flex justify-between gap-4">
+                      <span>{ln.name}</span>
+                      <span>{(ln.value/100).toFixed(2)}%</span>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Yes/No Buttons */}
+          {/* Buttons */}
           <div className="mt-[48px] border border-white/40 rounded-[24px] overflow-hidden">
-            <div className="h-[60px] bg-white/40 flex text-[16px] text-white">
-              <div className="flex-1 flex items-center px-[24px]">
-                <span>{t('detail.options')}</span>
+            {!isMobile && (
+              <div className="h-[60px] bg-white/40 flex text-[16px] text-white">
+                <div className="flex-1 flex items-center px-[24px]">
+                  <span>{t('detail.options')}</span>
+                </div>
+                <div className="flex-1 flex items-center justify-center px-[24px]">
+                  <span>{t('detail.chance')}</span>
+                  <RefreshIcon className="ml-[4px]" />
+                </div>
+                <div className="flex-1 flex items-center justify-end px-[24px]">
+                  <span>{t('detail.currentPrice')}</span>
+                </div>
               </div>
-              <div className="flex-1 flex items-center justify-center px-[24px]">
-                <span>{t('detail.chance')}</span>
-                <RefreshIcon className="ml-[4px]" />
+            )}
+            {predictionDetail.outcome.map((outcome, index) => (
+              <div key={index} className="h-[96px] flex text-[18px] text-white font-bold">
+                <div className="flex-1 flex items-center px-[24px]">
+                  <div className="w-[36px] h-[36px] rounded-full" style={{backgroundColor: colors[index]}}></div>
+                  <span className="ml-[12px]">{outcome.name}</span>
+                </div>
+                {!isMobile && (
+                  <div className="flex-1 flex items-center justify-center px-[24px]">
+                    <span>{`${Number((100 * Number(outcome.prob)).toFixed(2))}%`}</span>
+                  </div>
+                )}
+                <div className="flex-1 flex items-center justify-end px-[24px]">
+                  <HoverTooltipButton
+                    label={`${t('predictions.buy')} ${Number((100 * Number(outcome.prob)).toFixed(2))}`}
+                    hoverLabel={`${outcome.prob}%`}
+                    tooltip={
+                      <>
+                        To win: {outcome.roi} x
+                      </>
+                    }
+                    onClick={() => setCurrentOutcome(0)}
+                    style={{background: colors[index]}}
+                    className={`group h-[48px] w-[162px] text-white font-bold text-[16px] rounded-[8px] ${currentOutcome === index ? 'active' : ''}`}
+                    buttonProps={{ variant: "outline" }}
+                  />
+                </div>
               </div>
-              <div className="flex-1 flex items-center justify-end px-[24px]">
-                <span>{t('detail.currentPrice')}</span>
-              </div>
-            </div>
-            <div className="h-[96px] flex text-[18px] text-white font-bold">
-              <div className="flex-1 flex items-center px-[24px]">
-                <Image src="/images/icon/icon-yes.png" alt="" width={36} height={36} />
-                <span className="ml-[12px]">{predictionDetail?.metaJson.outcomes[0]}</span>
-              </div>
-              <div className="flex-1 flex items-center justify-center px-[24px]">
-                <span>{`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-10).toFixed(2) : 0}%`}</span>
-              </div>
-              <div className="flex-1 flex items-center justify-end px-[24px]">
-                <HoverTooltipButton
-                  label={`Buy ${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-12).toFixed(2) : 0}`}
-                  hoverLabel={`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[0]).shiftedBy(-10).toFixed(2) : 0}%`}
-                  tooltip={
-                    <>
-                      To win: {predictionDetail.outcomeYields[predictionDetail.metaJson.outcomes[0]]} x
-                    </>
-                  }
-                  onClick={() => setOutcome(0)}
-                  className={`group h-[48px] w-[162px] ${outcome === 0 ? 'bg-[#29C04E] hover:bg-[#29C04E] text-white' : 'bg-[#34503B] hover:bg-[#29C04E] text-[#089C2B] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
-                  buttonProps={{ variant: "outline" }}
-                />
-              </div>
-            </div>
-            <div className="h-[96px] flex text-[18px] text-white font-bold border-t border-white/40">
-              <div className="flex-1 flex items-center px-[24px]">
-                <Image src="/images/icon/icon-no.png" alt="" width={36} height={36} />
-                <span className="ml-[12px]">{predictionDetail?.metaJson.outcomes[1]}</span>
-              </div>
-              <div className="flex-1 flex items-center justify-center px-[24px]">
-                <span>{`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[1]).shiftedBy(-10).toFixed(2) : 0}%`}</span>
-              </div>
-              <div className="flex-1 flex items-center justify-end px-[24px]">
-                <HoverTooltipButton
-                  label={`Buy ${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[1]).shiftedBy(-12).toFixed(2) : 0}`}
-                  hoverLabel={`${predictionDetail ? new BigNumber(predictionDetail.pProbsJson[1]).shiftedBy(-10).toFixed(2) : 0}%`}
-                  tooltip={
-                    <>
-                      To win: {predictionDetail.outcomeYields[predictionDetail.metaJson.outcomes[1]]} x
-                    </>
-                  }
-                  onClick={() => setOutcome(1)}
-                  className={`group h-[48px] w-[162px] ${outcome === 1 ? 'bg-[#F95D5D] hover:bg-[#F95D5D] text-white' : 'bg-[rgba(249,93,93,0.5)] hover:bg-[#F95D5D] text-[#E04646] hover:text-white'} font-bold text-[16px] rounded-[8px]`}
-                  buttonProps={{ variant: "outline" }}
-                />
-              </div>
-            </div>
+            ))}
           </div>
 
           {/* Rules */}
           <div className="mt-[48px]">
-            <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">Rules</h3>
+            <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">{t('detail.rules')}</h3>
             <div className="border border-white/40 rounded-[24px] overflow-hidden p-[24px] pb-[12px]">
               <ClampableText
-                text={predictionDetail?.metaJson.description}
+                text={predictionDetail.marketDesc}
                 maxLines={5}
-                className="leading-[24px] text-[16px] text-white"
+                className="leading-[24px] text-[16px] text-white whitespace-pre-line"
                 onToggle={(expanded) => console.log("expanded:", expanded)}
               />
             </div>
           </div>
 
-          <div className="mt-[24px] border border-white/40 rounded-[24px] overflow-hidden px-[28px] py-[24px]">
-            <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
-              <OutcomeProposed className="text-[14px]" />
-              <span className="inline-block ml-[8px]">Outcome proposed</span>
+          <div className="mt-[24px] flex items-center justify-between border border-white/40 rounded-[24px] overflow-hidden px-[28px] py-[24px]">
+            <div>
+              <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
+                <OutcomeProposed className={`text-[14px] ${predictionDetail.status === 'Resolved' || predictionDetail.status === 'Completed' ? 'text-[#29C041]' : 'text-white/60'}`} />
+                <span className="inline-block ml-[8px]">{t('detail.outcomeProposed')}</span>
+              </div>
+              <div className={`my-[-3px] ml-[7px] h-[30px] border-l ${predictionDetail.status === 'Resolved' || predictionDetail.status === 'Completed' ? 'border-[#29C041]' : 'border-white/60'}`}>
+                {(predictionDetail.status === 'Resolved' || predictionDetail.status === 'Completed') && (
+                  <span className="ml-[14px] leading-[16px] text-[16px] text-[#29C041]">{predictionDetail.outcome[Number(predictionDetail.winnerId)].name}</span>
+                )}
+              </div>
+              <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
+                <DisputeWindow className={`text-[14px] ${predictionDetail.status === 'Completed' ? 'text-[#29C041]' : 'text-white/60'}`} />
+                <span className="inline-block ml-[8px]">{t('detail.disputeWindow')}</span>
+              </div>
+              <div className={`my-[-3px] ml-[7px] h-[30px] border-l ${predictionDetail.status === 'Completed' ? 'border-[#29C041]' : 'border-white/60'}`}></div>
+              <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
+                <FinalOutcome className={`text-[14px] ${predictionDetail.status === 'Completed' ? 'text-[#29C041]' : 'text-white/60'}`} />
+                <span className="inline-block ml-[8px]">{t('detail.finalOutcome')}</span>
+              </div>
+              {predictionDetail.status === 'Completed' && (
+                <div className="ml-[22px] leading-[16px] text-[16px] text-[#29C041]">{predictionDetail.outcome[Number(predictionDetail.winnerId)].name}</div>
+              )}
             </div>
-            <div className="my-[-3px] ml-[7px] h-[30px] border-l border-white/60"></div>
-            <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
-              <DisputeWindow className="text-[14px]" />
-              <span className="inline-block ml-[8px]">Dispute window</span>
-            </div>
-            <div className="my-[-3px] ml-[7px] h-[30px] border-l border-white/60"></div>
-            <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
-              <FinalOutcome className="text-[14px]" />
-              <span className="inline-block ml-[8px]">Final outcome</span>
-            </div>
+            {predictionDetail.status === 'Resolved' && (
+              <Image src="/images/released.png" alt="" width={120} height={120} />
+            )}
+            {predictionDetail.status === 'Completed' && (
+              <Image src="/images/ended.png" alt="" width={120} height={120} />
+            )}
           </div>
 
           {/* Trades */}
           <div className="mt-[48px]">
-            <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">Trades</h3>
-            <div className="border border-white/40 rounded-[24px] overflow-hidden  px-[28px] py-[37px] space-y-[16px]">
-              {tradesList.map((trades, index) => (
-                <div key={`${trades.marketId}_${index}`} className="flex items-center justify-between">
-                  <div className="flex items-center gap-[12px] text-[16px] text-white">
-                    <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
-                    <div>***</div>
-                    <div className="opacity-60">{capitalizeFirst(trades.side)}</div>
-                    <div className="h-[16px] leading-[16px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] px-[4px] rounded-[4px]"><TooltipAmount shares={trades.deltaShares} decimals={9} precision={2}/> {trades.outcomeName}</div>
-                    <div className="opacity-60">at</div>
-                    <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
-                    <div><TooltipAmount shares={trades.amount} decimals={9} precision={2}/></div>
-                  </div>
-                  <div className="text-white/60 text-[16px]">{timeAgoEn(trades.eventMs)}</div>
+            <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">{t('detail.trade')}</h3>
+            <div className="border border-white/40 rounded-[24px]  px-[28px] py-[37px] space-y-[16px] overflow-x-auto overflow-y-hidden">
+              {tradesList.length > 0 ? (
+                <>
+                  {tradesList.map((trades, index) => (
+                    <div key={`${trades.marketId}_${index}`} className="min-w-[536px] flex items-center justify-between">
+                      <div className="flex items-center gap-[12px] text-[16px] text-white">
+                        <div className="size-[32px] bg-gradient-to-r from-[#3EECAC]/45 to-[#EE74E1]/45 rounded-[32px]"></div>
+                        <div>{trades.userAddr.slice(-6)}</div>
+                        <div className="opacity-60">{capitalizeFirst(trades.side)}</div>
+                        <div className={`h-[20px] leading-[20px] px-[4px] rounded-[4px] ${trades.side === 'buy' ? 'bg-[rgba(40,192,78,0.5)] text-[#28C04E]' : 'bg-[rgba(249,93,93,0.5)] text-[#F95D5D]'}`}><TooltipAmount shares={trades.deltaShares} decimals={9} precision={2}/> {trades.outcomeName}</div>
+                        <div className="opacity-60">at</div>
+                        <Image src="/images/icon/icon-token.png" alt="" width={12} height={12} />
+                        <div><TooltipAmount shares={trades.amount} decimals={9} precision={2}/></div>
+                      </div>
+                      <div className="text-white/60 text-[16px]">{timeAgoEn(trades.eventMs)}</div>
+                    </div>
+                  ))}
+                </>
+              ) : (
+                <div className="mt-[37px]">
+                  <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>
+                  <div className="mt-[12px] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">{t('common.nothing')}</div>
                 </div>
-              ))}
+              )}
               {/*分页组件*/}
               <Pagination
+                className="min-w-[536px]"
                 currentPage={tradesPageNumber}
                 totalPages={tradesTotalPages}
                 onPageChange={handlePageChange}
@@ -490,26 +522,26 @@ export default function PredictionDetailsClient() {
             </div>
           </div>
 
-          {/*<div className="mt-[36px] h-[24px] leading-[24px] text-white text-[18px] font-bold">Opinions (0)</div>*/}
+          {/*<div className="mt-[36px] h-[24px] leading-[24px] text-white text-[18px] font-bold">{t('detail.opinions')} (0)</div>*/}
 
           {/*<div className="mt-[45px] bg-white/40 rounded-[12px] px-[24px] py-[14px]">*/}
           {/*  <div className="flex items-center justify-between">*/}
           {/*    <div className="size-[32px] bg-[#D9D9D9] rounded-full"></div>*/}
-          {/*    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white/60 px-[12px]">Say something</div>*/}
+          {/*    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white/60 px-[12px]">{t('detail.saySomething')}</div>*/}
           {/*    <Edit1Icon className="text-white/60 text-[24px] cursor-pointer hover:text-white" />*/}
           {/*  </div>*/}
           {/*</div>*/}
 
           {/*<div className="mt-[48px]">*/}
           {/*  <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>*/}
-          {/*  <div className="mt-[12x] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">Nothing yet</div>*/}
+          {/*  <div className="mt-[12px] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">{t('common.nothing')}</div>*/}
           {/*</div>*/}
         </div>
-        {predictionDetail && (
-          <div className="w-[368px] sticky top-[80px]">
+        {!isMobile && predictionDetail && (
+          <div className="w-[368px] sticky top-[80px]" style={{ height: '100%' }}>
             <TradingForm
               prediction={predictionDetail}
-              initialOutcome={outcome}
+              initialOutcome={currentOutcome}
               outcomeChange={handleOutcomeChange}
             />
             <TermsAgreement />
@@ -518,7 +550,7 @@ export default function PredictionDetailsClient() {
       </main>
 
       {/* Footer */}
-      <Footer />
+      {!isMobile && <Footer />}
     </div>
   );
 }

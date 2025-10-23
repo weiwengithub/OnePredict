@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, ChevronDown } from 'lucide-react';
+import {useLanguage} from "@/contexts/LanguageContext";
 
 export interface PaginationProps {
   currentPage: number;
@@ -22,6 +23,8 @@ export const Pagination: React.FC<PaginationProps> = ({
   itemsPerPageOptions = [5, 10, 20, 50],
   className = "",
 }) => {
+  const { t } = useLanguage();
+
   const [showItemsPerPageDropdown, setShowItemsPerPageDropdown] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -160,8 +163,8 @@ export const Pagination: React.FC<PaginationProps> = ({
       aria-label="Pagination navigation"
     >
       {/* Page info */}
-      <div className="w-[98px] leading-[32px] text-white text-[16px]">
-        Page {currentPage} of {totalPages}
+      <div className="leading-[32px] text-white text-[16px]">
+        {t('common.pagination', {currentPage, totalPages})}
       </div>
 
       {/* Page navigation */}
@@ -255,7 +258,7 @@ export const Pagination: React.FC<PaginationProps> = ({
           }}
           className="h-[32px] w-[98px] border border-white/40 rounded-[8px] flex items-center justify-center cursor-pointer text-[16px] text-white/40 hover:text-white transition-all gap-1 focus:outline-none focus:ring-2 focus:ring-white/50 focus:text-white"
         >
-          {itemsPerPage}/page
+          {itemsPerPage}/{t('common.page')}
           <ChevronDown size={12} />
         </button>
 
@@ -298,7 +301,7 @@ export const Pagination: React.FC<PaginationProps> = ({
                     : 'text-white/60 hover:bg-white/10 hover:text-white'
                 }`}
               >
-                {option}/page
+                {option}/{t('common.page')}
               </button>
             ))}
           </div>

@@ -1,6 +1,5 @@
 import testnet from './testnet.json';
 import mainnet from './mainnet.json';
-import { tokenList } from './token';
 
 interface TokenListItem {
     coinType: string;
@@ -11,11 +10,9 @@ interface TokenListItem {
 
 testnet.showBalancesTokenList = testnet.showBalancesTokenList.map((item: TokenListItem) => ({
     ...item,
-    icon: tokenList[item.symbol as keyof typeof tokenList]
 }))
 mainnet.showBalancesTokenList = mainnet.showBalancesTokenList.map((item: TokenListItem) => ({
     ...item,
-    icon: tokenList[item.symbol as keyof typeof tokenList]
 }))
 
 const onechain_testnet = testnet
@@ -25,3 +22,4 @@ export default currentNetwork
 export const showBalancesTokenList = currentNetwork.showBalancesTokenList
 export const rightNetwork = currentNetwork.rightNetwork
 export const chainName = currentNetwork.chainName
+export const colors = ['#28C04E', '#F95D5D','#FF8725', '#FFD918','#1CE0E8', '#1A8EFF','#805CFF', '#CF4BC6' ]

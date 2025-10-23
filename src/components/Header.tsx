@@ -1,14 +1,11 @@
 "use client";
 
-import React, {useState, useEffect, useRef} from "react";
-import { Button } from "@/components/ui/button";
+import React, {useState, useEffect} from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
-import DepositModal from "@/components/DepositModal";
-import WithdrawModal from "@/components/WithdrawModal";
 import { useLanguage } from "@/contexts/LanguageContext";
 import SearchModal from "@/components/SearchModal";
 import Signin from "@/components/Signin";
@@ -17,14 +14,7 @@ import SearchIcon from "@/assets/icons/search.svg";
 import NetworkIcon from "@/assets/icons/network.svg";
 import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
 import CheckedIcon from "@/assets/icons/checked.svg";
-import GoogleIcon from "@/assets/icons/google.svg";
-import AppleIcon from "@/assets/icons/apple.svg";
-import WalletIcon from "@/assets/icons/walletIcon.svg";
-import {addPoint} from "@/lib/utils";
-import ProfileIcon from "@/assets/icons/profile.svg";
-import SettingsIcon from "@/assets/icons/settings.svg";
 import { setSigninOpen } from "@/store";
-import LogoutIcon from "@/assets/icons/logout.svg";
 import {useCurrentAccount} from "@onelabs/dapp-kit";
 import { useDispatch, useSelector } from 'react-redux';
 import {RootState} from "@/lib/interface";
@@ -36,8 +26,6 @@ interface HeaderProps {
 export default function Header({ currentPage }: HeaderProps) {
   const dispatch = useDispatch();
   const [showIntegralModal, setShowIntegralModal] = useState(false);
-  const [showDeposit, setShowDeposit] = useState(false);
-  const [showWithdraw, setShowWithdraw] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
@@ -96,12 +84,12 @@ export default function Header({ currentPage }: HeaderProps) {
   return (
     <>
       <header
-        className="hidden md:block fixed top-0 left-0 right-0 z-50 h-[64px] transition-all duration-300 bg-[#04122B]"
+        className="h-[64px] bg-[#04122B] sticky top-0 z-50"
       >
-        <div className="max-w-[1728px] mx-auto px-[40px]">
-          <div className="relative flex items-center justify-between transition-all duration-300 h-[64px]">
+        <div className="max-w-[1728px] mx-auto px-[16px] md:px-[40px]">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center h-[64px]">
             {/* Left side - Logo */}
-            <div className="flex items-center space-x-4 z-10">
+            <div className="flex items-center z-10 justify-self-start">
               <Link href="/" className="block transition-transform hover:scale-105">
                 <Image
                   src="/images/logo.png"
@@ -114,37 +102,24 @@ export default function Header({ currentPage }: HeaderProps) {
             </div>
 
             {/* Center - Navigation (绝对居中) */}
-            <div className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 z-20">
-              <nav className="flex gap-[40px] items-center justify-center">
-                {navigationItems.map((item) => (
-                  <Link
-                    key={item.key}
-                    href={item.href}
-                    className={`
-                    h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200
-                    hover:text-[#477CFC] relative group whitespace-nowrap
-                    ${activePage === item.key
-                      ? 'text-[#477CFC] font-medium'
-                      : 'text-white'
-                    }
-                  `}
-                  >
-                    {item.label}
-
-                    {/* 活跃页面下划线 */}
-                    {/*{activePage === item.key && (*/}
-                    {/*  <div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-[#467DFF] rounded-full" />*/}
-                    {/*)}*/}
-
-                    {/* 悬停效果 */}
-                    {/*<div className="absolute -bottom-1 left-0 right-0 h-0.5 bg-white/30 rounded-full scale-x-0 group-hover:scale-x-100 transition-transform duration-200" />*/}
-                  </Link>
-                ))}
-              </nav>
-            </div>
+            <nav className={`justify-self-center z-20 flex items-center gap-[20px] md:gap-[40px] whitespace-nowrap max-w-[60vw] md:max-w-none overflow-x-auto scrollbar-none`}>
+              {navigationItems.map((item) => (
+                <Link
+                  key={item.key}
+                  href={item.href}
+                  className={`
+              h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200
+              hover:text-[#477CFC] relative group
+              ${activePage === item.key ? 'text-[#477CFC] font-medium' : 'text-white'}
+            `}
+                >
+                  {item.label}
+                </Link>
+              ))}
+            </nav>
 
             {/* Right side - User menu */}
-            <div className="flex items-center gap-[8px] z-10">
+            <div className="flex items-center gap-[8px] z-10 justify-self-end">
               {/* USDH Balance */}
               <div className="flex items-center mr-[40px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
                 <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
@@ -198,8 +173,8 @@ export default function Header({ currentPage }: HeaderProps) {
                           setLanguage('en');
                           setShowLanguageDropdown(false);
                         }}
-                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
-                          language === 'en' ? 'text-white' : 'text-white/50 hover:text-white'
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] rounded-[8px] transition-colors ${
+                          language === 'en' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
                         }`}
                       >
                         <span>English</span>
@@ -211,12 +186,25 @@ export default function Header({ currentPage }: HeaderProps) {
                           setLanguage('zh');
                           setShowLanguageDropdown(false);
                         }}
-                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] bg-[#01173C] rounded-[8px] transition-colors ${
-                          language === 'zh' ? 'text-white' : 'text-white/50 hover:text-white'
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] rounded-[8px] transition-colors ${
+                          language === 'zh' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
                         }`}
                       >
                         <span>简体中文</span>
                         {language === 'zh' && <CheckedIcon className="text-[12px]" />}
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setLanguage('zhtw');
+                          setShowLanguageDropdown(false);
+                        }}
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] rounded-[8px] transition-colors ${
+                          language === 'zhtw' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
+                        }`}
+                      >
+                        <span>繁體中文</span>
+                        {language === 'zhtw' && <CheckedIcon className="text-[12px]" />}
                       </button>
                     </div>
                   </div>
@@ -235,33 +223,13 @@ export default function Header({ currentPage }: HeaderProps) {
             </div>
           </div>
         </div>
-
-        {/* 渐变边框效果（滚动时显示） */}
-        {isScrolled && (
-          <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        )}
       </header>
 
       {/* Trading Modal */}
       <PredictionIntegralModal
         isOpen={showIntegralModal}
         onClose={() => setShowIntegralModal(false)}
-        onShowDeposit={() => setShowDeposit(true)}
-        onShowWithdraw={() => setShowWithdraw(true)}
-        prediction={{
-          question: 'string',
-          chance: 0,
-          volume: 'string',
-          deadline: 'string',
-          id: ''
-        }}
       />
-
-      {/* Deposit Modal */}
-      <DepositModal open={showDeposit} onOpenChange={setShowDeposit} />
-
-      {/* Withdraw Modal */}
-      <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
 
       {/* Search Modal */}
       <SearchModal

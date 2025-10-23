@@ -12,6 +12,7 @@ import UserIcon from "@/assets/icons/user.svg";
 import apiService from "@/lib/api/services";
 import {MarketOption} from "@/lib/api/interface";
 import {useRouter} from "next/navigation";
+import {useIsMobile} from "@/contexts/viewport";
 
 interface SearchResult {
   id: string;
@@ -26,6 +27,7 @@ interface SearchModalProps {
 }
 
 export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
+  const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
   const { t } = useLanguage();
@@ -58,27 +60,33 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
 
   const didFetchRef = useRef(false);
   const [trendingResults, setTrendingResults] = useState<MarketOption[]>([]);
+  const [predictionPageNumber, setPredictionPageNumber] = useState(0);
+  const [predictionPageSize, setPredictionPageSize] = useState(20);
   useEffect(() => {
     if (didFetchRef.current) return;   // 防止 StrictMode 下的第二次执行
     didFetchRef.current = true;
 
     (async () => {
       try {
-        const {data} = await apiService.getMarketList();
-        setTrendingResults(data.item)
+        const {data} = await apiService.getMarketList({
+          pageSize: predictionPageSize,
+          pageNum: predictionPageNumber,
+          projectName: ''
+        });
+        setTrendingResults(data.rows)
       } catch (e) {
         console.error(e);
       }
     })();
   }, []);
 
-  const filteredResults = trendingResults.filter(result =>
-    result.metaJson.title.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // const filteredResults = trendingResults.filter(result =>
+  //   result.metaJson.title.toLowerCase().includes(searchQuery.toLowerCase())
+  // );
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-[576px] w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[36px] shadow-2xl shadow-black/50">
+    <Dialog open={open} onOpenChange={onOpenChange} className="z-[60]">
+      <DialogContent className={`bg-[#051A3D] border-none overflow-hidden rounded-[36px] shadow-2xl shadow-black/50 ${isMobile ? 'w-full left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none px-[16px] py-[24px]' : 'max-w-[576px] w-full p-[24px]'}`}>
         {/* Header with gradient border effect */}
         <div className="relative">
           {/* Search Box with enhanced gradient */}
@@ -103,7 +111,7 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
         {/* Results List with improved styling */}
         <div>
           <div className="space-y-1">
-            {filteredResults.map((result, index) => (
+            {trendingResults.map((result, index) => (
               <div
                 key={result.marketId}
                 className="flex items-center justify-between p-[8px] hover:bg-white/20 rounded-[8px] transition-all duration-200 group cursor-pointer"
@@ -113,21 +121,21 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
               >
                 <div className="w-[32px] h-[32px] rounded-[8px] overflow-hidden">
                   <Image
-                    src={result.metaJson.image_url}
+                    src={result.imageUrl}
                     alt=""
                     width={18}
                     height={18}
                     className="size-full"
                   />
                 </div>
-                <div className="flex-1 h-[24px] leading-[24px] text-[20px] text-white px-[12px] truncate">{result.metaJson.title}</div>
+                <div className="flex-1 h-[24px] leading-[24px] text-[20px] text-white px-[12px] truncate">{result.marketName}</div>
                 <UserIcon className="text-[12px] text-white/60" />
                 <div className="ml-[4px] h-[24px] leading-[24px] text-[14px] text-white/60">155</div>
               </div>
             ))}
           </div>
 
-          {filteredResults.length === 0 && searchQuery && (
+          {trendingResults.length === 0 && searchQuery && (
             <div className="text-center py-12">
               <div className="text-white/40 text-base mb-2">{t('search.noResults')}</div>
               <div className="text-white/30 text-sm">Try searching for "{searchQuery}"</div>

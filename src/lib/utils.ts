@@ -5,7 +5,6 @@ import { bcs, fromHEX, toHEX } from '@onelabs/bcs';
 import { toast } from "sonner";
 import BigNumber from 'bignumber.js';
 import i18n from '@/lib/i18n'
-import { TFunction } from "i18next";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
@@ -18,7 +17,7 @@ export const onCopyToText = (text: string) => {
   textField.select()
   document.execCommand('copy')
   textField.remove()
-  toast.success(i18n.t('common.copy'))
+  toast.success(i18n.t('common.copySuccessful'))
 };
 
 export const addPoint = (address:string, len = 5) => {
@@ -297,29 +296,25 @@ export function timeAgoEn(
   const DAY    = 24 * HOUR;
 
   // 小于 5 秒：直接 just now / in 0 seconds
-  if (diff < SECOND) return future ? "in 0 seconds" : "just now";
+  if (diff < SECOND) return i18n.t('time.justNow');
 
   if (diff < MINUTE) {
     const n = Math.floor(diff / SECOND);
-    const unit = n === 1 ? "second" : "seconds";
-    return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+    return future ? i18n.t(n === 1 ? 'time.second_future_one' : 'time.second_future_other', {count: n}) : i18n.t(n === 1 ? 'time.second_past_one' : 'time.second_past_other', {count: n});
   }
 
   if (diff < HOUR) {
     const n = Math.floor(diff / MINUTE);
-    const unit = n === 1 ? "minute" : "minutes";
-    return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+    return future ? i18n.t(n === 1 ? 'time.minute_future_one' : 'time.minute_future_other', {count: n}) : i18n.t(n === 1 ? 'time.minute_past_one' : 'time.minute_past_other', {count: n});
   }
 
   if (diff < DAY) {
     const n = Math.floor(diff / HOUR);
-    const unit = n === 1 ? "hour" : "hours";
-    return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+    return future ? i18n.t(n === 1 ? 'time.hour_future_one' : 'time.hour_future_other', {count: n}) : i18n.t(n === 1 ? 'time.hour_past_one' : 'time.hour_past_other', {count: n});
   }
 
   const n = Math.floor(diff / DAY);
-  const unit = n === 1 ? "day" : "days";
-  return future ? `in ${n} ${unit}` : `${n} ${unit} ago`;
+  return future ? i18n.t(n === 1 ? 'time.day_future_one' : 'time.day_future_other', {count: n}) : i18n.t(n === 1 ? 'time.day_past_one' : 'time.day_past_other', {count: n});
 }
 
 function toDate(v: number | string | Date): Date {

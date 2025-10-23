@@ -20,16 +20,10 @@ import { Swiper as SwiperType } from 'swiper';
 // Import additional Swiper styles
 import 'swiper/css/zoom';
 import 'swiper/css/keyboard';
-
-interface CarouselItem {
-  id: number;
-  image: string;
-  title?: string;
-  description?: string;
-}
+import {BannerInfo} from "@/lib/api/interface";
 
 interface FullscreenModalProps {
-  items: CarouselItem[];
+  items: BannerInfo[];
   isOpen: boolean;
   initialSlide: number;
   onClose: () => void;
@@ -137,7 +131,7 @@ export default function FullscreenModal({
   const handleDownload = async () => {
     const currentItem = items[currentSlide];
     try {
-      const response = await fetch(currentItem.image);
+      const response = await fetch(currentItem.imageUrl);
       const blob = await response.blob();
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
@@ -159,14 +153,14 @@ export default function FullscreenModal({
         await navigator.share({
           title: currentItem.title,
           text: currentItem.description,
-          url: currentItem.image,
+          url: currentItem.imageUrl,
         });
       } catch (error) {
         console.error('Share failed:', error);
       }
     } else {
       // 复制到剪贴板作为后备方案
-      navigator.clipboard.writeText(currentItem.image);
+      navigator.clipboard.writeText(currentItem.imageUrl);
       alert('图片链接已复制到剪贴板');
     }
   };
@@ -215,7 +209,7 @@ export default function FullscreenModal({
           <SwiperSlide key={item.id} className="flex items-center justify-center">
             <div className="swiper-zoom-container">
               <img
-                src={item.image}
+                src={item.imageUrl}
                 alt={item.title}
                 className="max-w-full max-h-full object-contain cursor-pointer"
                 style={{

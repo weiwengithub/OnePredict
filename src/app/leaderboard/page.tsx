@@ -1,8 +1,8 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import Avatar from 'boring-avatars';
 import { Badge } from "@/components/ui/badge";
 import MobileNavigation from "@/components/MobileNavigation";
 import { Trophy, Medal, Award, ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
@@ -12,115 +12,220 @@ import { Pagination } from "@/components/Pagination";
 import Image from "next/image";
 import ExportIcon from "@/assets/icons/export.svg";
 import DeclineIcon from "@/assets/icons/decline.svg";
-
+import {useLanguage} from "@/contexts/LanguageContext";
+import {useIsMobile} from "@/contexts/viewport";
+import {MemberInfo, RankInfo} from "@/lib/api/interface";
+import apiService from "@/lib/api/services";
+import { useSelector } from "react-redux";
+import { useMemo } from "react";
+import { useCurrentAccount } from "@onelabs/dapp-kit";
+import { RootState } from "@/store";
 type TimePeriod = 'all' | 'daily' | 'weekly' | 'monthly';
 type SortField = 'pnl' | 'volume' | 'trades'
+import Skeleton from "@/components/ui/skeleton";
+
+function LeaderboardSkeleton({ isMobile }: { isMobile: boolean }) {
+  const Row = ({ highlight = false }: { highlight?: boolean }) => (
+    <div className={`min-w-[800px] ${highlight ? "bg-white/[0.02]" : ""}`}>
+      <div className="flex items-center py-[12px]">
+        <div className="w-[84px] flex items-center justify-center">
+          <Skeleton className="h-[24px] w-[24px] rounded-full" />
+        </div>
+        <div className="flex-1 px-[24px] flex items-center gap-[16px]">
+          <Skeleton className="h-[40px] w-[40px] rounded-full" />
+          <Skeleton className="h-[16px] w-[120px]" />
+          <Skeleton className="h-[16px] w-[48px] rounded-[4px]" />
+        </div>
+        <div className="w-[120px] flex justify-center">
+          <Skeleton className="h-[16px] w-[80px]" />
+        </div>
+        <div className="w-[120px] flex justify-center">
+          <Skeleton className="h-[16px] w-[80px]" />
+        </div>
+        <div className="w-[120px] flex justify-center">
+          <Skeleton className="h-[16px] w-[80px]" />
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div className="mt-[22px] max-w-[1020px] mx-auto bg-[#04122B] text-white/60 backdrop-blur-sm rounded-[32px] overflow-x-auto overflow-y-hidden shadow-2xl">
+      {/* 表头骨架 */}
+      <div className="min-w-[800px] bg-[#031026] pt-[23px] pb-[17px]">
+        <div className="flex items-center text-[16px] tracking-wider px-[24px]">
+          <div className="w-[84px] text-center">
+            <Skeleton className="h-[16px] w-[48px] mx-auto" />
+          </div>
+          <div className="flex-1">
+            <Skeleton className="h-[16px] w-[120px]" />
+          </div>
+          <div className="w-[120px] flex justify-center">
+            <Skeleton className="h-[16px] w-[80px]" />
+          </div>
+          <div className="w-[120px] flex justify-center">
+            <Skeleton className="h-[16px] w-[80px]" />
+          </div>
+          <div className="w-[120px] flex justify-center">
+            <Skeleton className="h-[16px] w-[80px]" />
+          </div>
+        </div>
+      </div>
+
+      {/* 行骨架（含“我的排名”占位 + 列表占位） */}
+      <div className="min-w-[800px] divide-y divide-white/10">
+        <Row highlight />
+        {Array.from({ length: 6 }).map((_, i) => (
+          <Row key={i} highlight={i % 2 === 0} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
 
 export default function Leaderboard() {
-  const [isMobile, setIsMobile] = useState(false);
+  const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [currentPeriod, setCurrentPeriod] = useState<TimePeriod>('weekly');
+  const [currentPeriod, setCurrentPeriod] = useState<TimePeriod>('all');
   const [currentSortField, setCurrentSortField] = useState<SortField>('pnl');
-
-  // Detect mobile viewport
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  // Reset to first page when period changes
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [currentPeriod]);
 
   // Time period configurations
   const timePeriods = [
-    { key: 'all' as TimePeriod, label: 'All', description: 'Today\'s Top Performers' },
-    { key: 'daily' as TimePeriod, label: 'Daily', description: 'Today\'s Top Performers' },
-    { key: 'weekly' as TimePeriod, label: 'Weekly', description: 'This Week\'s Champions' },
-    { key: 'monthly' as TimePeriod, label: 'Monthly', description: 'Month\'s Leading Predictors' }
+    { key: 'all' as TimePeriod, label: t('leaderboard.all'), description: 'Today\'s Top Performers' },
+    { key: 'daily' as TimePeriod, label: t('leaderboard.daily'), description: 'Today\'s Top Performers' },
+    { key: 'weekly' as TimePeriod, label: t('leaderboard.weekly'), description: 'This Week\'s Champions' },
+    { key: 'monthly' as TimePeriod, label: t('leaderboard.monthly'), description: 'Month\'s Leading Predictors' }
   ];
 
-  // Generate period-specific leaderboard data
-  const generatePeriodData = (period: TimePeriod) => {
-    const firstNames = ["Alex", "Sarah", "Michael", "Jessica", "David", "Emma", "Ryan", "Lisa", "Kevin", "Amy",
-                       "John", "Maria", "Daniel", "Sophie", "Chris", "Rachel", "Mark", "Anna", "Tom", "Emily",
-                       "James", "Kate", "Peter", "Nicole", "Sam", "Lucy", "Ben", "Grace", "Matt", "Olivia",
-                       "Josh", "Hannah", "Luke", "Chloe", "Adam", "Zoe", "Jake", "Mia", "Ryan", "Ella",
-                       "Noah", "Ava", "Ethan", "Isabella", "Mason", "Charlotte", "Logan", "Amelia", "Lucas", "Harper"];
-
-    const lastNames = ["Smith", "Johnson", "Williams", "Brown", "Jones", "Garcia", "Miller", "Davis", "Rodriguez", "Martinez",
-                      "Hernandez", "Lopez", "Gonzalez", "Wilson", "Anderson", "Thomas", "Taylor", "Moore", "Jackson", "Martin",
-                      "Lee", "Perez", "Thompson", "White", "Harris", "Sanchez", "Clark", "Ramirez", "Lewis", "Robinson",
-                      "Walker", "Young", "Allen", "King", "Wright", "Scott", "Torres", "Nguyen", "Hill", "Flores",
-                      "Green", "Adams", "Nelson", "Baker", "Hall", "Rivera", "Campbell", "Mitchell", "Carter", "Roberts"];
-
-    const avatars = [
-      "https://ext.same-assets.com/1155254500/403630554.png",
-      "https://ext.same-assets.com/1155254500/2433125264.png",
-      "https://ext.same-assets.com/1155254500/4107709064.png",
-      "https://ext.same-assets.com/1155254500/2551173646.bin",
-      "https://ext.same-assets.com/1155254500/3415865673.bin",
-      "https://ext.same-assets.com/1155254500/847220604.bin",
-      "https://ext.same-assets.com/1155254500/420979322.bin",
-      "https://ext.same-assets.com/1155254500/2944589987.bin",
-      "https://ext.same-assets.com/1155254500/734502197.bin",
-      "https://ext.same-assets.com/1155254500/93840700.bin"
-    ];
-
-    // Different base values for different periods
-    const periodConfig = {
-      all: { basePoints: 15000, maxPoints: 25000, userCount: 50 },
-      daily: { basePoints: 500, maxPoints: 800, userCount: 30 },
-      weekly: { basePoints: 1500, maxPoints: 2500, userCount: 45 },
-      monthly: { basePoints: 5000, maxPoints: 8000, userCount: 50 },
-    };
-
-    const config = periodConfig[period];
-
-    // Shuffle names for different periods to show ranking changes
-    const shuffleSeed = period === 'daily' ? 1 : period === 'weekly' ? 2 : period === 'monthly' ? 3 : 4;
-    const shuffledFirstNames = [...firstNames].sort(() => Math.sin(shuffleSeed) - 0.5);
-    const shuffledLastNames = [...lastNames].sort(() => Math.cos(shuffleSeed) - 0.5);
-
-    return Array.from({ length: config.userCount }, (_, index) => {
-      const rank = index + 1;
-      const pointsRange = config.maxPoints - config.basePoints;
-      const basePoints = config.maxPoints - (rank * (pointsRange / config.userCount));
-      const randomVariation = Math.floor(Math.random() * 100) - 50;
-      const points = Math.max(config.basePoints, basePoints + randomVariation);
-
-      const baseAccuracy = 98 - (rank * 0.4) + Math.random() * 2;
-      const accuracy = Math.max(70, Math.min(98, baseAccuracy));
-
-      const predictionMultiplier = period === 'daily' ? 0.2 : period === 'weekly' ? 0.5 : period === 'monthly' ? 1.5 : 4;
-      const predictions = Math.floor((Math.random() * 30 + 20) * predictionMultiplier);
-
-      return {
-        rank,
-        username: `${shuffledFirstNames[index % shuffledFirstNames.length]} ${shuffledLastNames[index % shuffledLastNames.length].charAt(0)}`,
-        avatar: avatars[index % avatars.length],
-        points,
-        accuracy: `${accuracy.toFixed(1)}%`,
-        totalPredictions: predictions,
-        winStreak: Math.floor(Math.random() * 15)
-      };
-    });
-  };
-
-  const leaderboardData = generatePeriodData(currentPeriod);
-
   // Pagination logic
-  const totalPages = Math.ceil(leaderboardData.length / itemsPerPage);
+  const totalPages = 1;
   const startIndex = (currentPage - 1) * itemsPerPage;
   const endIndex = startIndex + itemsPerPage;
-  const currentUsers = leaderboardData.slice(startIndex, endIndex);
+  const currentUsers = [];
+
+  const [userRank, setUserRank] = useState<RankInfo | null>(null);
+  const [rankList, setRankList] = useState<RankInfo[]>([]);
+  const calledOnceRef = useRef(false);
+  const currentAccount = useCurrentAccount();
+  const [pageSize, setPageSize] = useState(50);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [hasMore, setHasMore] = useState(false);
+  const loadMoreRef = useRef<HTMLDivElement | null>(null);
+
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
+  const userAddress = useMemo(() => {
+    return currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+  }, [currentAccount, zkLoginData]);
+
+  const loadingRef = useRef(false);
+  const lastRequestedPageRef = useRef<number>(0); // 防同页重复
+  const ioLockRef = useRef(false); // IO触发期间的软锁
+  const loadPage = async (targetPage: number, replace = false) => {
+    // 防止同页重复请求（某些后端在空数据时会回传同一页）
+    if (lastRequestedPageRef.current === targetPage) return;
+    lastRequestedPageRef.current = targetPage;
+
+    if (loadingRef.current) return;
+    loadingRef.current = true;
+    setLoading(true);
+
+    const ac = new AbortController();
+    const { signal } = ac;
+
+    try {
+      const { data } = await apiService.getRankList(
+        {
+          pageSize,
+          pageNum: targetPage,
+          type: "All"
+        },
+        { signal }
+      );
+
+      const user = data?.rows?.[0]?.loginUserRank;
+      if (user) setUserRank(user);
+
+      const rawList: RankInfo[] = data?.rows?.[0]?.rankList ?? [];
+      const newList = user ? rawList.filter(r => r.address !== user.address) : rawList;
+
+      // 合并列表
+      setRankList(prev => (replace ? newList : [...prev, ...newList]));
+
+      const total: number | undefined = data?.count;
+      const received = newList.length;
+      const startOffset = (targetPage - 1) * pageSize;
+
+      const nextHasMore =
+        total != null
+          ? startOffset + received < total
+          : received === pageSize;
+
+      setHasMore(nextHasMore);
+
+      if (received > 0) {
+        setPageNumber(targetPage + 1);
+      }
+    } catch (e: any) {
+      if (e?.name !== "CanceledError" && e?.code !== "ERR_CANCELED") {
+        console.error(e?.message || "请求失败");
+      }
+    } finally {
+      loadingRef.current = false;
+      setLoading(false);
+      ioLockRef.current = false;
+    }
+
+    return () => ac.abort();
+  };
+
+  // 首屏加载：默认请求第 1 页
+  useEffect(() => {
+    let canceled = false;
+    (async () => {
+      const cancel = await loadPage(1, true);
+      return () => {
+        canceled = true;
+        cancel?.(); // 组件卸载时取消请求
+      };
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const getMoreRankList = () => {
+    if (!loading && hasMore) {
+      loadPage(pageNumber);
+    }
+  };
+
+  useEffect(() => {
+    const el = loadMoreRef.current;
+    if (!el) return;
+
+    // 预取触发点提前 200px
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const first = entries[0];
+        if (first.isIntersecting) {
+          // 有更多、且没在加载才触发
+          if (hasMore && !loading && !loadingRef.current) {
+            getMoreRankList();
+          }
+        }
+      },
+      {
+        root: null,
+        rootMargin: "200px 0px",
+        threshold: 0,
+      }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, loading, getMoreRankList]);
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -135,6 +240,10 @@ export default function Leaderboard() {
 
   const handlePeriodChange = (period: TimePeriod) => {
     setCurrentPeriod(period);
+    if (!loading) {
+      setPageNumber(1);
+      loadPage(1, true);
+    }
   };
 
   const getRankIcon = (rank: number) => {
@@ -154,42 +263,19 @@ export default function Leaderboard() {
   const TimePeriodSelector = () => {
     return (
       <div className="mt-[16px]">
-        {/* Desktop version */}
-        <div className="hidden md:flex items-center justify-center space-x-[8px]">
+        <div className="flex items-center justify-center space-x-[8px]">
           {timePeriods.map((period) => (
             <Button
               key={period.key}
               variant="ghost"
               onClick={() => handlePeriodChange(period.key)}
-              className={`h-[32px] px-[16px] py-[8px] rounded-[40px] text-[16px] font-medium transition-all duration-300 ${
-                currentPeriod === period.key
-                  ? 'bg-white text-black'
-                  : 'text-white hover:bg-white hover:text-black border border-white/20'
-              }`}
+              className={`rounded-[40px] font-medium transition-all duration-300 
+                ${isMobile ? 'h-[24px] px-[12px] py-[4px] text-[14px]' : 'h-[32px] px-[16px] py-[8px] text-[16px]'}
+                ${currentPeriod === period.key ? 'bg-white text-black' : 'text-white hover:bg-white hover:text-black border border-white/20'}`}
             >
               {period.label}
             </Button>
           ))}
-        </div>
-
-        {/* Mobile version */}
-        <div className="md:hidden">
-          <div className="grid grid-cols-2 gap-2 max-w-sm mx-auto">
-            {timePeriods.map((period) => (
-              <Button
-                key={period.key}
-                variant="ghost"
-                onClick={() => handlePeriodChange(period.key)}
-                className={`py-3 rounded-xl text-sm transition-all duration-300 ${
-                  currentPeriod === period.key
-                    ? 'bg-white text-black'
-                    : 'text-white hover:bg-white hover:text-black border border-white/20'
-                }`}
-              >
-                {period.label}
-              </Button>
-            ))}
-          </div>
         </div>
       </div>
     );
@@ -197,167 +283,204 @@ export default function Leaderboard() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-[136px] md:pb-0">
-      {/* Desktop Header */}
-      <Header currentPage="leaderboard" />
-
-      {/* Mobile Navigation */}
-      <MobileNavigation
-        activeCategory="leaderboard"
-        onCategoryChange={() => {}}
-      />
+      {/* Header */}
+      {isMobile ? (
+        <MobileNavigation
+          activeCategory="leaderboard"
+          onCategoryChange={() => {}}
+        />
+      ) : (
+        <Header currentPage="leaderboard" />
+      )}
 
       {/* Main Content */}
-      <main className="max-w-[1728px] mx-auto px-[40px] pt-[64px]">
+      <main className={isMobile ? 'w-full p-[16px]' : 'max-w-[1728px] mx-auto px-[40px] pt-[136px]'}>
         {/* Header Section */}
-        <div className="text-center mt-[136px]">
+        <div className="text-center">
           <div className="flex items-center justify-center">
-            <div className="w-[96px] h-[96px] bg-[#483E27] rounded-[24px] flex items-center justify-center">
-              <Image src="/images/leaderboard.png" alt="" width={48} height={48} />
+            <div className={`${isMobile ? 'w-[64px] h-[64px]' : 'w-[96px] h-[96px]'} bg-[#483E27] rounded-[24px] flex items-center justify-center`}>
+              <Image src="/images/leaderboard.png" alt="" width={48} height={48} className={isMobile ? 'size-[32px]' : 'size-[48px]'} />
             </div>
           </div>
-          <div className="mt-[16px] text-[56px] text-white leading-[73px] tracking-tight">Leaderboard</div>
-          <p className="mt-[16px] text-[#A5A6A8] text-[32px] mx-auto leading-[42px]">Top performers on Bayes Market prediction platform</p>
+          <div className={`mt-[16px] text-white tracking-tight ${isMobile ? 'text-[40px] leading-[52px]' : 'text-[56px] leading-[73px]'}`}>{t('header.leaderboard')}</div>
+          <p className={`mt-[16px] text-[#A5A6A8] mx-auto ${isMobile ? 'text-[16px] leading-[21px]' : 'text-[32px] leading-[42px]'}`}>{t('leaderboard.title')}</p>
         </div>
 
         {/* Time Period Selector */}
         <TimePeriodSelector />
 
         {/* Leaderboard Table */}
-        <div className="mt-[22px] max-w-[1020px] mx-auto bg-[#04122B] text-white/60 backdrop-blur-sm rounded-[32px] overflow-hidden shadow-2xl">
-          {/* Table Header */}
-          <div className="bg-[#031026] pt-[23px] pb-[17px]">
-            <div className="hidden md:flex text-[16px] tracking-wider">
-              <div className="w-[84px] text-center">Rank</div>
-              <div className="flex-1 px-[24px]">Trader</div>
-              <div className="w-[120px] group flex items-center justify-center cursor-pointer" onClick={() => setCurrentSortField("pnl")}>
-                <div className={`text-white ${currentSortField === "pnl" ? 'block' : 'hidden group-hover:block'}`}>
-                  <DeclineIcon />
+        {loading && pageNumber === 1 ? (
+          <LeaderboardSkeleton isMobile={isMobile} />
+        ) : (
+          <div className="mt-[22px] max-w-[1020px] mx-auto bg-[#04122B] text-white/60 backdrop-blur-sm rounded-[32px] overflow-x-auto overflow-y-hidden shadow-2xl">
+            {/* Table Header */}
+            <div className="min-w-[800px] bg-[#031026] pt-[23px] pb-[17px]">
+              <div className="flex text-[16px] tracking-wider">
+                <div className="w-[84px] text-center">{t('leaderboard.rank')}</div>
+                <div className="flex-1 px-[24px]">{t('leaderboard.trader')}</div>
+                <div className="w-[120px] group flex items-center justify-center cursor-pointer" onClick={() => setCurrentSortField("pnl")}>
+                  <div className={`text-white ${currentSortField === "pnl" ? 'block' : 'hidden group-hover:block'}`}>
+                    <DeclineIcon />
+                  </div>
+                  <span className={`ml-[4px] ${currentSortField === "pnl" ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>{t('leaderboard.pnL')}</span>
                 </div>
-                <span className={`ml-[4px] ${currentSortField === "pnl" ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>PnL</span>
-              </div>
-              <div className="w-[120px] group flex items-center justify-center cursor-pointer" onClick={() => setCurrentSortField("volume")}>
-                <div className={`text-white ${currentSortField === "volume" ? 'block' : 'hidden group-hover:block'}`}>
-                  <DeclineIcon />
+                <div className="w-[120px] group flex items-center justify-center cursor-pointer" onClick={() => setCurrentSortField("volume")}>
+                  <div className={`text-white ${currentSortField === "volume" ? 'block' : 'hidden group-hover:block'}`}>
+                    <DeclineIcon />
+                  </div>
+                  <span className={`ml-[4px] ${currentSortField === "volume" ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>{t('leaderboard.volume')}</span>
                 </div>
-                <span className={`ml-[4px] ${currentSortField === "volume" ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>Volume</span>
-              </div>
-              <div className="w-[120px] group flex items-center justify-center cursor-pointer" onClick={() => setCurrentSortField("trades")}>
-                <div className={`text-white ${currentSortField === "trades" ? 'block' : 'hidden group-hover:block'}`}>
-                  <DeclineIcon />
+                <div className="w-[120px] group flex items-center justify-center cursor-pointer" onClick={() => setCurrentSortField("trades")}>
+                  <div className={`text-white ${currentSortField === "trades" ? 'block' : 'hidden group-hover:block'}`}>
+                    <DeclineIcon />
+                  </div>
+                  <span className={`ml-[4px] ${currentSortField === "trades" ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>{t('leaderboard.trades')}</span>
                 </div>
-                <span className={`ml-[4px] ${currentSortField === "trades" ? 'text-white' : 'text-white/60 group-hover:text-white'}`}>Trades</span>
               </div>
             </div>
-          </div>
 
-          {/* Table Body */}
-          <div className="divide-y divide-white/20">
-            {currentUsers.map((user, index) => (
-              <div
-                key={`${currentPeriod}-${user.rank}`}
-                className={`hover:bg-white/[0.03] transition-all duration-300 ${
-                  index % 2 === 0 ? 'bg-white/[0.01]' : 'bg-transparent'
-                }`}
-              >
-                {/* Desktop Layout */}
-                <div className="hidden md:flex items-center py-[12px]">
-                  {/* Rank */}
-                  <div className="w-[84px] flex items-center justify-center">
-                    {getRankIcon(user.rank)}
-                  </div>
+            {/* Table Body */}
+            {rankList.length > 0 ? (
+              <div className="min-w-[800px] divide-y divide-white/20">
+                {userRank && (
+                  <div
+                    className="hover:bg-white/[0.03] transition-all duration-300"
+                  >
+                    <div className="flex items-center py-[12px]">
+                      {/* Rank */}
+                      <div className="w-[84px] flex items-center justify-center">
+                        {getRankIcon(userRank.sort)}
+                      </div>
 
-                  {/* Trader */}
-                  <div className="flex-1 px-[24px] flex items-center text-white">
-                    <Avatar className="w-[40px] h-[40px] ring-2 ring-white/10">
-                      <AvatarImage src={user.avatar} alt={user.username} />
-                      <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 font-bold">
-                        {user.username.charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="ml-[16px] inline-block text[16px]">{user.username}</span>
-                    <span className="ml-[12px] mr-[24px] inline-block h-[16px] leading-[16px] px-[10px] border border-[#28C04E] bg-[rgba(40,192,78,0.5)]] rounded-[4px] text-[12px] text-[#28C04E]">Me</span>
-                    <ExportIcon />
-                  </div>
+                      {/* Trader */}
+                      <div className="flex-1 px-[24px] flex items-center text-white">
+                        <Avatar
+                          size={40}
+                          name={userRank.address}
+                          variant={'marble'}
+                        />
+                        <span className="ml-[16px] inline-block text[16px]">{userRank.address.slice(-6)}</span>
+                        <span className="ml-[12px] mr-[24px] inline-block h-[16px] leading-[16px] px-[10px] border border-[#28C04E] bg-[rgba(40,192,78,0.5)]] rounded-[4px] text-[12px] text-[#28C04E]">{t('leaderboard.me')}</span>
+                        <ExportIcon />
+                      </div>
 
-                  {/* PnL */}
-                  <div className={`w-[120px] text-[16px] text-center ${user.points > 0 ? 'text-[#29C04E]' : user.points < 0 ? 'text-[#A63030]' : 'text-white'}`}>
-                    {user.points.toLocaleString()}
-                  </div>
+                      {/* PnL */}
+                      <div className={`w-[120px] text-[16px] text-center ${userRank.profit > 0 ? 'text-[#29C04E]' : userRank.profit < 0 ? 'text-[#A63030]' : 'text-white'}`}>
+                        {userRank.profit.toLocaleString()}
+                      </div>
 
-                  {/* Volume */}
-                  <div className={`w-[120px] text-[16px] text-center ${user.points > 0 ? 'text-[#29C04E]' : user.points < 0 ? 'text-[#A63030]' : 'text-white'}`}>
-                    {user.points.toLocaleString()}
-                  </div>
+                      {/* Volume */}
+                      <div className={`w-[120px] text-[16px] text-center ${userRank.volume > 0 ? 'text-[#29C04E]' : userRank.volume < 0 ? 'text-[#A63030]' : 'text-white'}`}>
+                        {userRank.volume.toLocaleString()}
+                      </div>
 
-                  {/* Trades */}
-                  <div className={`w-[120px] text-[16px] text-center ${user.points > 0 ? 'text-[#29C04E]' : user.points < 0 ? 'text-[#A63030]' : 'text-white'}`}>
-                    {user.points.toLocaleString()}
-                  </div>
-                </div>
-
-                {/* Mobile Layout */}
-                <div className="md:hidden">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center space-x-3">
-                      {getRankIcon(user.rank)}
-                      <Avatar className="w-10 h-10 ring-2 ring-white/10">
-                        <AvatarImage src={user.avatar} alt={user.username} />
-                        <AvatarFallback className="bg-gradient-to-br from-blue-600 to-blue-800 text-white font-bold">
-                          {user.username.charAt(0)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="text-white font-semibold">{user.username}</span>
-                    </div>
-                    <span className="text-white font-bold text-lg">{user.points.toLocaleString()}</span>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-4 text-center">
-                    <div>
-                      <Badge className="bg-emerald-500/15 text-emerald-400 border-emerald-400/30 text-xs">
-                        {user.accuracy}
-                      </Badge>
-                      <div className="text-white/40 text-xs mt-1">Accuracy</div>
-                    </div>
-                    <div>
-                      <span className="text-white/80 font-semibold">{user.totalPredictions}</span>
-                      <div className="text-white/40 text-xs mt-1">Predictions</div>
-                    </div>
-                    <div>
-                      <Badge
-                        className={`text-xs ${
-                          user.winStreak > 5
-                            ? 'bg-orange-500/15 text-orange-400 border-orange-400/30'
-                            : user.winStreak > 0
-                            ? 'bg-blue-500/15 text-blue-400 border-blue-400/30'
-                            : 'bg-gray-500/15 text-gray-400 border-gray-400/30'
-                        }`}
-                      >
-                        {user.winStreak}
-                      </Badge>
-                      <div className="text-white/40 text-xs mt-1">Win Streak</div>
+                      {/* Trades */}
+                      <div className={`w-[120px] text-[16px] text-center ${userRank.tradeCount > 0 ? 'text-[#29C04E]' : userRank.tradeCount < 0 ? 'text-[#A63030]' : 'text-white'}`}>
+                        {userRank.tradeCount.toLocaleString()}
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
+                {rankList.map((rank, index) => (
+                  <div
+                    key={`${rank.address}-${index}`}
+                    className={`hover:bg-white/[0.03] transition-all duration-300 ${
+                      index % 2 === 0 ? 'bg-white/[0.01]' : 'bg-transparent'
+                    }`}
+                  >
+                    <div className="flex items-center py-[12px]">
+                      {/* Rank */}
+                      <div className="w-[84px] flex items-center justify-center">
+                        {getRankIcon(rank.sort)}
+                      </div>
+
+                      {/* Trader */}
+                      <div className="flex-1 px-[24px] flex items-center text-white">
+                        <Avatar
+                          size={40}
+                          name={rank.address}
+                          variant={'marble'}
+                        />
+                        <span className="ml-[16px] inline-block text[16px]">{rank.address.slice(-6)}</span>
+                        {/*<span className="ml-[12px] mr-[24px] inline-block h-[16px] leading-[16px] px-[10px] border border-[#28C04E] bg-[rgba(40,192,78,0.5)]] rounded-[4px] text-[12px] text-[#28C04E]">Me</span>*/}
+                        {/*<ExportIcon />*/}
+                      </div>
+
+                      {/* PnL */}
+                      <div className={`w-[120px] text-[16px] text-center ${rank.profit > 0 ? 'text-[#29C04E]' : rank.profit < 0 ? 'text-[#A63030]' : 'text-white'}`}>
+                        {rank.profit.toLocaleString()}
+                      </div>
+
+                      {/* Volume */}
+                      <div className={`w-[120px] text-[16px] text-center ${rank.volume > 0 ? 'text-[#29C04E]' : rank.volume < 0 ? 'text-[#A63030]' : 'text-white'}`}>
+                        {rank.volume.toLocaleString()}
+                      </div>
+
+                      {/* Trades */}
+                      <div className={`w-[120px] text-[16px] text-center ${rank.tradeCount > 0 ? 'text-[#29C04E]' : rank.tradeCount < 0 ? 'text-[#A63030]' : 'text-white'}`}>
+                        {rank.tradeCount.toLocaleString()}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {loading && (
+                  <>
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div key={`loading-row-${i}`} className="min-w-[800px]">
+                        <div className="flex items-center py-[12px]">
+                          <div className="w-[84px] flex items-center justify-center">
+                            <Skeleton className="h-[24px] w-[24px] rounded-full" />
+                          </div>
+                          <div className="flex-1 px-[24px] flex items-center gap-[16px]">
+                            <Skeleton className="h-[40px] w-[40px] rounded-full" />
+                            <Skeleton className="h-[16px] w-[120px]" />
+                          </div>
+                          <div className="w-[120px] flex justify-center">
+                            <Skeleton className="h-[16px] w-[80px]" />
+                          </div>
+                          <div className="w-[120px] flex justify-center">
+                            <Skeleton className="h-[16px] w-[80px]" />
+                          </div>
+                          <div className="w-[120px] flex justify-center">
+                            <Skeleton className="h-[16px] w-[80px]" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </>
+                )}
+
+                {/* 触底哨兵：用于 IntersectionObserver 观测 */}
+                {hasMore && (
+                  <div ref={loadMoreRef} className="h-6 w-full" />
+                )}
+
+                {/* 兜底“加载更多”按钮（万一 IO 不可用或用户想手动触发） */}
+                {hasMore && !loading && (
+                  <div className="flex justify-center py-4">
+                    <button
+                      onClick={getMoreRankList}
+                      className="px-4 h-9 rounded-md bg-white/10 hover:bg-white/20 transition duration-200"
+                    >
+                      {t('common.loadMore') ?? 'Load more'}
+                    </button>
+                  </div>
+                )}
               </div>
-            ))}
+            ) : (
+              <div className="my-[37px]">
+                <Image src="/images/empty.png" alt="Points" width={50} height={39} className="mx-auto" />
+                <div className="mt-[12px] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">{t('common.nothing')}</div>
+              </div>
+            )}
           </div>
-        </div>
-
-        {/*分页组件*/}
-        <div className="max-w-[1020px] mt-[24px] mx-auto">
-          <Pagination
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={handlePageChange}
-            itemsPerPage={itemsPerPage}
-            onItemsPerPageChange={handleItemsPerPageChange}
-            itemsPerPageOptions={[5, 10, 20, 50]}
-          />
-        </div>
+        )}
       </main>
 
       {/* Footer */}
-      <Footer />
+      {!isMobile && <Footer />}
     </div>
   );
 }

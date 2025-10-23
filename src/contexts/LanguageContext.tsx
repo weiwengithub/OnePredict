@@ -4,7 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import '../lib/i18n'; // Initialize i18n
 
-export type Language = 'en' | 'zh';
+export type Language = 'en' | 'zh' | 'zhtw';
 
 interface LanguageContextType {
   language: Language;
@@ -24,7 +24,7 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     if (ready && typeof window !== 'undefined') {
       setIsReady(true);
       const savedLanguage = localStorage.getItem('i18nextLng') as Language;
-      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh')) {
+      if (savedLanguage && (savedLanguage === 'en' || savedLanguage === 'zh' || savedLanguage === 'zhtw')) {
         setLanguageState(savedLanguage);
         i18n.changeLanguage(savedLanguage);
       } else {

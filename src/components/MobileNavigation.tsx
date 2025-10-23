@@ -1,29 +1,38 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import {
-  Search,
-  Bell,
-  Menu,
-  Home,
-  TrendingUp,
-  Clock,
-  Plus,
-  Building2,
-  DollarSign,
-  Bitcoin,
-  Film,
-  Trophy,
-  User,
-  Settings,
-  Bookmark,
-  Gift,
-  BarChart3
-} from "lucide-react";
+import {Menu} from "lucide-react";
 import Link from 'next/link';
+import Image from "next/image";
+import {useDispatch, useSelector} from 'react-redux';
+import {useCurrentAccount, useDisconnectWallet} from "@onelabs/dapp-kit";
+import {useUsdhBalance} from "@/hooks/useUsdhBalance";
+import {useRouter} from "next/navigation";
+import {clearLoginData, setSigninOpen} from "@/store";
+import {RootState} from "@/lib/interface";
+import PredictionIntegralModal from "@/components/PredictionIntegralModal";
+import SearchModal from "@/components/SearchModal";
+import Signin from "@/components/Signin";
+import { useLanguage } from "@/contexts/LanguageContext";
+import { useTheme } from '@/contexts/ThemeContext';
+import HomeIcon from "@/assets/icons/menu/home.svg";
+import SearchIcon from "@/assets/icons/menu/search.svg";
+import AssetsIcon from "@/assets/icons/menu/assets.svg";
+import MoreIcon from "@/assets/icons/menu/more.svg";
+import NotificationIcon from "@/assets/icons/menu/notification.svg";
+import LeaderboardIcon from "@/assets/icons/menu/leaderboard.svg";
+import RewardIcon from "@/assets/icons/menu/rewards.svg";
+import ProfileIcon from "@/assets/icons/menu/profile.svg";
+import SettingIcon from "@/assets/icons/menu/settings.svg";
+import LanguagesIcon from "@/assets/icons/menu/languages.svg";
+import DarkIcon from "@/assets/icons/menu/dark.svg";
+import LightIcon from "@/assets/icons/menu/light.svg";
+import SystemIcon from "@/assets/icons/menu/system.svg";
+import LogoutIcon from "@/assets/icons/menu/logout.svg";
+import ArrowIcon from "@/assets/icons/menu/arrow.svg";
+import CheckedIcon from "@/assets/icons/menu/checked.svg";
 
 interface MobileNavigationProps {
   onCategoryChange?: (category: string) => void;
@@ -32,28 +41,61 @@ interface MobileNavigationProps {
 
 export default function MobileNavigation({
   onCategoryChange,
-  activeCategory = "trending"
+  activeCategory = "home"
 }: MobileNavigationProps) {
+  const dispatch = useDispatch();
+  const router = useRouter();
+  const { language, setLanguage, t } = useLanguage();
+  const { theme, actualTheme, setTheme, toggleTheme } = useTheme();
+
+  const [showIntegralModal, setShowIntegralModal] = useState(false);
+  const [showSearchModal, setShowSearchModal] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const [selectLanguage, setSelectLanguage] = useState(false);
+  const [selectMode, setSelectMode] = useState(false);
+
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
+  const { mutate: disconnect } = useDisconnectWallet();
+  const { balance: usdhBalance } = useUsdhBalance({
+    // address: userAddress, // 可选：不传则自动解析
+    pollMs: 0, // 可选：例如 5000 开启 5s 轮询
+  });
+
+  const [showTheme, setShowTheme] = useState(false);
 
   // Main pages navigation
   const mainPages = [
-    { id: "home", label: "Home", icon: Home, href: "/" },
-    { id: "leaderboard", label: "Leaderboard", icon: BarChart3, href: "/leaderboard" },
-    { id: "rewards", label: "Rewards", icon: Gift, href: "/rewards" }
+    { id: "home", label: t('header.forYou'), icon: HomeIcon, href: "/" },
+    { id: "search", label: t('header.search'), icon: SearchIcon, href: "/leaderboard" },
+    { id: "assets", label: t('header.assets'), icon: AssetsIcon, href: "/rewards" },
+    { id: "more", label: t('header.more'), icon: MoreIcon, href: "/rewards" }
   ];
 
-  const categories = [
-    { id: "trending", label: "Trending", icon: TrendingUp },
-    { id: "live", label: "Live", icon: Clock },
-    { id: "new", label: "New", icon: Plus },
-    { id: "politics", label: "Politics", icon: Building2 },
-    { id: "economy", label: "Economy", icon: DollarSign },
-    { id: "crypto", label: "Crypto", icon: Bitcoin },
-    { id: "entertainment", label: "Entertainment", icon: Film },
-    { id: "sports", label: "Sports", icon: Trophy },
-    { id: "watchlist", label: "Watchlist", icon: Bookmark },
-  ];
+  const handleButtonClick = () => {
+    if (zkLoginData || currentAccount) {
+      setShowIntegralModal(true);
+    } else {
+      dispatch(setSigninOpen(true))
+    }
+  };
+
+  const handleMenuClick = (id: string) => {
+    switch (id) {
+      case "home":
+        router.push("/");
+        break;
+      case "search":
+        setShowSearchModal(true);
+        break;
+      case "assets":
+        handleButtonClick()
+        break;
+      case "more":
+        setIsOpen(true);
+        break;
+    }
+  }
 
   const handleCategoryClick = (categoryId: string) => {
     onCategoryChange?.(categoryId);
@@ -63,152 +105,248 @@ export default function MobileNavigation({
   return (
     <>
       {/* Mobile Header */}
-      <div className="md:hidden bg-white border-b border-gray-200 px-4 py-3 sticky top-0 z-40">
+      <div className="h-[48px] bg-[#051A3D] border-b border-white/10 px-[16px] sticky top-0 z-50">
         <div className="flex items-center justify-between">
           {/* Left: Menu and Logo */}
           <div className="flex items-center space-x-3">
             <Sheet open={isOpen} onOpenChange={setIsOpen}>
               <SheetTrigger asChild>
                 <Button variant="ghost" size="sm" className="p-2">
-                  <Menu className="w-5 h-5" />
+                  <Menu className="w-5 h-5 text-white" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-72 p-0">
-                <div className="p-6">
-                  <h2 className="text-lg font-bold text-gray-900 mb-6">OnePredict</h2>
+              <SheetContent side="left" className="w-[280px] p-0 bg-[#051A3D]">
+                <div className="px-[16px] py-[22px]">
+                  <Signin />
 
-                  {/* Main Pages */}
-                  <div className="space-y-2 mb-6">
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-                      Navigation
-                    </h3>
-                    {mainPages.map((page) => {
-                      const Icon = page.icon;
-                      const isActive = activeCategory === page.id;
-
-                      return (
-                        <Link
-                          key={page.id}
-                          href={page.href}
-                          onClick={() => setIsOpen(false)}
-                          className={`
-                            w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-colors
-                            ${isActive
-                              ? "bg-gray-900 text-white"
-                              : "text-gray-700 hover:bg-gray-100"
-                            }
-                          `}
-                        >
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{page.label}</span>
-                        </Link>
-                      );
-                    })}
+                  <div
+                    className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                    onClick={() => {
+                      if (zkLoginData || currentAccount) {
+                        // router.push("/setting")
+                      } else {
+                        setIsOpen(false);
+                        dispatch(setSigninOpen(true))
+                      }
+                    }}
+                  >
+                    <NotificationIcon className="text-[16px] text-white" />
+                    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.notification')}</div>
                   </div>
 
-                  {/* Categories */}
-                  <div className="space-y-2">
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-                      Categories
-                    </h3>
-                    {categories.map((category) => {
-                      const Icon = category.icon;
-                      const isActive = activeCategory === category.id;
-
-                      return (
-                        <button
-                          key={category.id}
-                          onClick={() => handleCategoryClick(category.id)}
-                          className={`
-                            w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left transition-colors
-                            ${isActive
-                              ? "bg-gray-900 text-white"
-                              : "text-gray-700 hover:bg-gray-100"
-                            }
-                          `}
-                        >
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{category.label}</span>
-                        </button>
-                      );
-                    })}
+                  <div
+                    className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                    onClick={() => {
+                      router.push("/leaderboard")
+                    }}
+                  >
+                    <LeaderboardIcon className="text-[16px] text-white" />
+                    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.leaderboard')}</div>
                   </div>
 
-                  {/* Account Section */}
-                  <div className="mt-8 pt-6 border-t border-gray-200">
-                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">
-                      Account
-                    </h3>
-                    <div className="space-y-2">
-                      <button className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left text-gray-700 hover:bg-gray-100 transition-colors">
-                        <User className="w-5 h-5" />
-                        <span className="font-medium">Profile</span>
-                      </button>
-                      <button className="w-full flex items-center space-x-3 px-3 py-3 rounded-lg text-left text-gray-700 hover:bg-gray-100 transition-colors">
-                        <Settings className="w-5 h-5" />
-                        <span className="font-medium">Settings</span>
-                      </button>
+                  <div
+                    className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                    onClick={() => {
+                      if (zkLoginData || currentAccount) {
+                        router.push("/rewards")
+                      } else {
+                        setIsOpen(false);
+                        dispatch(setSigninOpen(true))
+                      }
+                    }}
+                  >
+                    <RewardIcon className="text-[16px] text-white" />
+                    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.rewards')}</div>
+                  </div>
+
+                  {(zkLoginData || currentAccount) && (
+                    <>
+                      <div
+                        className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                        onClick={() => {
+                          router.push("/profile")
+                        }}
+                      >
+                        <ProfileIcon className="text-[16px] text-white" />
+                        <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.profile')}</div>
+                      </div>
+
+                      <div
+                        className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                        onClick={() => {
+                          router.push("/setting")
+                        }}
+                      >
+                        <SettingIcon className="text-[16px] text-white" />
+                        <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.settings')}</div>
+                      </div>
+                    </>
+                  )}
+
+                  <div>
+                    <div
+                      className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                      onClick={() => setSelectLanguage(!selectLanguage)}
+                    >
+                      <LanguagesIcon className="text-[16px] text-white" />
+                      <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.languages')}</div>
+                      <ArrowIcon className={`text-[16px] text-white/60 transition-transform duration-300 ease-out ${selectLanguage ? 'rotate-180' : ''}`} />
                     </div>
+                    {selectLanguage && (
+                      <>
+                        <div
+                          className="ml-[16px] h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                          onClick={() => setLanguage('en')}
+                        >
+                          <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">English</div>
+                          {language === 'en' && <CheckedIcon className="text-[16px] text-white/60" />}
+                        </div>
+                        <div
+                          className="ml-[16px] h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                          onClick={() => setLanguage('zh')}
+                        >
+                          <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">简体中文</div>
+                          {language === 'zh' && <CheckedIcon className="text-[16px] text-white/60" />}
+                        </div>
+                      </>
+                    )}
                   </div>
+
+                  {showTheme && (
+                    <div>
+                      <div
+                        className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                        onClick={() => setSelectMode(!selectMode)}
+                      >
+                        {theme === 'dark' && (
+                          <>
+                            <DarkIcon className="text-[16px] text-white" />
+                            <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.darkMode')}</div>
+                          </>
+                        )}
+                        {theme === 'light' && (
+                          <>
+                            <LightIcon className="text-[16px] text-white" />
+                            <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.lightMode')}</div>
+                          </>
+                        )}
+                        {theme === 'system' && (
+                          <>
+                            <SystemIcon className="text-[16px] text-white" />
+                            <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.systemMode')}</div>
+                          </>
+                        )}
+                        <ArrowIcon className={`text-[16px] text-white/60 transition-transform duration-300 ease-out ${selectMode ? 'rotate-180' : ''}`} />
+                      </div>
+                      {selectMode && (
+                        <>
+                          <div
+                            className="ml-[32px] h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                            onClick={() => setTheme('dark')}
+                          >
+                            <DarkIcon className="text-[16px] text-white" />
+                            <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.darkMode')}</div>
+                            {theme === 'dark' && <CheckedIcon className="text-[16px] text-white/60" />}
+                          </div>
+                          <div
+                            className="ml-[32px] h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                            onClick={() => setTheme('light')}
+                          >
+                            <LightIcon className="text-[16px] text-white" />
+                            <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.lightMode')}</div>
+                            {theme === 'light' && <CheckedIcon className="text-[16px] text-white/60" />}
+                          </div>
+                          <div
+                            className="ml-[32px] h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                            onClick={() => setTheme('system')}
+                          >
+                            <SystemIcon className="text-[16px] text-white" />
+                            <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.systemMode')}</div>
+                            {theme === 'system' && <CheckedIcon className="text-[16px] text-white/60" />}
+                          </div>
+                        </>
+                      )}
+                    </div>
+                  )}
+
+                  {(zkLoginData || currentAccount) && (
+                    <div
+                      className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
+                      onClick={() => {
+                        if(zkLoginData){
+                          dispatch(clearLoginData())
+                          disconnect()
+                          window.location.reload()
+                        }else{
+                          disconnect()
+                        }
+                      }}
+                    >
+                      <LogoutIcon className="text-[16px] text-white" />
+                      <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.logout')}</div>
+                    </div>
+                  )}
                 </div>
               </SheetContent>
             </Sheet>
 
-            <h1 className="text-lg font-bold text-gray-900">OnePredict</h1>
+            <Link href="/" className="block transition-transform hover:scale-105">
+              <Image
+                src="/images/logo.png"
+                alt="OnePredict"
+                width={195}
+                height={64}
+                className="w-auto h-[48px] transition-all duration-300"
+              />
+            </Link>
           </div>
 
           {/* Right: Balance and Notifications */}
-          <div className="flex items-center space-x-3">
-            <div className="flex items-center space-x-1">
-              <Badge variant="secondary" className="bg-green-100 text-green-800 text-xs">
-                0
-              </Badge>
-            </div>
-            <Button variant="ghost" size="sm" className="p-2">
-              <Bell className="w-5 h-5 text-gray-500" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Search Bar */}
-        <div className="mt-3">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search predictions..."
-              className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
+          <div className="flex items-center cursor-pointer" onClick={handleButtonClick}>
+            <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
+            <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[24px] font-bold text-white/60 hover:text-white">{usdhBalance}</span>
           </div>
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40">
-        <div className="grid grid-cols-3 gap-1">
+      <div className="fixed bottom-0 left-0 right-0 bg-[#051A3D] border-t border-white/10 z-40">
+        <div className="grid grid-cols-4">
           {mainPages.map((page) => {
             const Icon = page.icon;
             const isActive = activeCategory === page.id;
 
             return (
-              <Link
+              <div
                 key={page.id}
-                href={page.href}
                 className={`
-                  flex flex-col items-center justify-center py-3 px-1 transition-colors
+                  flex flex-col items-center justify-center py-[14px] transition-colors
                   ${isActive
-                    ? "text-blue-600"
-                    : "text-gray-500 hover:text-gray-700"
+                    ? "text-white"
+                    : "text-white/60 hover:text-white"
                   }
                 `}
+                onClick={() => handleMenuClick(page.id)}
               >
-                <Icon className="w-6 h-6 mb-1" />
-                <span className="text-xs font-medium">{page.label}</span>
-              </Link>
+                <Icon className="text-[20px]" />
+                <span className="mt-[8px] text-[12px] font-bold">{page.label}</span>
+              </div>
             );
           })}
         </div>
       </div>
+
+      {/* Trading Modal */}
+      <PredictionIntegralModal
+        isOpen={showIntegralModal}
+        onClose={() => setShowIntegralModal(false)}
+      />
+
+      {/* Search Modal */}
+      <SearchModal
+        open={showSearchModal}
+        onOpenChange={setShowSearchModal}
+      />
     </>
   );
 }

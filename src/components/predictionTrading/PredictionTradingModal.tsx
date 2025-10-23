@@ -6,6 +6,7 @@ import CloseIcon from "@/assets/icons/close.svg";
 import TradingForm from "./TradingForm";
 import TermsAgreement from "./TermsAgreement";
 import { MarketOption } from "@/lib/api/interface";
+import {useIsMobile} from "@/contexts/viewport";
 
 interface PredictionTradingModalProps {
   isOpen: boolean;
@@ -20,6 +21,8 @@ export default function PredictionTradingModal({
   prediction,
   initialOutcome = 0
 }: PredictionTradingModalProps) {
+  const isMobile = useIsMobile();
+
   useEffect(() => {
     if (isOpen) {
       // 保存当前的overflow值
@@ -45,17 +48,17 @@ export default function PredictionTradingModal({
       />
 
       {/* 右侧滑出弹窗 */}
-      <div className={`fixed right-0 top-0 h-full w-full max-w-[432px] bg-[#051A3D] z-50 transform transition-transform duration-300 ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed bg-[#051A3D] z-50 transform transition-transform duration-300
+        ${isOpen ? 'translate-x-0' : 'translate-x-full'} 
+        ${isMobile ? 'left-0 bottom-0 w-full pb-[30px]' : 'right-0 top-0 h-full w-full max-w-[432px]'}`}>
         {/* 弹窗头部 */}
         <div className="flex items-center justify-between pt-[24px] pl-[12px] pr-[24px]">
           <div className="flex-1 flex items-center overflow-hidden">
             <Avatar className="w-[24px] h-[24px] rounded-[8px] transition-all">
-              <AvatarImage src={prediction.metaJson.image_url} alt="avatar" />
+              <AvatarImage src={prediction.imageUrl} alt="avatar" />
             </Avatar>
             <h2 className="truncate h-[24px] leading-[24px] text-[20px] font-bold text-white px-[12px]">
-              {prediction.metaJson.title}
+              {prediction.marketName}
             </h2>
           </div>
           <CloseIcon className="text-[24px] text-[#D2D1D1] hover:text-white cursor-pointer" onClick={onClose} />

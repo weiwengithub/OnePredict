@@ -18,6 +18,7 @@ import { Maximize } from 'lucide-react';
 import { Swiper as SwiperType } from 'swiper';
 import { useState } from 'react';
 import FullscreenModal from './FullscreenModal';
+import { useIsMobile } from '@/contexts/viewport';
 
 // Import Swiper styles
 import 'swiper/css';
@@ -29,18 +30,12 @@ import 'swiper/css/effect-fade';
 import 'swiper/css/effect-flip';
 import 'swiper/css/effect-cards';
 import 'swiper/css/effect-creative';
-
-interface CarouselItem {
-  id: number;
-  image: string;
-  title?: string;
-  description?: string;
-}
+import {BannerInfo} from "@/lib/api/interface";
 
 export type EffectType = 'slide' | 'fade' | 'cube' | 'coverflow' | 'flip' | 'cards' | 'creative';
 
 interface CustomCarouselProps {
-  items: CarouselItem[];
+  items: BannerInfo[];
   autoplay?: boolean;
   loop?: boolean;
   slidesPerView?: number;
@@ -64,6 +59,12 @@ export default function CustomCarousel({
   effect = 'slide',
   height = '400px',
 }: CustomCarouselProps) {
+  const isMobile = useIsMobile();
+  if(isMobile) {
+    slidesPerView = 1;
+    const w = document.documentElement.clientWidth;
+    height = `${Math.round(400 * (w - 32) / 1020)}px`;
+  }
   const supportFullscreen = false;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -166,7 +167,7 @@ export default function CustomCarousel({
   const showNavigation = !['cube', 'fade', 'flip', 'cards'].includes(effect);
 
   return (
-    <div className="relative w-full my-[40px]">
+    <div className={`relative w-full ${isMobile ? 'my-[16px]' : 'my-[40px]'}`}>
       <Swiper
         modules={getAllModules()}
         centeredSlides={centeredSlides}
@@ -181,7 +182,7 @@ export default function CustomCarousel({
           el: '.swiper-pagination-custom',
           clickable: true,
           renderBullet: (index, className) => {
-            return `<span class="${className} custom-bullet"></span>`;
+            return `<span class="${className} ${isMobile ? 'mobile-custom-bullet' : 'custom-bullet'}"></span>`;
           },
         }}
         autoplay={
@@ -213,13 +214,16 @@ export default function CustomCarousel({
               effect === 'cards' ? 'bg-white' : ''
             }`}
             onClick={() => {
-              if (!supportFullscreen) return;
-              setCurrentSlide(index);
-              setIsFullscreen(true);
+              if(item.bannerLink) {
+                window.open(item.bannerLink.indexOf('http') < 0 ? `https://${item.bannerLink}` : item.bannerLink, '_blank', 'noopener,noreferrer');
+              }
+              // if (!supportFullscreen) return;
+              // setCurrentSlide(index);
+              // setIsFullscreen(true);
             }}
             >
               <img
-                src={item.image}
+                src={item.imageUrl}
                 alt={item.title}
                 className="w-full h-full object-cover transition-transform duration-500"
               />
@@ -250,23 +254,28 @@ export default function CustomCarousel({
         ))}
       </Swiper>
 
-      <div className="mt-[26px] mx-auto max-w-[1020px] flex items-center justify-between">
-        {/* Custom Pagination */}
-        <div className="swiper-pagination-custom flex gap-[8px]"></div>
-        {/* Custom Navigation Buttons - 只在支持的效果下显示 */}
-        {showNavigation && (
-          <div className="mr-[52px] flex gap-[13px]">
-            <button className="swiper-button-prev-custom w-[42px] h-[42px] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white flex items-center justify-center transition-all duration-300 hover:scale-110">
-              <ChevronLeft />
-            </button>
+      {isMobile ? (
+        <div className="absolute left-0 right-0 bottom-1 z-20">
+          <div className="swiper-pagination-custom w-full flex justify-center gap-[8px]"></div>
+        </div>
+      ) : (
+        <div className="mt-[26px] mx-auto max-w-[1020px] flex items-center justify-between">
+          {/* Custom Pagination */}
+          <div className="swiper-pagination-custom flex gap-[8px]"></div>
+          {/* Custom Navigation Buttons - 只在支持的效果下显示 */}
+          {showNavigation && (
+            <div className="mr-[52px] flex gap-[13px]">
+              <button className="swiper-button-prev-custom w-[42px] h-[42px] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white flex items-center justify-center transition-all duration-300 hover:scale-110">
+                <ChevronLeft />
+              </button>
 
-            <button className="swiper-button-next-custom w-[42px] h-[42px] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white flex items-center justify-center transition-all duration-300 hover:scale-110">
-              <ChevronRight />
-            </button>
-          </div>
-        )}
-
-      </div>
+              <button className="swiper-button-next-custom w-[42px] h-[42px] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white flex items-center justify-center transition-all duration-300 hover:scale-110">
+                <ChevronRight />
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       <style jsx global>{`
         .custom-bullet {
@@ -289,6 +298,28 @@ export default function CustomCarousel({
           width: 60px !important;
           background: #467dff !important;
           opacity: 1 !important;
+        }
+        
+        .mobile-custom-bullet {
+            width: 4px !important;
+            height: 4px !important;
+            background: rgba(255,255,255,0.6) !important;
+            border-radius: 20px !important;
+            transition: all 0.3s ease !important;
+            cursor: pointer !important;
+            border: none !important;
+            margin: 0 !important;
+        }
+
+        .mobile-custom-bullet:hover {
+            background: #ffffff !important;
+            opacity: 1 !important;
+        }
+
+        .mobile-custom-bullet.swiper-pagination-bullet-active {
+            width: 4px !important;
+            background: #ffffff !important;
+            opacity: 1 !important;
         }
 
         .swiper-slide-active .group {
@@ -318,6 +349,12 @@ export default function CustomCarousel({
         /* 翻页效果特殊样式 */
         .swiper-flip .swiper-slide {
           background: #fff;
+        }
+        
+        @media (max-width: 768px) {
+            .swiper-slide:not(.swiper-slide-active) .group {
+                transform: none;
+            }
         }
       `}</style>
 

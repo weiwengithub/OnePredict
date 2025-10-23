@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import React, { useRef, useState, useEffect, useMemo } from "react";
+import Avatar from 'boring-avatars';
 import MobileNavigation from "@/components/MobileNavigation";
 import Link from 'next/link';
 import Footer from "@/components/Footer";
@@ -14,40 +14,31 @@ import Image from "next/image";
 import { useCurrentAccount } from "@onelabs/dapp-kit";
 import apiService from "@/lib/api/services";
 import { store } from "@/store";
+import {useLanguage} from "@/contexts/LanguageContext";
+import SettingsIcon from "@/assets/icons/settings.svg";
+import {onCopyToText} from "@/lib/utils";
+import CopyIcon from "@/assets/icons/copy_1.svg";
+import SharePopover from "@/components/SharePopover";
+import {useIsMobile} from "@/contexts/viewport";
+import {useRouter} from "next/navigation";
+import {useSelector} from "react-redux";
+import {RootState} from "@/lib/interface";
+import {MemberInfo} from "@/lib/api/interface";
+import WechatIcon from "@/assets/icons/wechat.svg";
 
 interface PositionItemApi {
   marketId: string;
-  userAddr: string;
-  outcome: number;
-  shares: string;
-  buyPrice: string;
-  eventMs: number;
-  packageId: string;
-  coinType: string;
   marketName: string;
-  marketImage: string;
-  outcomeName: string;
   marketPrice: string;
-  entryPrice: string;
-  bet: string;
-  positionValue: string;
-  pnl: string;
-  winProfit: string;
-  marketState: number;
 }
 
 function MarketsItem(item: PositionItemApi) {
   return (
-    <div className="flex items-center px-[12px] pt-[14px]">
-      <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
-        <AvatarImage src={item.marketImage} alt="avatar" />
-        <AvatarFallback className="bg-gradient-to-br from-blue-100 to-indigo-100 text-gray-700 font-semibold">
-          {item.marketName?.charAt(0).toUpperCase()}
-        </AvatarFallback>
-      </Avatar>
+    <div className="flex items-center px-[12px] pt-[14px] pb-[13px] rounded-[16px] hover:bg-white/20">
+      <img src="/images/demo.png" alt=""/>
       <div className="flex-1 ml-[12px]">
         <div className="leading-[24px] text-[16px] text-white truncate">{item.marketName}</div>
-        <div className="h-[24px] flex items-end"><UserIcon className="text-white text-[14px]"/><span className="inline-block ml-[7px] h-[16px] leading-[24px] text-[12px] text-white/60">15</span></div>
+        <div className="h-[16px] flex items-end"><UserIcon className="text-white text-[14px]"/><span className="inline-block ml-[7px] h-[16px] leading-[22px] text-[12px] text-white/60">15</span></div>
       </div>
       <div className="h-[24px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center px-[4px]">
         <span className="text-[#28C04E] text-[16px]">{item.marketPrice} Up</span>
@@ -56,160 +47,219 @@ function MarketsItem(item: PositionItemApi) {
   );
 }
 
+function MobileMarketsItem(item: PositionItemApi) {
+  return (
+    <div className="flex items-center">
+      <img src="/images/demo.png" alt=""/>
+      <div className="flex-1 ml-[8px]">
+        <div className="leading-[16px] text-[16px] text-white truncate">{item.marketName}</div>
+        <div className="mt-[4px] flex gap-[8px]">
+          <div className="h-[20px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center px-[4px]">
+            <span className="text-[#28C04E] text-[14px]">{item.marketPrice} Up</span>
+          </div>
+          <div className="mt-[5px] h-[12px] flex items-end">
+            <UserIcon className="text-white text-[12px]"/>
+            <span className="inline-block ml-[7px] h-[12px] leading-[12px] text-[12px] text-white/60">15</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Profile() {
-  const [isMobile, setIsMobile] = useState(false);
+  const { t } = useLanguage();
+  const isMobile = useIsMobile();
+  const router = useRouter();
   const currentAccount = useCurrentAccount();
-  const [positions, setPositions] = useState<PositionItemApi[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
+  const [userData, setUserData] = useState<MemberInfo | null>(null);
+  const calledOnceRef = useRef(false);
 
-  // Detect mobile viewport
+  const userAddress = useMemo(() => {
+    return currentAccount?.address || zkLoginData?.zkloginUserAddress;
+  }, [currentAccount, zkLoginData]);
   useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
+    if (calledOnceRef.current || !userAddress) return;
+    calledOnceRef.current = true;
 
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+    const controller = new AbortController();
 
-  // Mock prediction data based on ID（仅用于页面头部展示头像等静态信息）
-  const getPredictionData = () => {
-    const predictionMap: { [key: string]: any } = {
-      "0": {
-        id: "0",
-        question: "Will Ethereum Merge be delayed?",
-        chance: 31.78,
-        volume: "14611.13",
-        deadline: "Sep 30, 2025",
-        category: "crypto",
-        avatar: "https://ext.same-assets.com/1155254500/403630554.png",
-      }
-    };
-
-    return predictionMap["0"];
-  };
-
-  const prediction = getPredictionData();
-
-  useEffect(() => {
-    const fetchPositions = async () => {
+    (async () => {
       try {
-        setLoading(true);
-        setError(null);
-        const zkLoginData = store.getState().zkLoginData as any;
-        const userAddr = currentAccount?.address || zkLoginData?.zkloginUserAddress;
-        if (!userAddr) {
-          setPositions([]);
-          return;
-        }
-        const res = await apiService.getMarketPosition(userAddr);
-        const items = (res as any)?.data?.items ?? [];
-        setPositions(items);
+        console.log('userAddress', userAddress)
+        const {data} = await apiService.getMemberInfo({ signal: controller.signal, address: userAddress });
+        console.log('data', data)
+        setUserData(data)
       } catch (e: any) {
-        setError(e?.message || 'Failed to load positions');
-        setPositions([]);
-      } finally {
-        setLoading(false);
+        if (e.name !== 'CanceledError') {
+          console.log(e);
+        }
       }
+    })();
+
+    // 卸载时取消请求并阻止 setState
+    return () => {
+      controller.abort();
     };
-    fetchPositions();
-  }, [currentAccount?.address]);
+  }, [userAddress]);
+
+  const [positions, setPositions] = useState<PositionItemApi[]>([{
+    marketId: '111111',
+    marketName: 'text1;',
+    marketPrice: '2.58'
+  }, {
+    marketId: '22222',
+    marketName: 'text2;',
+    marketPrice: '2.58'
+  }]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-20 md:pb-0">
-      {/* Desktop Header */}
-      <Header currentPage="details" />
-
-      {/* Mobile Navigation */}
-      <MobileNavigation
-        activeCategory=""
-        onCategoryChange={() => {}}
-      />
+      {/* Header */}
+      {isMobile ? (
+        <MobileNavigation
+          activeCategory=""
+          onCategoryChange={() => {}}
+        />
+      ) : (
+        <Header currentPage="details" />
+      )}
 
       {/* Main Content */}
-      <main className="max-w-[1312px] mx-auto pt-[114px]">
+      <main className={isMobile ? 'w-full px-[16px] py-[24px] relative' : 'max-w-[1312px] mx-auto pt-[50px]'}>
         {/* Back Button */}
         <div className="flex items-center">
           <Link href="/">
             <div className="flex items-center text-white/40 hover:text-white">
-              <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">Home</span>
+              <HomeIcon /><span className="ml-[8px] h-[18px] leading-[18px] text-[14px]">{t('nav.home')}</span>
             </div>
           </Link>
           <ArrowRightIcon className="mx-[16px] text-white/40" />
-          <div className="h-[18px] leading-[18px] text-[14px] text-white">Profile</div>
+          <div className="h-[18px] leading-[18px] text-[14px] text-white">{t('nav.profile')}</div>
         </div>
 
         {/* Header */}
         <div className="mt-[24px]">
-          <div className="flex gap-3">
-            <Avatar className="w-[136px] h-[136px] rounded-full">
-              <AvatarImage src={prediction.avatar} alt="Prediction" />
-              <AvatarFallback className="bg-blue-600 text-white">?</AvatarFallback>
-            </Avatar>
-            <div className="ml-[24px]">
-              <div className="h-[31px] leading-[31px] text-[24px] text-white font-bold">Kupc</div>
+          <div className={`flex ${isMobile ? 'flex-col' : 'gap-[24px]'}`}>
+            <Avatar
+              size={isMobile ? 80 : 136}
+              name={userData?.loginAddress}
+              variant={'marble'}
+            />
+            <div>
+              <div className="h-[31px] leading-[31px] text-[24px] text-white font-bold">{userData?.nickName}</div>
               <div className="mt-[12px] flex gap-[10px] h-[18px] text-[14px] text-white/80">
-                <span>1 Followers</span>
+                <span>1 {t('profile.followers')}</span>
                 <span className="border-l border-white/80 my-[1px]"></span>
-                <span>0 Followers</span>
+                <span>0 {t('profile.following')}</span>
                 <span className="border-l border-white/80 my-[1px]"></span>
-                <span>0 Opinions</span>
+                <span>0 {t('profile.opinions')}</span>
               </div>
-              <div className="mt-[22px] flex items-center gap-[12px]">
-                <div className="h-[32px] leading-[32px] rounded-[24px] border border-white/40 text-[12px] px-[12px] text-white">Follow</div>
-                <div className="h-[36px] flex items-center rounded-[32px] border border-white/40 text-[12px] px-[12px] text-white"><ExportIcon /></div>
+              <div className={`${isMobile ? 'absolute top-[17px] right-[16px]' : 'mt-[22px]'} flex items-center gap-[12px]`}>
+                <div
+                  className="h-[32px] leading-[32px] rounded-[24px] border border-white/40 text-[12px] px-[12px] text-white"
+                  onClick={() => {
+                    router.push('/setting');
+                  }}
+                >{t('profile.follow')}</div>
+                <SharePopover
+                  trigger={<div className={`${isMobile ? 'size-[32px]' : 'size-[36px]'} flex items-center justify-center rounded-[32px] border border-white/40 text-[12px] text-white`}><ExportIcon /></div>}
+                  content={
+                    <div className="max-w-[260px] text-sm leading-5">
+                      <div
+                        className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] cursor-pointer"
+                        // onClick={() => onCopyToText(`${window.location.origin}/details?marketId=${prediction.marketId}`)}
+                      >
+                        <CopyIcon />
+                        {t('predictions.copyLink')}
+                      </div>
+                    </div>
+                  }
+                  offset={10}
+                  lockScroll
+                />
               </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-[40px] flex gap-[24px]">
-          {/* Position */}
-          <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
-            <Image src="/images/icon/icon-profile-1.png" alt="" width={36} height={36} />
-            <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">Position</div>
-            <div className="mt-[24px] leading-[24px] text-[24px] text-white font-bold">35</div>
-          </div>
+        {isMobile ? (
+          <div className="mt-[24px] space-y-[16px]">
+            {/* Position */}
+            <div className="flex items-center gap-[16px] h-[72px] px-[16px] bg-[#04122B] rounded-[16px]">
+              <Image src="/images/icon/icon-profile-1.png" alt="" width={36} height={36} />
+              <div className="flex-1 leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.position')}</div>
+              <div className="leading-[24px] text-[24px] text-white font-bold">35</div>
+            </div>
 
-          {/* Volume Traded */}
-          <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
-            <Image src="/images/icon/icon-profile-2.png" alt="" width={36} height={36} />
-            <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">Volume Traded</div>
-            <div className="mt-[24px] flex gap-[8px] leading-[24px] text-[24px] text-white font-bold">
-              <Image src="/images/icon/icon-token.png" alt="" width={24} height={24} />
-              <span>539</span>
+            {/* Volume Traded */}
+            <div className="flex items-center gap-[16px] h-[72px] px-[16px] bg-[#04122B] rounded-[16px]">
+              <Image src="/images/icon/icon-profile-2.png" alt="" width={36} height={36} />
+              <div className="flex-1 leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.volume')}</div>
+              <div className="flex gap-[8px] leading-[24px] text-[24px] text-white font-bold">
+                <Image src="/images/icon/icon-token.png" alt="" width={24} height={24} />
+                <span>539</span>
+              </div>
+            </div>
+
+            {/* PnL Rank */}
+            <div className="flex items-center gap-[16px] h-[72px] px-[16px] bg-[#04122B] rounded-[16px]">
+              <Image src="/images/icon/icon-profile-3.png" alt="" width={36} height={36} />
+              <div className="flex-1 leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.rank')}</div>
+              <div className="leading-[24px] text-[24px] text-white font-bold">35</div>
             </div>
           </div>
+        ) : (
+          <div className="mt-[40px] flex gap-[24px]">
+            {/* Position */}
+            <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
+              <Image src="/images/icon/icon-profile-1.png" alt="" width={36} height={36} />
+              <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.position')}</div>
+              <div className="mt-[24px] leading-[24px] text-[24px] text-white font-bold">35</div>
+            </div>
 
-          {/* PnL Rank */}
-          <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
-            <Image src="/images/icon/icon-profile-3.png" alt="" width={36} height={36} />
-            <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">PnL Rank</div>
-            <div className="mt-[24px] leading-[24px] text-[24px] text-white font-bold">35</div>
+            {/* Volume Traded */}
+            <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
+              <Image src="/images/icon/icon-profile-2.png" alt="" width={36} height={36} />
+              <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.volume')}</div>
+              <div className="mt-[24px] flex gap-[8px] leading-[24px] text-[24px] text-white font-bold">
+                <Image src="/images/icon/icon-token.png" alt="" width={24} height={24} />
+                <span>539</span>
+              </div>
+            </div>
+
+            {/* PnL Rank */}
+            <div className="flex-1 h-[180px] p-[24px] bg-[#04122B] rounded-[16px]">
+              <Image src="/images/icon/icon-profile-3.png" alt="" width={36} height={36} />
+              <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.rank')}</div>
+              <div className="mt-[24px] leading-[24px] text-[24px] text-white font-bold">35</div>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* All Markets */}
         <div className="mt-[32px] bg-[#04122B] rounded-[16px] p-[24px] overflow-hidden">
-          <div className="mb-[24px] leading-[24px] text-[18px] text-white font-bold">All Markets</div>
+          <div className="mb-[24px] leading-[24px] text-[18px] text-white font-bold">{t('profile.allMarkets')}</div>
           <div className="space-y-[12px]">
-            {loading && (
-              <div className="text-white/60">Loading...</div>
+            {positions.length > 0 ? (
+              <>
+                {positions.map((item, index) => (
+                  isMobile ? <MobileMarketsItem key={`${item.marketId}_${index}`} {...item} /> : <MarketsItem key={`${item.marketId}_${index}`} {...item} />
+                ))}
+              </>
+            ) : (
+              <div className="mt-[37px]">
+                <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>
+                <div className="mt-[12px] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">{t('common.nothing')}</div>
+              </div>
             )}
-            {!loading && error && (
-              <div className="text-red-400">{error}</div>
-            )}
-            {!loading && !error && positions.map((item, index) => (
-              <MarketsItem key={`${item.marketId}_${index}`} {...item} />
-            ))}
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <Footer />
+      {!isMobile && <Footer />}
     </div>
   );
 }

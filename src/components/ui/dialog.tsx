@@ -3,16 +3,17 @@ import { cn } from "@/lib/utils";
 import { X } from "lucide-react";
 
 interface DialogProps {
+  className?: string;
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
   children: React.ReactNode;
 }
 
-const Dialog: React.FC<DialogProps> = ({ open, onOpenChange, children }) => {
+const Dialog: React.FC<DialogProps> = ({ className = '', open, onOpenChange, children }) => {
   if (!open) return null;
 
   return (
-    <div className="fixed h-screen inset-0 z-50">
+    <div className={cn("fixed h-screen inset-0 z-20", className)}>
       <div
         className="h-full inset-0 bg-black/50"
         onClick={() => onOpenChange?.(false)}

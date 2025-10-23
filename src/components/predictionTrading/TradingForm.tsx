@@ -23,7 +23,9 @@ import {useLanguage} from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import apiService from "@/lib/api/services";
 import {TooltipAmount} from "@/components/TooltipAmount";
-import {fix, toDisplayDenomAmount} from "@/lib/numbers";
+import {abbreviateNumber, fix, toDisplayDenomAmount} from "@/lib/numbers";
+import Countdown from "@/components/Countdown";
+import { colors } from "@/assets/config";
 
 interface TradingFormProps {
   prediction: MarketOption;
@@ -33,15 +35,15 @@ interface TradingFormProps {
 }
 
 export default function TradingForm({prediction, initialOutcome, outcomeChange, onClose}: TradingFormProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [tradeType, setTradeType] = useState<'buy' | 'sell'>('buy');
   const [buyOutcome, setBuyOutcome] = useState<number>(0);
   const [sellOutcome, setSellOutcome] = useState(0);
   const [amount, setAmount] = useState<number | string>('');
   const [sellAmount, setSellAmount] = useState<number | string>('');
   const [sellAvailable, setSellAvailable] = useState<number | string>(0);
-  const yesPrice = new BigNumber(prediction.pProbsJson[0]).shiftedBy(-12);
-  const noPrice = new BigNumber(prediction.pProbsJson[1]).shiftedBy(-12);
+  // const yesPrice = new BigNumber(prediction.pProbsJson[0]).shiftedBy(-12);
+  // const noPrice = new BigNumber(prediction.pProbsJson[1]).shiftedBy(-12);
   const [progress, setProgress] = useState(0);
   const [sellProgress, setSellProgress] = useState(0);
   const suiClient = useSuiClient() as any;
@@ -49,6 +51,8 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
   const dispatch = useDispatch();
   const [tradeDeadlineTime, setTradeDeadlineTime] = useState('');
   const [showTradeDeadline, setShowTradeDeadline] = useState<boolean>(false);
+
+  const startTime = new Date(prediction.startTime).getTime();
 
   useEffect(() => {
     setBuyOutcome(initialOutcome)
@@ -105,7 +109,8 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
     try {
       const marketClient = new MarketClient(suiClient, {
         packageId: prediction.packageId,
-        coinType: prediction.coinType
+        coinType: prediction.coinType,
+        globalSeqId: prediction.globalSequencerId || ''
       });
       // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
       const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
@@ -119,7 +124,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
         console.error('No coin object found for type:', prediction.coinType);
         return;
       }
-      const payAmount = MarketClient.calcTotalFromCost(Number(amount) * Math.pow(10, 9), prediction.paramsJson.buy_fee_bps);
+      const payAmount = MarketClient.calcTotalFromCost(Number(amount) * Math.pow(10, 9), prediction.buyFee);
       const tx = await marketClient.buildBuyByAmountTx({
         marketId: prediction.marketId,
         outcome: buyOutcome,
@@ -127,6 +132,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
         paymentCoinId: coinObjectId,
         minSharesOut: 0,
       });
+      tx.setGasBudget(100000000);
       console.log(tx)
       await executeTransaction(tx, false);
       setAmount('')
@@ -181,7 +187,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
   }, []);
 
   const toWin = useMemo(() => {
-    const _yield = prediction.outcomeYields[prediction.metaJson.outcomes[buyOutcome]];
+    const _yield = prediction.outcome?prediction.outcome[buyOutcome].roi:0;
     return amount ? Number(_yield) * Number(amount) : 0
   }, [buyOutcome, amount])
 
@@ -191,7 +197,8 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
     try {
       const marketClient = new MarketClient(suiClient, {
         packageId: position.packageId,
-        coinType: position.coinType
+        coinType: position.coinType,
+        globalSeqId: position.globalSequencerId || ''
       });
       // 查询钱包中该币种的 Coin 对象，选择一个对象 ID 作为支付币
       const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
@@ -262,35 +269,37 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               <span>{t('predictions.outcomes')}</span>
               <RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" />
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  setBuyOutcome(0)
-                  outcomeChange && outcomeChange(0)
-                }}
-                className={`h-[48px] rounded-[8px] border-none text-[16px] font-bold transition-all ${
-                  buyOutcome === 0
-                    ? 'bg-[#29C04E] hover:bg-[#29C04E] text-white'
-                    : 'bg-[#34503B] hover:bg-[#29C04E] text-[#089C2B] hover:text-white'
-                }`}
-              >
-                {prediction.metaJson.outcomes[0]} {yesPrice.toFixed(2)}
-              </button>
-
-              <button
-                onClick={() => {
-                  setBuyOutcome(1)
-                  outcomeChange && outcomeChange(1)
-                }}
-                className={`h-[48px] rounded-[8px] border-none text-[16px] font-bold transition-all ${
-                  buyOutcome === 1
-                    ? 'bg-[#F95D5D] hover:bg-[#F95D5D] text-white'
-                    : 'bg-[rgba(249,93,93,0.5)] hover:bg-[#F95D5D] text-[#E04646] hover:text-white'
-                }`}
-              >
-                {prediction.metaJson.outcomes[1]} {noPrice.toFixed(2)}
-              </button>
-            </div>
+            {startTime > Date.now() ? (
+              <Countdown
+                target={startTime}
+                onEnd={() => console.log("time over")}
+              />
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                
+                {
+                  prediction.outcome?.map((item, index) => {
+                    return (
+                      <button
+                        key={index}
+                  onClick={() => {
+                    setBuyOutcome(index)
+                    outcomeChange && outcomeChange(1)
+                  }}
+                  style={{background: colors[index]}}
+                  className={`h-[48px] rounded-[8px] border-none text-[16px] font-bold transition-all predict-btn text-white ${
+                    buyOutcome === index
+                      ? 'active'
+                      : ''
+                  }`}
+                >
+                  {item.name||''} {Number(item.prob||0).toFixed(2)}
+                </button>
+                    )
+                  })
+                }
+              </div>
+            )}
           </div>
 
           {/* Amount 输入 */}
@@ -352,7 +361,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                     onClick={setMaxAmount}
                     className="px-[8px] bg-[#051A3D] border-none rounded-[8px] text-white/60 text-[16px] font-bold hover:bg-[#E0E2E4] hover:text-black"
                   >
-                    MAX
+                    {t('common.max')}
                   </Button>
                 </div>
               </div>
@@ -362,9 +371,9 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
           {/* Balance 余额 */}
           <div className="mt-[8px] flex items-center justify-between">
             <div className="h-[24px] leading-[24px] text-[16px] text-white/60 font-bold flex items-center gap-[8px]">
-              <span className="inline-block">{t('predictions.balance')}</span>
+              <span className="inline-block whitespace-nowrap">{t('predictions.balance')}</span>
               <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
-              <span className="inline-block">{usdhBalance}</span>
+              <span className="inline-block">{abbreviateNumber(usdhBalance, {style: language === 'zh' ? 'cn' : 'western', decimals: 2})}</span>
             </div>
             <div className="w-[140px]">
               <ProgressBar
@@ -381,7 +390,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
 
           {amount && (
             <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
-              <span className="inline-block text-white/60">To win</span>
+              <span className="inline-block text-white/60">{t('predictions.toWin')}</span>
               <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
               <span className="inline-block text-[#043FCA]">{Number(toWin).toFixed(2)}</span>
             </div>
@@ -394,7 +403,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               disabled={!amount}
               className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {`Buy ${prediction.metaJson.outcomes[buyOutcome]}`}
+              {`${t('predictions.buy')} ${prediction.outcome?prediction.outcome[buyOutcome].name:''}`}
             </Button>
           ) : (
             <Button
@@ -412,7 +421,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
           {/* Outcomes 选择 */}
           <div className="mt-[24px]">
             <div className="flex items-center justify-between h-[24px] leading-[24px] text-[16px] font-bold text-white/60 mb-[12px]">
-              <span>Position</span>
+              <span>{t('predictions.position')}</span>
               <RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" />
             </div>
             <div className="bg-[#051A3D] h-[56px] border border-white/20 rounded-[8px] relative">
@@ -425,7 +434,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   )}
                   <div className="flex-1 ml-[12px]">
                     <div className="h-[14px] leading-[14px] text-[14px] text-white">{positionList[sellOutcome].outcomeName}</div>
-                    <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={positionList[sellOutcome].shares} decimals={9} precision={2}/>  Shares</div>
+                    <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={positionList[sellOutcome].shares} decimals={9} precision={2}/>  {t('predictions.shares')}</div>
                   </div>
                   <ArrowDownIcon className={`text-white text-[16px] mr-[4px] transition-transform duration-300 ease-out ${showCheckPosition ? 'rotate-180' : ''}`} />
                   {showCheckPosition && (
@@ -433,7 +442,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                       {positionList.map((item, i) => (
                         <div
                           key={item.marketId}
-                          className="h-[56px] bg-[rgba(5,26,61,0.8)] rounded-[8px] flex items-center p-[8px] cursor-pointer"
+                          className={`h-[56px] rounded-[8px] flex items-center p-[8px] cursor-pointer ${item.outcome === sellOutcome ? 'bg-[rgba(5,26,61,0.8)]' : ''} hover:bg-[rgba(5,26,61,0.8)]`}
                           onClick={() => {
                             setSellOutcome(item.outcome)
                             setShowCheckPosition(false)
@@ -449,7 +458,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                           )}
                           <div className="flex-1 ml-[12px]">
                             <div className="h-[14px] leading-[14px] text-[14px] text-white">{item.outcomeName}</div>
-                            <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={item.shares} decimals={9} precision={2}/>  Shares</div>
+                            <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={item.shares} decimals={9} precision={2}/>  {t('predictions.shares')}</div>
                           </div>
                           {item.outcome === sellOutcome && <CheckedIcon className="text-[#00AE66] text-[24px] mr-[4px]" />}
                         </div>
@@ -458,7 +467,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   )}
                 </div>
               ) : (
-                <div className="w-full leading-[56px] text-[16px] text-white/20 text-center">No available positions.</div>
+                <div className="w-full leading-[56px] text-[16px] text-white/20 text-center">{t('predictions.noAvailablePositions')}</div>
               )}
             </div>
           </div>
@@ -466,7 +475,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
           {/* Amount 输入 */}
           <div className="mt-[24px]">
             <div className="flex items-center justify-between h-[24px] leading-[24px] text-[16px] font-bold text-white/60 mb-[12px]">
-              <span>Shares</span>
+              <span>{t('predictions.shares')}</span>
               <SettingsIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" />
             </div>
             <div className="space-y-3">
@@ -504,7 +513,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                     onClick={setMaxSellAmount}
                     className="px-[8px] bg-[#051A3D] border-none rounded-[8px] text-white/60 text-[16px] font-bold hover:bg-[#E0E2E4] hover:text-black"
                   >
-                    MAX
+                    {t('common.max')}
                   </Button>
                 </div>
               </div>
@@ -514,7 +523,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
           {/* 持仓数量 */}
           <div className="mt-[8px] flex items-center justify-between">
             <div className="h-[24px] leading-[24px] text-[16px] text-white/60 font-bold flex items-center gap-[8px]">
-              <span className="inline-block">Available</span>
+              <span className="inline-block">{t('predictions.available')}</span>
               <span className="inline-block">{fix(sellAvailable.toString(), 2)}</span>
             </div>
             <div className="w-[140px]">
@@ -532,7 +541,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
 
           {!!sellAmount && (
             <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
-              <span className="inline-block text-white/60">Cash Out</span>
+              <span className="inline-block text-white/60">{t('predictions.cashOut')}</span>
               <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
               <span className="inline-block text-[#043FCA]">{Number(cashOut).toFixed(2)}</span>
             </div>
@@ -545,7 +554,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               disabled={!sellAmount}
               className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {`Sell ${prediction.metaJson.outcomes[sellOutcome]}`}
+              {`${t('predictions.sell')} ${prediction.outcome[sellOutcome].name}`}
             </Button>
           ) : (
             <Button

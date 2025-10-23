@@ -31,11 +31,15 @@ export interface HoverTooltipButtonProps {
   align?: React.ComponentProps<typeof TooltipContent>["align"];
   sideOffset?: number;
 
+  style?: Record<string, string>;
   /** 追加到 Button 的类名（会和默认样式合并） */
   className?: string;
 
   /** 传递给 Button 的其余原生/组件属性（如 variant/size/disabled 等） */
   buttonProps?: ButtonOwnProps;
+  color?: string
+  onMouseOver?: () => void;
+  onMouseLeave?: () => void;
 }
 
 /**
@@ -49,8 +53,12 @@ export const HoverTooltipButton = React.memo(function HoverTooltipButton({
   side = "top",
   align = "center",
   sideOffset = 8,
+  style,
   className = "",
   buttonProps,
+  color,
+  onMouseOver,
+  onMouseLeave,
 }: HoverTooltipButtonProps) {
   const mergedBtnClass =
     [
@@ -59,6 +67,8 @@ export const HoverTooltipButton = React.memo(function HoverTooltipButton({
       "text-[16px] font-semibold",
       "transition-all duration-200 shadow-sm hover:shadow-md",
       "hover:text-white",
+      "text-[#fff]",
+      "predict-btn",
       // 允许外部覆盖/追加
       className,
     ]
@@ -69,7 +79,7 @@ export const HoverTooltipButton = React.memo(function HoverTooltipButton({
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button className={mergedBtnClass} onClick={onClick} {...buttonProps}>
+          <Button className={mergedBtnClass} onClick={onClick} {...buttonProps} style={style || {background: color, width: '100%'}} onMouseOver={onMouseOver ? () => onMouseOver() : undefined} onMouseLeave={onMouseLeave ? () => onMouseLeave() : undefined}>
             {hoverLabel ? (
               <>
                 <span className="group-hover:hidden">{label}</span>
@@ -85,7 +95,7 @@ export const HoverTooltipButton = React.memo(function HoverTooltipButton({
           side={side}
           align={align}
           sideOffset={sideOffset}
-          className="z-50 rounded-[8px] bg-[#5E6064] px-[15px] py-[11px] text-[16px] text-white shadow-lg backdrop-blur border border-[#26282E]"
+          className="z-50 rounded-[8px] bg-[#5E6064] px-[12px] py-[11px] text-[16px] text-white shadow-lg backdrop-blur border border-[#26282E]"
         >
           {tooltip}
           <TooltipArrow className="fill-[#5E6064]" />

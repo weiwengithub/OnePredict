@@ -159,3 +159,91 @@ export function formatNumberWithSeparator(num: number | string, separator = ',')
   const fi = i.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
   return d ? `${fi}.${d}` : fi;
 }
+
+type AbbrevStyle = 'western' | 'cn';
+type FormatOptions = {
+  decimals?: number;       // 最多保留小数位，默认 1
+  minDecimals?: number;    // 最少保留小数位，默认 0
+  trimZeros?: boolean;     // 去掉小数尾随 0，默认 true
+  locale?: string | false; // 本地化分组，如 'en-US'/'zh-CN'；false 表示不分组，默认 false
+  style?: AbbrevStyle;     // 'western' => K/M/B/T；'cn' => 万/亿/兆，默认 'western'
+  threshold?: number;      // 触发缩写的阈值，默认 1000（中文样式默认 10000）
+};
+
+export function abbreviateNumber(
+  input: number | string | null | undefined,
+  options: FormatOptions = {}
+): string {
+  if (input === null || input === undefined || input === '' as any) return '';
+
+  const n = typeof input === 'string' ? Number(input) : input;
+  if (!Number.isFinite(n)) return String(input);
+
+  const {
+    style = 'western',
+    decimals = 1,
+    minDecimals = 0,
+    trimZeros = true,
+    locale = false,
+  } = options;
+
+  const threshold = options.threshold ?? (style === 'cn' ? 10000 : 1000);
+
+  const abs = Math.abs(n);
+  const sign = n < 0 ? '-' : '';
+
+  // 单位表
+  const units =
+    style === 'cn'
+      ? [
+        { v: 1e12, s: '兆' }, // 1,000,000,000,000
+        { v: 1e8, s: '亿' },  // 100,000,000
+        { v: 1e4, s: '万' },  // 10,000
+      ]
+      : [
+        { v: 1e12, s: 'T' },
+        { v: 1e9, s: 'B' },
+        { v: 1e6, s: 'M' },
+        { v: 1e3, s: 'K' },
+      ];
+
+  // 小于阈值：直接返回（可选分组）
+  if (abs < threshold) {
+    return locale
+      ? new Intl.NumberFormat(locale).format(n)
+      : String(n);
+  }
+
+  // 找到合适单位
+  const u = units.find(u => abs >= u.v) ?? units[units.length - 1];
+
+  const num = n / u.v;
+
+  // 格式化小数位
+  const clamp = (x: number, min: number, max: number) =>
+    Math.max(min, Math.min(max, x));
+  const maxFrac = clamp(decimals, 0, 10);
+
+  // 先 toFixed，再可选去 0
+  let str = num.toFixed(maxFrac);
+  if (trimZeros && maxFrac > 0) {
+    str = str.replace(/\.?0+$/, ''); // 去除尾随 0 和可能的点
+  }
+
+  // 至少保留 minDecimals
+  if (minDecimals > 0) {
+    const [i, f = ''] = str.split('.');
+    const need = Math.max(0, minDecimals - f.length);
+    if (need > 0) str = i + '.' + (f + '0'.repeat(need));
+  }
+
+  // 对整数部分做本地化分组（仅对数字部分，不含单位）
+  if (locale) {
+    const [intPart, fracPart] = str.split('.');
+    const grouped = new Intl.NumberFormat(locale).format(Number(intPart));
+    str = fracPart ? `${grouped}.${fracPart}` : grouped;
+  }
+
+  return `${sign}${str}${u.s}`;
+}
+

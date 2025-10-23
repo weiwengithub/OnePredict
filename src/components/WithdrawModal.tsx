@@ -19,6 +19,7 @@ import { ZkloginClient } from '@/txsdk/zklogin';
 import { toast } from "sonner";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import WarningIcon from "@/assets/icons/warning_1.svg";
+import {useIsMobile} from "@/contexts/viewport";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -27,6 +28,7 @@ interface WelcomeModalProps {
 
 export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
   const suiClient = useSuiClient();
   const executeTransaction = useExecuteTransaction()
 
@@ -116,8 +118,8 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[450px] p-0 bg-transparent border-none">
+    <Dialog open={open} onOpenChange={onOpenChange} className="z-[60]">
+      <DialogContent className={`p-0 bg-transparent border-none ${isMobile ? "w-full left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "w-[450px]"}`}>
         <div className="w-full h-full relative rounded-[20px] bg-[#051A3D] p-[24px] overflow-hidden">
           <div className="h-[20px] leading-[20px] text-[20px] text-white font-bold text-center relative">
             {t('send.send')}
@@ -133,7 +135,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
           <div className="mt-[28px] h-[16px] leading-[16px] text-[16px] text-white/60">{t('send.select')}</div>
           <div className="mt-[8px]">
             <Select value={token} onValueChange={(v) => console.log(v)}>
-              <SelectTrigger className="h-[48px] w-full bg-white/10 border-none rounded-[8px] text-white text-[14px] px-[12px]">
+              <SelectTrigger className="h-[48px] w-full bg-white/10 border-none rounded-[8px] text-white text-[14px] px-[12px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none">
                 <SelectValue placeholder={t('categories.pickOne')}>
                   <div className="flex items-center gap-1">
                     <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
@@ -156,13 +158,13 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
             />
-            <span className="ml-[8px] h-[48px] leading-[48px] px-[24px] bg-white/10 rounded-[8px] text-[16px] text-white/60 hover:text-white cursor-pointer" onClick={() => setAmount(usdhBalance)}>Max</span>
+            <span className="ml-[8px] h-[48px] leading-[48px] px-[24px] bg-white/10 rounded-[8px] text-[16px] text-white/60 hover:text-white cursor-pointer" onClick={() => setAmount(usdhBalance)}>{t('common.max')}</span>
           </div>
           <div className="mt-[16px] h-[16px] leading-[16px] text-[16px] text-white/60">{t('send.to')}</div>
           <div className="mt-[16px] h-[64px] bg-white/10 rounded-[8px]">
             <Textarea
               className="w-full p-[12px] leading-[20px] text-[16px] text-white placeholder:text-white/60"
-              placeholder="0x... (Onechain address)"
+              placeholder={`0x... (${t('send.onechainAddress')})`}
               value={toAddress}
               maxRows={2}
               variant="borderless"

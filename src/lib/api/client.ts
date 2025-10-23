@@ -18,11 +18,12 @@ const api: AxiosInstance = axios.create(API_CONFIG);
 // 请求拦截器
 api.interceptors.request.use(
   (config) => {
-    config.headers.CHANNEL = 'RWA';
+    config.headers.CHANNEL = 'OnePredict';
+    console.log('config.params', config.data)
     // 可以在这里添加认证token等
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const token = localStorage.getItem('predict-token') ? localStorage.getItem('predict-token') : null;
     if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+      config.headers.Authorization = token;
     }
 
     // 添加时间戳防止缓存
@@ -32,7 +33,6 @@ api.interceptors.request.use(
         _t: Date.now(),
       };
     }
-
     return config;
   },
   (error: AxiosError) => {
@@ -73,7 +73,7 @@ export const apiClient = {
   },
 
   // POST请求
-  post: <T = unknown>(url: string, data?: Record<string, unknown>, config?: ApiConfig): Promise<AxiosResponse<T>> => {
+  post: <T = unknown>(url: string, data?: any, config?: ApiConfig): Promise<AxiosResponse<T>> => {
     return api.post(url, data, config);
   },
 

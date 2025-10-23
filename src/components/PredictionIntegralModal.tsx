@@ -26,28 +26,22 @@ import {useRouter} from "next/navigation";
 import {useLanguage} from "@/contexts/LanguageContext";
 import { MarketClient } from "@/lib/market";
 import { useExecuteTransaction } from "@/hooks/useExecuteTransaction";
+import {Avatar, AvatarImage} from "@/components/ui/avatar";
+import SharePopover from "@/components/SharePopover";
+import DepositModal from "@/components/DepositModal";
+import WithdrawModal from "@/components/WithdrawModal";
+import {useIsMobile} from "@/contexts/viewport";
 
 interface PredictionIntegralModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onShowDeposit: () => void;
-  onShowWithdraw: () => void;
-  prediction: {
-    question: string;
-    chance: number;
-    volume: string;
-    deadline: string;
-    id?: string;
-  };
 }
 
 export default function PredictionIntegralModal({
   isOpen,
   onClose,
-  onShowDeposit,
-  onShowWithdraw,
-  prediction,
 }: PredictionIntegralModalProps) {
+  const isMobile = useIsMobile();
   const { t } = useLanguage();
   const router = useRouter();
   const [amount, setAmount] = useState<number>(0);
@@ -55,6 +49,9 @@ export default function PredictionIntegralModal({
   const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [tradeList, setTradeList] = useState<MarketTradeOption[]>([]);
   const [transactionList, setTransactionList] = useState<TransactionOption[]>([]);
+
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
   const [showSale, setShowSale] = useState(false);
   const [salePosition, setSalePosition] = useState<MarketPositionOption | null>(null);
 
@@ -200,6 +197,7 @@ export default function PredictionIntegralModal({
       const marketClient = new MarketClient(suiClient, {
         packageId: position.packageId,
         coinType: position.coinType,
+        globalSeqId: position.globalSequencerId || ''
       });
       const tx = await marketClient.buildRedeemTx({
         marketId: position.marketId,
@@ -227,9 +225,9 @@ export default function PredictionIntegralModal({
       />
 
       {/* 右侧滑出弹窗 */}
-      <div className={`fixed right-0 top-0 h-full w-full max-w-[432px] flex flex-col bg-[#051A3D] p-[24px] z-50 transform transition-transform duration-300 ${
-        isOpen ? 'translate-x-0' : 'translate-x-full'
-      }`}>
+      <div className={`fixed flex flex-col bg-[#051A3D] p-[24px] z-50 transform transition-transform duration-300
+        ${isOpen ? 'translate-x-0' : 'translate-x-full'} 
+        ${isMobile ? 'left-0 top-[90px] bottom-0 w-full pb-[30px]' : 'right-0 top-0 h-full w-full max-w-[432px]'}`}>
         {!!zkLoginData && (
           <div></div>
         )}
@@ -261,7 +259,7 @@ export default function PredictionIntegralModal({
           <div className="mt-[56px] flex gap-[16px]">
             <div
               className="flex-1 h-[56px] flex items-center justify-center bg-[#36383A] rounded-[16px] cursor-pointer"
-              onClick={onShowDeposit}
+              onClick={() => setShowDeposit(true)}
             >
               <div className="size-[16px] bg-white rounded-full flex items-center justify-center">
                 <DownIcon className="text-[8px] text-black" />
@@ -270,7 +268,7 @@ export default function PredictionIntegralModal({
             </div>
             <div
               className="flex-1 h-[56px] flex items-center justify-center bg-[#FAFAFA] rounded-[16px] cursor-pointer"
-              onClick={onShowWithdraw}
+              onClick={() => setShowWithdraw(true)}
             >
               <div className="size-[16px] bg-black rounded-full flex items-center justify-center">
                 <UpIcon className="text-[8px] text-white" />
@@ -325,7 +323,9 @@ export default function PredictionIntegralModal({
                       }}
                     >
                       <div className="flex items-center">
-                        <Image src={position.marketImage} alt="" width={40} height={40} />
+                        <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
+                          <AvatarImage src={position.marketImage} alt="avatar" />
+                        </Avatar>
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
                             {position.marketName}
@@ -342,7 +342,25 @@ export default function PredictionIntegralModal({
                           </div>
                         </div>
                         <div className="text-white px-[12px] text-[12px] mx-[20px]">
-                          <ExportIcon />
+                          <SharePopover
+                            trigger={<ExportIcon className="text-white/60 hover:text-white text-[12px]" />}
+                            content={
+                              <div className="max-w-[260px] text-sm leading-5">
+                                <div
+                                  className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCopyToText(`${window.location.origin}/details?marketId=${position.marketId}`)
+                                  }}
+                                >
+                                  <CopyIcon />
+                                  {t('predictions.copyLink')}
+                                </div>
+                              </div>
+                            }
+                            offset={10}
+                            lockScroll
+                          />
                         </div>
                         {position.marketState === 1 && (
                           <div
@@ -398,7 +416,7 @@ export default function PredictionIntegralModal({
                           </div>
                         </div>
                         <div className="flex-1">
-                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.toWin')}</div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.toWin')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
                             <TooltipAmount shares={position.winProfit} decimals={0} precision={2}/>
                           </div>
@@ -411,9 +429,9 @@ export default function PredictionIntegralModal({
               ) : (
                 <>
                   <div className="mt-[40px] mx-auto size-[48px]">
-                    <Image src="/images/list-empty.png" alt="" width={48} height={48} />
+                    <Image src="/images/empty.png" alt="" width={48} height={48} />
                   </div>
-                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.nothing')}</div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
                 </>
               )}
             </>
@@ -431,7 +449,10 @@ export default function PredictionIntegralModal({
                       }}
                     >
                       <div className="flex">
-                        <Image src={trade.marketImage} alt="" width={40} height={40} />
+                        <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
+                          <AvatarImage src={trade.marketImage} alt="avatar" />
+                        </Avatar>
+                        {/*<Image src={trade.marketImage} alt="" width={40} height={40} />*/}
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
                             {trade.marketName}
@@ -450,7 +471,7 @@ export default function PredictionIntegralModal({
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.type')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white">
-                            {trade.side.replace(/^\p{L}/u, c => c.toLocaleUpperCase())}
+                            {trade.side === 'buy' ? t('predictions.buy') : trade.side === 'sell' ? t('predictions.sell') : ''}
                           </div>
                         </div>
                         <div>
@@ -479,9 +500,9 @@ export default function PredictionIntegralModal({
               ) : (
                 <div>
                   <div className="mt-[40px] mx-auto size-[48px]">
-                    <Image src="/images/list-empty.png" alt="" width={48} height={48} />
+                    <Image src="/images/empty.png" alt="" width={48} height={48} />
                   </div>
-                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.nothing')}</div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
                 </div>
               )}
             </>
@@ -523,15 +544,21 @@ export default function PredictionIntegralModal({
               ) : (
                 <div>
                   <div className="mt-[40px] mx-auto size-[48px]">
-                    <Image src="/images/list-empty.png" alt="" width={48} height={48} />
+                    <Image src="/images/empty.png" alt="" width={48} height={48} />
                   </div>
-                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.nothing')}</div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
                 </div>
               )}
             </>
           )}
         </div>
       </div>
+
+      {/* Deposit Modal */}
+      <DepositModal open={showDeposit} onOpenChange={setShowDeposit} />
+
+      {/* Withdraw Modal */}
+      <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
 
       {/* Sale Modal */}
       <SaleModal open={showSale} position={salePosition} onOpenChange={setShowSale}></SaleModal>

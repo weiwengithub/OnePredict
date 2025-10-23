@@ -189,4 +189,18 @@
     background: transparent;
     border: none;
   }
+
+  /* Hide lightweight-charts watermark/logo inside #container */
+  #tv-attr-logo {
+    display: none !important;
+  }
+  .predict-btn {
+    opacity: 0.6;
+    &:hover {
+       opacity: 1;
+    }
+    &.active {
+      opacity: 1;
+    }
+  }
 }

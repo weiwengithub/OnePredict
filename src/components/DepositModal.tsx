@@ -15,6 +15,7 @@ import { ZkLoginData } from "@/lib/interface";
 import {setSigninOpen, store} from "@/store";
 import { onCopyToText } from "@/lib/utils";
 import { QRCode } from "@/components/QRCode";
+import {useIsMobile} from "@/contexts/viewport";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -24,6 +25,8 @@ interface WelcomeModalProps {
 
 export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) {
   const { t } = useLanguage();
+  const isMobile = useIsMobile();
+
   // 禁止背景滚动
   useEffect(() => {
     if (open) {
@@ -51,11 +54,11 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
   }, [currentAccount, zkLoginData])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="w-[450px] p-0 bg-transparent border-none">
+    <Dialog open={open} onOpenChange={onOpenChange} className="z-[60]">
+      <DialogContent className={`p-0 bg-transparent border-none ${isMobile ? "w-full left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "w-[450px]"}`}>
         <div className="w-full h-full relative rounded-[20px] bg-[#051A3D] p-[24px] overflow-hidden space-y-[16px]">
           <div className="h-[20px] leading-[20px] text-[20px] text-white font-bold text-center relative">
-            Daposit
+            {t('deposit.deposit')}
             <div className="size-[24px] cursor-pointer absolute top-0 right-0">
               <CloseIcon
                 className="text-[14px] text-[#D2D1D1] hover:text-white"
@@ -73,23 +76,23 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
             />
           </div>
           <div className="leading-[20px] text-white text-[20px]">
-            Address
+            {t('deposit.address')}
           </div>
           <div className="leading-[24px] text-white/60 text-[16px] break-all pb-[16px] border-b border-white/40">
             {address}<CopyIcon className="inline-block ml-1 -mt-1 text-[8px] cursor-pointer hover:text-white" onClick={() => onCopyToText(address)} />
           </div>
           <div className="h-[40px] flex items-center bg-[#252520] rounded-[24px] px-[16px]">
             <WarningIcon className="text-[#E8C24D] text-[16px]" />
-            <span className="ml-[8px] text-[#E8C24D] text-[12px]">Supports only OneChain native USDH</span>
+            <span className="ml-[8px] text-[#E8C24D] text-[12px]">{t('deposit.warning')}</span>
           </div>
           <Button
             onClick={() => onOpenChange(false)}
             className="w-full h-[48px] bg-[#199DFF] hover:bg-blue-700 text-white text-[24px] rounded-[12px] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            I got it
+            {t('deposit.gotIt')}
           </Button>
           <div className="h-[12px] leading-[12px] text-[12px] text-white/60 text-center">
-            Your address has been copied to clipboard
+            {t('deposit.tip')}
           </div>
         </div>
       </DialogContent>
