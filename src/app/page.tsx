@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef } from "react";
 import PredictionCard from "@/components/PredictionCard";
 import MobileNavigation from "@/components/MobileNavigation";
 import CustomCarousel, { EffectType } from '@/components/CustomCarousel';
@@ -9,97 +9,104 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import Image from "next/image";
 import apiService from "@/lib/api/services";
-import { BannerInfo, MarketOption, type SortBy } from "@/lib/api/interface";
+import { BannerInfo, MarketOption, type SortBy, type Direction } from "@/lib/api/interface";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Swiper as SwiperType } from 'swiper';
 import { useIsMobile } from '@/contexts/viewport';
 import { useQuery } from '@tanstack/react-query';
-import WechatIcon from "@/assets/icons/wechat.svg";
 
 export default function Home() {
   const isMobile = useIsMobile();
   const { t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState("home");
 
-  const [predictionData, setPredictionData] = useState<MarketOption[]>([]);
+  // 筛选和排序参数
+  const [category, setCategory] = useState("trending");
+  const [sortBy, setSortBy] = useState<SortBy>("endTime");
+  const [direction, setDirection] = useState<Direction>("");
+  const [showFollowed, setShowFollowed] = useState(false);
+
+  // 分页参数
   const [predictionPageNumber, setPredictionPageNumber] = useState(1);
-  const [predictionPageSize, setPredictionPageSize] = useState(8);
-  const [loading, setLoading] = useState(false);
-  const [hasMore, setHasMore] = useState(false);
+  const [predictionPageSize] = useState(8);
 
-  // 防止重复点击造成并发
-  const loadingRef = useRef(false);
-
-  // 统一的加载函数：传入要拉取的页码
-  const loadPage = async (targetPage: number, replace = false, filter: {category: string; sortBy: SortBy} = { category: 'trending', sortBy: 'endTime'}) => {
-    if (loadingRef.current) return;
-    loadingRef.current = true;
-    setLoading(true);
-
-    // 每次请求前创建一个 AbortController，卸载时取消
-    const ac = new AbortController();
-    const { signal } = ac;
-
-    try {
-      const {data} = await apiService.getMarketList({
-        pageSize: predictionPageSize,
-        pageNum: predictionPageNumber,
-        orderByColumn: filter.sortBy,
-        orderDirection: "ASC"
-      }, { signal });
-      const newList = data.rows || [];
-      setPredictionData(prev =>
-        replace ? newList : [...prev, ...newList]
-      );
-      // 计算是否还有更多
-      const loadedTotal = (replace ? 0 : predictionData.length) + newList.length;
-      setHasMore(loadedTotal < (data.count ?? loadedTotal)); // 若后端没给 total，则默认还有
-      // 下一次请求页码自增
-      setPredictionPageNumber(targetPage + 1);
-    } catch (e: any) {
-      // 被取消的请求不视为错误
-      if (e?.name !== "CanceledError" && e?.code !== "ERR_CANCELED") {
-        console.error(e?.message || "请求失败");
+  // 使用 useQuery 请求市场列表数据
+  const { data: marketData, isLoading, isFetching } = useQuery<{ rows: MarketOption[]; count: number }>({
+    queryKey: ['marketList', category, sortBy, direction, showFollowed, predictionPageNumber],
+    queryFn: async ({ signal }) => {
+      if (showFollowed) {
+        // 当 showFollowed 为 true 时，调用 getMarketFollowList
+        const { data } = await apiService.getMarketFollowList({
+          pageSize: predictionPageSize,
+          pageNum: predictionPageNumber,
+        }, { signal });
+        return data;
+      } else {
+        // 否则调用 getMarketList
+        const { data } = await apiService.getMarketList({
+          pageSize: predictionPageSize,
+          pageNum: predictionPageNumber,
+          orderByColumn: sortBy,
+          orderDirection: direction || undefined,
+        }, { signal });
+        return data;
       }
-    } finally {
-      loadingRef.current = false;
-      setLoading(false);
+    },
+    // 保持之前的数据，避免重新加载时闪烁
+    placeholderData: (previousData) => previousData,
+  });
+
+  // 累积数据（用于分页）
+  const [accumulatedData, setAccumulatedData] = useState<MarketOption[]>([]);
+
+  // 用 ref 追踪上一次的页码
+  const prevPageRef = React.useRef(predictionPageNumber);
+
+  // 当 marketData 变化时，根据页码决定是替换还是追加数据
+  React.useEffect(() => {
+    if (marketData?.rows) {
+      if (predictionPageNumber === 1) {
+        // 页码为 1 时，替换数据
+        setAccumulatedData(marketData.rows);
+      } else if (predictionPageNumber > prevPageRef.current) {
+        // 页码增加时，追加数据
+        setAccumulatedData(prev => [...prev, ...marketData.rows]);
+      }
+      prevPageRef.current = predictionPageNumber;
     }
+  }, [marketData, predictionPageNumber]);
 
-    // 返回一个取消函数（仅在需要中途取消时使用）
-    return () => ac.abort();
-  };
+  // 计算是否还有更多数据
+  const hasMore = marketData ? accumulatedData.length < (marketData.count ?? accumulatedData.length) : false;
 
-  // 首屏加载：默认请求第 1 页
-  useEffect(() => {
-    let canceled = false;
-    (async () => {
-      // replace=true 表示首次加载用新数据替换旧列表
-      const cancel = await loadPage(1, true);
-      return () => {
-        canceled = true;
-        cancel?.(); // 组件卸载时取消请求
-      };
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
-
+  // 加载更多
   const getMoreMarketList = () => {
-    if (!loading && hasMore) {
-      loadPage(predictionPageNumber);
+    if (!isFetching && hasMore) {
+      setPredictionPageNumber(prev => prev + 1);
     }
   };
 
-  const [bannerList, setBannerList] = useState<BannerInfo[]>([]);
-  useEffect(() => {
-    (async () => {
-      const {data} = await apiService.getBannerList();
-      console.log(data);
-      setBannerList(data.rows)
-    })().catch((e) => {
-      if (e?.name !== "AbortError") console.error(e);
-    });
+  // 处理筛选条件变化 - 使用 useCallback 避免无限循环
+  const handleFilterChange = React.useCallback((params: { category: string; sortBy: SortBy; direction: Direction; showFollowed: boolean; }) => {
+    setCategory(params.category);
+    setSortBy(params.sortBy);
+    setDirection(params.direction);
+    setShowFollowed(params.showFollowed);
+    // 重置页码
+    setPredictionPageNumber(1);
+    setAccumulatedData([]);
   }, []);
+
+  // Banner 查询
+  const { data: bannerData } = useQuery({
+    queryKey: ['bannerList'],
+    queryFn: async () => {
+      const { data } = await apiService.getBannerList();
+      return data;
+    },
+  });
+
+  const bannerList = bannerData?.rows || [];
 
   const swiperRef = useRef<SwiperType | null>(null);
   const handleSwiperInit = (swiper: SwiperType) => {
@@ -126,19 +133,21 @@ export default function Home() {
         )}
 
         {/* Desktop Category Navigation */}
-        <CategoryTabs onChange={({category, sortBy, direction, showFollowed}) => {
-          // loadPage(1, true, value);
-        }} />
+        <CategoryTabs onChange={handleFilterChange} />
 
         {/* Prediction Cards Grid */}
-        {predictionData.length > 0 ? (
+        {accumulatedData.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-[15px] pb-[15px]">
-            {predictionData.map((prediction, index) => (
+            {accumulatedData.map((prediction, index) => (
               <PredictionCard
-                key={index}
+                key={prediction.id || index}
                 prediction={prediction}
               />
             ))}
+          </div>
+        ) : isLoading ? (
+          <div className="my-[120px] text-center">
+            <div className="text-white/60 text-[16px]">{t('common.loading') || 'Loading...'}</div>
           </div>
         ) : (
           <div className="my-[120px]">
@@ -150,10 +159,10 @@ export default function Home() {
         {/* Load More */}
         {hasMore && (
           <div
-            className="mt-[15px] flex items-center justify-center bg-[#010A2C] border border-[#26282E] text-center rounded-[16px] py-[9px]"
+            className="mt-[15px] flex items-center justify-center bg-[#010A2C] border border-[#26282E] text-center rounded-[16px] py-[9px] cursor-pointer"
             onClick={getMoreMarketList}
           >
-            <span className="mr-[4px] text-[14px] text-white/60">{t('common.loadMore')}</span>
+            <span className="mr-[4px] text-[14px] text-white/60">{isFetching ? t('common.loading') || 'Loading...' : t('common.loadMore')}</span>
             <Image src="/images/icon/icon-refresh.png" alt="OnePredict" width={14} height={14} />
           </div>
         )}

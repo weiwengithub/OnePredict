@@ -68,27 +68,27 @@ api.interceptors.response.use(
 // 通用API方法
 export const apiClient = {
   // GET请求
-  get: <T = unknown>(url: string, params?: Record<string, unknown>): Promise<AxiosResponse<T>> => {
-    return api.get(url, { params });
+  get: <T = unknown>(url: string, params?: Record<string, unknown>): Promise<T> => {
+    return api.get(url, { params }) as Promise<T>;
   },
 
   // POST请求
-  post: <T = unknown>(url: string, data?: any, config?: ApiConfig): Promise<AxiosResponse<T>> => {
-    return api.post(url, data, config);
+  post: <T = unknown>(url: string, data?: any, config?: ApiConfig): Promise<T> => {
+    return api.post(url, data, config) as Promise<T>;
   },
 
   // PUT请求
-  put: <T = unknown>(url: string, data?: Record<string, unknown>): Promise<AxiosResponse<T>> => {
-    return api.put(url, data);
+  put: <T = unknown>(url: string, data?: Record<string, unknown>): Promise<T> => {
+    return api.put(url, data) as Promise<T>;
   },
 
   // DELETE请求
-  delete: <T = unknown>(url: string): Promise<AxiosResponse<T>> => {
-    return api.delete(url);
+  delete: <T = unknown>(url: string): Promise<T> => {
+    return api.delete(url) as Promise<T>;
   },
 
   // PATCH请求
-  patch: <T = unknown>(url: string, data?: Record<string, unknown>): Promise<AxiosResponse<T>> => {
-    return api.patch(url, data);
+  patch: <T = unknown>(url: string, data?: Record<string, unknown>): Promise<T> => {
+    return api.patch(url, data) as Promise<T>;
   },
 };

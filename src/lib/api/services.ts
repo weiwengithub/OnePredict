@@ -28,7 +28,7 @@ export const apiService = {
     orderDirection?: Direction;
     projectName?: string;
   }, config?: ApiConfig) => {
-    return apiClient.post<ResMarketList>('/api/ext/market/list', params, config);
+    return apiClient.post<{ data: ResMarketList }>('/api/ext/market/list', params, config);
   },
 
   // 获取市场详情
@@ -58,7 +58,7 @@ export const apiService = {
 
   // 首页banner图查询
   getBannerList: (params?: { pageSize?: number; pageNum?: number }, config?: ApiConfig) => {
-    return apiClient.post<ResBannerList>('/api/ext/banner/list', params, config);
+    return apiClient.post<{ data: ResBannerList }>('/api/ext/banner/list', params, config);
   },
 
   // 获取用户信息
@@ -103,7 +103,7 @@ export const apiService = {
 
   // 获取已关注项目
   getMarketFollowList: (params: {pageSize: number; pageNum: number;}, config?: ApiConfig) => {
-    return apiClient.post('/api/ext/market/myFollowList', params, config);
+    return apiClient.post<{ data: ResMarketList }>('/api/ext/market/myFollowList', params, config);
   },
 
   // 排行榜
