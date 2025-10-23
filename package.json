@@ -42,7 +42,8 @@
     "sonner": "^2.0.7",
     "swiper": "^11.2.10",
     "tailwind-merge": "^3.3.0",
-    "tailwindcss-animate": "^1.0.7"
+    "tailwindcss-animate": "^1.0.7",
+    "same-runtime": "^0.0.1"
   },
   "devDependencies": {
     "@biomejs/biome": "1.9.4",

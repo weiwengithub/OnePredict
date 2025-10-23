@@ -28,7 +28,7 @@
         "./src/*"
       ]
     },
-    "jsxImportSource": "react"
+    "jsxImportSource": "same-runtime/dist"
   },
   "include": [
     "**/*.ts",

@@ -52,29 +52,29 @@ export default function Home() {
         return data;
       }
     },
-    // 保持之前的数据，避免重新加载时闪烁
-    placeholderData: (previousData) => previousData,
   });
 
   // 累积数据（用于分页）
   const [accumulatedData, setAccumulatedData] = useState<MarketOption[]>([]);
 
-  // 用 ref 追踪上一次的页码
-  const prevPageRef = React.useRef(predictionPageNumber);
+  // 用 ref 追踪上一次成功加载的页码
+  const loadedPageRef = React.useRef(0);
 
   // 当 marketData 变化时，根据页码决定是替换还是追加数据
   React.useEffect(() => {
-    if (marketData?.rows) {
+    // 只有在数据加载完成且是新页面时才更新
+    if (marketData?.rows && !isFetching) {
       if (predictionPageNumber === 1) {
         // 页码为 1 时，替换数据
         setAccumulatedData(marketData.rows);
-      } else if (predictionPageNumber > prevPageRef.current) {
-        // 页码增加时，追加数据
+        loadedPageRef.current = 1;
+      } else if (predictionPageNumber > loadedPageRef.current) {
+        // 页码增加且是新数据时，追加数据
         setAccumulatedData(prev => [...prev, ...marketData.rows]);
+        loadedPageRef.current = predictionPageNumber;
       }
-      prevPageRef.current = predictionPageNumber;
     }
-  }, [marketData, predictionPageNumber]);
+  }, [marketData, predictionPageNumber, isFetching]);
 
   // 计算是否还有更多数据
   const hasMore = marketData ? accumulatedData.length < (marketData.count ?? accumulatedData.length) : false;
