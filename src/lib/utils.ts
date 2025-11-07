@@ -281,40 +281,81 @@ export function formatShortDate(
   }).format(new Date(ms));
 }
 
-export function timeAgoEn(
-  input: number | string | Date,
-  baseNow: number = Date.now()
-): string {
-  const target = new Date(input).getTime(); // 假设你的 toDate 做的也是这件事
-  let diff = baseNow - target;              // >0 过去；<0 未来
+export function timeAgoEn(input: string | number | Date, baseNow?: number) {
+  // 1) 解析成时间戳（毫秒），优先按 UTC 解析
+  const target = toUtcMillis(input);
+  if (target == null || Number.isNaN(target)) return '';
+
+  // 2) 当前时间（毫秒）
+  const now = typeof baseNow === 'number' ? baseNow : Date.now();
+
+  // 3) 计算差值
+  let diff = now - target;          // >0 过去；<0 未来
   const future = diff < 0;
   diff = Math.abs(diff);
 
-  const SECOND = 5_000;
+  // 4) 时间单位（毫秒）
+  const SECOND = 1_000;
   const MINUTE = 60 * SECOND;
   const HOUR   = 60 * MINUTE;
   const DAY    = 24 * HOUR;
 
-  // 小于 5 秒：直接 just now / in 0 seconds
-  if (diff < SECOND) return i18n.t('time.justNow');
+  // 小于 5 秒：just now
+  if (diff < 5 * SECOND) return i18n.t('time.justNow');
 
   if (diff < MINUTE) {
     const n = Math.floor(diff / SECOND);
-    return future ? i18n.t(n === 1 ? 'time.second_future_one' : 'time.second_future_other', {count: n}) : i18n.t(n === 1 ? 'time.second_past_one' : 'time.second_past_other', {count: n});
+    return future
+      ? i18n.t(n === 1 ? 'time.second_future_one' : 'time.second_future_other', { count: n })
+      : i18n.t(n === 1 ? 'time.second_past_one'   : 'time.second_past_other',   { count: n });
   }
 
   if (diff < HOUR) {
     const n = Math.floor(diff / MINUTE);
-    return future ? i18n.t(n === 1 ? 'time.minute_future_one' : 'time.minute_future_other', {count: n}) : i18n.t(n === 1 ? 'time.minute_past_one' : 'time.minute_past_other', {count: n});
+    return future
+      ? i18n.t(n === 1 ? 'time.minute_future_one' : 'time.minute_future_other', { count: n })
+      : i18n.t(n === 1 ? 'time.minute_past_one'   : 'time.minute_past_other',   { count: n });
   }
 
   if (diff < DAY) {
     const n = Math.floor(diff / HOUR);
-    return future ? i18n.t(n === 1 ? 'time.hour_future_one' : 'time.hour_future_other', {count: n}) : i18n.t(n === 1 ? 'time.hour_past_one' : 'time.hour_past_other', {count: n});
+    return future
+      ? i18n.t(n === 1 ? 'time.hour_future_one' : 'time.hour_future_other', { count: n })
+      : i18n.t(n === 1 ? 'time.hour_past_one'   : 'time.hour_past_other',   { count: n });
   }
 
   const n = Math.floor(diff / DAY);
-  return future ? i18n.t(n === 1 ? 'time.day_future_one' : 'time.day_future_other', {count: n}) : i18n.t(n === 1 ? 'time.day_past_one' : 'time.day_past_other', {count: n});
+  return future
+    ? i18n.t(n === 1 ? 'time.day_future_one' : 'time.day_future_other', { count: n })
+    : i18n.t(n === 1 ? 'time.day_past_one'   : 'time.day_past_other',   { count: n });
+}
+
+/** 把各种输入统一解析为「毫秒时间戳」，默认按 UTC 处理常见无时区字符串 */
+export function toUtcMillis(input: string | number | Date): number | null {
+  if (input instanceof Date) return input.getTime();
+
+  if (typeof input === 'number') {
+    // 兼容秒/毫秒级时间戳（< 1e12 视为秒）
+    return Math.abs(input) < 1e12 ? input * 1000 : input;
+  }
+
+  if (typeof input === 'string') {
+    const s = input.trim();
+
+    // 1) 匹配 "YYYY-MM-DD HH:mm:ss"（无时区） => 当成 UTC，加上 Z
+    const m1 = /^\d{4}-\d{2}-\d{2}\s+\d{2}:\d{2}:\d{2}$/.test(s);
+    if (m1) return new Date(s.replace(' ', 'T') + 'Z').getTime();
+
+    // 2) 标准 ISO 串但没有时区（"YYYY-MM-DDTHH:mm:ss"）=> 当成 UTC，加 Z
+    const m2 = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}$/.test(s);
+    if (m2) return new Date(s + 'Z').getTime();
+
+    // 3) 其它情况（自带 Z 或 +08:00 等时区）交给 Date 解析
+    const t = new Date(s).getTime();
+    return Number.isNaN(t) ? null : t;
+  }
+
+  return null;
 }
 
 function toDate(v: number | string | Date): Date {
@@ -336,3 +377,25 @@ export function capitalizeFirstLowerRest(str = "") {
 }
 
 
+export function downloadDataUrl(dataUrl: string, filename = 'image.png') {
+  const a = document.createElement('a');
+  a.href = dataUrl;
+  a.download = filename;
+  a.click();
+}
+
+export async function copyImageFromDataUrl(dataUrl: string) {
+  // 把 dataURL 转 Blob
+  const blob = await (await fetch(dataUrl)).blob();
+
+  // 现代浏览器（需 HTTPS）
+  if ('clipboard' in navigator && 'ClipboardItem' in window) {
+    const item = new ClipboardItem({ [blob.type]: blob } as any);
+    await (navigator as any).clipboard.write([item]);
+    return true;
+  }
+
+  // Fallback：复制 dataURL 文本（不是图片本体）
+  await navigator.clipboard.writeText(dataUrl);
+  return false; // 告知是退化复制（仅复制了链接文本）
+}

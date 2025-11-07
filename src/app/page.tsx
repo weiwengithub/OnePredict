@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useMemo } from "react";
 import PredictionCard from "@/components/PredictionCard";
 import MobileNavigation from "@/components/MobileNavigation";
 import CustomCarousel, { EffectType } from '@/components/CustomCarousel';
@@ -9,11 +9,14 @@ import Footer from "@/components/Footer";
 import Header from "@/components/Header";
 import Image from "next/image";
 import apiService from "@/lib/api/services";
-import { BannerInfo, MarketOption, type SortBy, type Direction } from "@/lib/api/interface";
+import {BannerInfo, MarketOption, type SortBy, type Direction, DictInfo} from "@/lib/api/interface";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Swiper as SwiperType } from 'swiper';
 import { useIsMobile } from '@/contexts/viewport';
 import { useQuery } from '@tanstack/react-query';
+import { useCurrentAccount } from "@onelabs/dapp-kit";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/interface";
 
 export default function Home() {
   const isMobile = useIsMobile();
@@ -28,9 +31,12 @@ export default function Home() {
 
   // 分页参数
   const [predictionPageNumber, setPredictionPageNumber] = useState(1);
-  const [predictionPageSize] = useState(8);
-
-  // 使用 useQuery 请求市场列表数据
+  const [predictionPageSize] = useState(12);
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
+  const userAddress = useMemo(() => {
+    return currentAccount?.address || zkLoginData?.zkloginUserAddress;
+  }, [currentAccount, zkLoginData]);
   const { data: marketData, isLoading, isFetching } = useQuery<{ rows: MarketOption[]; count: number }>({
     queryKey: ['marketList', category, sortBy, direction, showFollowed, predictionPageNumber],
     queryFn: async ({ signal }) => {
@@ -39,6 +45,7 @@ export default function Home() {
         const { data } = await apiService.getMarketFollowList({
           pageSize: predictionPageSize,
           pageNum: predictionPageNumber,
+          address: userAddress || '',
         }, { signal });
         return data;
       } else {
@@ -46,8 +53,10 @@ export default function Home() {
         const { data } = await apiService.getMarketList({
           pageSize: predictionPageSize,
           pageNum: predictionPageNumber,
+          tags: [category],
           orderByColumn: sortBy,
           orderDirection: direction || undefined,
+          address: userAddress || '',
         }, { signal });
         return data;
       }
@@ -105,8 +114,16 @@ export default function Home() {
       return data;
     },
   });
-
   const bannerList = bannerData?.rows || [];
+
+  const { data: dictList } = useQuery({
+    queryKey: ['dictList'],
+    queryFn: async () => {
+      const { data } = await apiService.getMetadataDictList({dictType: "biz_project_type"});
+      return data;
+    },
+  });
+  const categories: DictInfo[] = dictList || [];
 
   const swiperRef = useRef<SwiperType | null>(null);
   const handleSwiperInit = (swiper: SwiperType) => {
@@ -114,7 +131,7 @@ export default function Home() {
   };
 
   return (
-    <div className="min-h-screen bg-[#051A3D] pb-20 md:pb-0">
+    <div className={`min-h-screen bg-[#051A3D] ${isMobile? 'pb-20' : ''}`}>
       {/* Header */}
       {isMobile ? (
         <MobileNavigation
@@ -133,7 +150,7 @@ export default function Home() {
         )}
 
         {/* Desktop Category Navigation */}
-        <CategoryTabs onChange={handleFilterChange} />
+        <CategoryTabs categories={categories} onChange={handleFilterChange} />
 
         {/* Prediction Cards Grid */}
         {accumulatedData.length > 0 ? (
@@ -151,7 +168,7 @@ export default function Home() {
           </div>
         ) : (
           <div className="my-[120px]">
-            <Image src="/images/empty.png" alt="Points" width={50} height={39} className="mx-auto" />
+            <Image src="/images/empty.png?v=1" alt="Points" width={50} height={39} className="mx-auto" />
             <div className="mt-[12px] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">{t('common.nothing')}</div>
           </div>
         )}
@@ -163,7 +180,7 @@ export default function Home() {
             onClick={getMoreMarketList}
           >
             <span className="mr-[4px] text-[14px] text-white/60">{isFetching ? t('common.loading') || 'Loading...' : t('common.loadMore')}</span>
-            <Image src="/images/icon/icon-refresh.png" alt="OnePredict" width={14} height={14} />
+            <Image src="/images/icon/icon-refresh.png?v=1" alt="OnePredict" width={14} height={14} />
           </div>
         )}
       </main>

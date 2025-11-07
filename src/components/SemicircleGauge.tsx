@@ -56,7 +56,7 @@ export default function SemicircleGauge({ outcomes, activeIndex }: SemicircleGau
         labelLine: { show: false },
         startAngle: 180,
         endAngle: 360,
-        data: outcomes?.length ? outcomes.map((item: any) => ({ value: Number(item.prob || item.value || 0), name: item.name })) : [],
+        data: outcomes?.length ? outcomes.map((item: any) => ({ value: Number(item.prob || item.value || 0), name: item.outcomeId })) : [],
       },
     ],
   }), [outcomes]);

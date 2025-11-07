@@ -16,7 +16,7 @@ export default function TermsAgreement({ className = "" }: TermsAgreementProps) 
       <p className="h-[24px] leading-[24px] text-[16px] text-white/60 font-bold">
         {t('predictions.trading')}
         <Link
-          href="/terms"
+          href="/doc/items"
           className="ml-1 hover:text-white underline"
         >
           {t('predictions.terms')}

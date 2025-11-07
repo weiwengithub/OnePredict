@@ -18,20 +18,24 @@ import { setSigninOpen } from "@/store";
 import {useCurrentAccount} from "@onelabs/dapp-kit";
 import { useDispatch, useSelector } from 'react-redux';
 import {RootState} from "@/lib/interface";
+import {formatNumberWithSeparator} from '@/lib/numbers';
+import { abbreviateNumber } from "@/lib/numbers";
+import {tokenIcon} from "@/assets/config";
 
 interface HeaderProps {
   currentPage?: 'home' | 'leaderboard' | 'rewards' | 'details';
 }
 
 export default function Header({ currentPage }: HeaderProps) {
+  const router = useRouter();
   const dispatch = useDispatch();
+
   const [showIntegralModal, setShowIntegralModal] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [showLanguageDropdown, setShowLanguageDropdown] = useState(false);
   const pathname = usePathname();
   const { language, setLanguage, t } = useLanguage();
-  const router = useRouter();
   const [showTheme, setShowTheme] = useState(false);
 
   const currentAccount = useCurrentAccount();
@@ -87,12 +91,12 @@ export default function Header({ currentPage }: HeaderProps) {
         className="h-[64px] bg-[#04122B] sticky top-0 z-50"
       >
         <div className="max-w-[1728px] mx-auto px-[16px] md:px-[40px]">
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center h-[64px]">
+          <div className="grid grid-cols-[auto_1fr] md:grid-cols-[1fr_auto_1fr] items-center h-[64px] space-x-[20px]">
             {/* Left side - Logo */}
-            <div className="flex items-center z-10 justify-self-start">
+            <div className="hidden md:flex items-center z-10 justify-self-start">
               <Link href="/" className="block transition-transform hover:scale-105">
                 <Image
-                  src="/images/logo.png"
+                  src="/images/logo.png?v=1"
                   alt="OnePredict"
                   width={195}
                   height={64}
@@ -104,26 +108,28 @@ export default function Header({ currentPage }: HeaderProps) {
             {/* Center - Navigation (绝对居中) */}
             <nav className={`justify-self-center z-20 flex items-center gap-[20px] md:gap-[40px] whitespace-nowrap max-w-[60vw] md:max-w-none overflow-x-auto scrollbar-none`}>
               {navigationItems.map((item) => (
-                <Link
+                <span
                   key={item.key}
-                  href={item.href}
-                  className={`
-              h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200
-              hover:text-[#477CFC] relative group
-              ${activePage === item.key ? 'text-[#477CFC] font-medium' : 'text-white'}
-            `}
-                >
-                  {item.label}
-                </Link>
+                  className={`h-[24px] leading-[24px] text-[16px] cursor-pointer transition-all duration-200 hover:text-[#477CFC] relative group ${activePage === item.key ? 'text-[#477CFC] font-medium' : 'text-white'}`}
+                  onClick={() => {
+                    if(item.href === '/rewards' && !zkLoginData && !currentAccount) {
+                      dispatch(setSigninOpen(true))
+                    } else {
+                      router.push(item.href);
+                    }
+                  }}
+                >{item.label}</span>
               ))}
             </nav>
 
             {/* Right side - User menu */}
             <div className="flex items-center gap-[8px] z-10 justify-self-end">
               {/* USDH Balance */}
-              <div className="flex items-center mr-[40px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
-                <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
-                <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[24px] font-bold text-white/60 hover:text-white">{usdhBalance}</span>
+              <div className="flex items-center mr-[20px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
+                <Image src={tokenIcon} alt="" width={20} height={20} />
+                <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[20px] font-bold text-white/60 hover:text-white">
+                  {abbreviateNumber(usdhBalance, {style: language === 'zh' ? 'cn' : 'western', decimals: 2})}
+                </span>
               </div>
 
               {/* Search Button */}
@@ -139,7 +145,7 @@ export default function Header({ currentPage }: HeaderProps) {
 
               {/* Language Selector */}
               <div
-                className="relative"
+                className="relative hidden md:block"
                 onMouseEnter={() => {
                   setShowLanguageDropdown(true);
                 }}
@@ -157,7 +163,7 @@ export default function Header({ currentPage }: HeaderProps) {
                   hover:bg-white/5
                 `}>
                   <NetworkIcon />
-                  <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[16px]">
+                  <span className="ml-[8px] mr-[12px] inline-block h-[24px] leading-[24px] text-[14px]">
                     {t('header.language')}
                   </span>
                   <ArrowDownIcon className="text-[16px] text-white/60" />
@@ -173,7 +179,7 @@ export default function Header({ currentPage }: HeaderProps) {
                           setLanguage('en');
                           setShowLanguageDropdown(false);
                         }}
-                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] rounded-[8px] transition-colors ${
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[14px] rounded-[8px] transition-colors ${
                           language === 'en' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
                         }`}
                       >
@@ -186,7 +192,7 @@ export default function Header({ currentPage }: HeaderProps) {
                           setLanguage('zh');
                           setShowLanguageDropdown(false);
                         }}
-                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] rounded-[8px] transition-colors ${
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[14px] rounded-[8px] transition-colors ${
                           language === 'zh' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
                         }`}
                       >
@@ -199,7 +205,7 @@ export default function Header({ currentPage }: HeaderProps) {
                           setLanguage('zhtw');
                           setShowLanguageDropdown(false);
                         }}
-                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[16px] rounded-[8px] transition-colors ${
+                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[14px] rounded-[8px] transition-colors ${
                           language === 'zhtw' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
                         }`}
                       >

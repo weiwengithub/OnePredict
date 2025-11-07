@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect, useRef, useCallback} from "react";
+import React, {useState, useEffect, useRef, useCallback, useMemo} from "react";
 import Avatar from 'boring-avatars';
 import MobileNavigation from "@/components/MobileNavigation";
 import Link from 'next/link';
@@ -18,6 +18,10 @@ import {useLanguage} from "@/contexts/LanguageContext";
 import {useIsMobile} from "@/contexts/viewport";
 import {MemberInfo} from "@/lib/api/interface";
 import apiService from "@/lib/api/services";
+import { useCurrentAccount } from "@onelabs/dapp-kit";
+import { useSelector } from "react-redux";
+import { RootState } from "@/lib/interface";
+import {toast} from "sonner";
 
 interface MarketInfo {
   id: string;
@@ -34,16 +38,21 @@ export default function Setting() {
   const isMobile = useIsMobile();
 
   const [userData, setUserData] = useState<MemberInfo | null>(null);
+  const [avatar, setAvatar] = useState("");
   const [nickName, setNickName] = useState("");
   const [introduction, setIntroduction] = useState("");
   const [inviteCode, setInviteCode] = useState("");
-
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
+  const userAddress = useMemo(() => {
+    return currentAccount?.address || zkLoginData?.zkloginUserAddress;
+  }, [currentAccount, zkLoginData]);
   const calledOnceRef = useRef(false);
-  const getData = async () => {
+  const getData = useCallback(async () => {
     const controller = new AbortController();
 
     try {
-      const {data} = await apiService.getMemberInfo({ signal: controller.signal });
+      const {data} = await apiService.getMemberInfo({ signal: controller.signal, address: userAddress });
       setUserData(data)
       setNickName(data.nickName);
       setIntroduction(data.introduction)
@@ -57,26 +66,37 @@ export default function Setting() {
     return () => {
       controller.abort();
     };
-  }
+  }, [userAddress]);
   useEffect(() => {
-    if (calledOnceRef.current) return;
+    if (calledOnceRef.current || !userAddress) return;
     calledOnceRef.current = true;
 
     getData()
-  }, []);
+  }, [userAddress]);
 
-  const updateMemberInfo = async () => {
-    const {data} = await apiService.updateMemberInfo({
-      avatar: "",
+  const updateMemberInfo = async (override?: Partial<{avatar: string; nickName: string; introduction: string}>) => {
+    const res = await apiService.updateMemberInfo({
+      avatar,
+      address: userAddress,
       nickName,
-      introduction
+      introduction,
+      ...override
     });
-    console.log(data);
+    console.log(res);
     getData()
   }
 
+  const bindByInviteCode = async () => {
+    const res = await apiService.bindByInviteCode({
+      inviteCode: inviteCode,
+      address: userAddress || ''
+    })
+    setInviteCode('')
+    toast.success(t('settings.bindSuccess'));
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#051A3D] via-[#0D2347] to-[#051A3D] pb-20 md:pb-0">
+    <div className={`min-h-screen bg-[#051A3D] ${isMobile ? 'pb-20' : ''}`}>
       {/* Header */}
       {isMobile ? (
         <MobileNavigation
@@ -88,7 +108,7 @@ export default function Setting() {
       )}
 
       {/* Main Content */}
-      <main className={isMobile ? 'w-full p-[16px]' : 'max-w-[1312px] mx-auto pt-[50px]'}>
+      <main className={isMobile ? 'w-full p-[16px]' : 'max-w-[1312px] min-h-[calc(100vh-332px)] mx-auto pt-[50px] px-[40px]'}>
         {/* Back Button */}
         <div className="flex items-center">
           <Link href="/">
@@ -102,16 +122,20 @@ export default function Setting() {
 
         <div className="mt-[36px] space-y-[36px]">
           <div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">{t('settings.profile')}</div>
-          <div className="flex items-center">
-            <Avatar
-              size={64}
-              name={userData?.loginAddress}
-              variant={'marble'}
-            />
-            <ImageUploader />
-            {/*<div className="ml-[24px] h-[36px] leading-[36px] border border-white/40 rounded-[24px] px-[12px] text-white text-[16px]">*/}
-            {/*  {t('settings.upload')} ({t('settings.max', {count: '5MB'})})*/}
-            {/*</div>*/}
+          <div className="flex items-center gap-[24px]">
+            {userData?.avatar ? (
+              <Image src={userData.avatar} alt="" width={64} height={64} />
+            ) : (
+              <Avatar
+                size={64}
+                name={userData?.loginAddress}
+                variant={'marble'}
+              />
+            )}
+            <ImageUploader showPreview={false} onUploadSuccess={(url) => {
+              setAvatar(url)
+              updateMemberInfo({ avatar: url });
+            }} />
           </div>
           <div>
             <div className="h-[24px] leading-[24px] text=[18px] text-white/60">{t('settings.username')}</div>
@@ -123,12 +147,11 @@ export default function Setting() {
                 placeholder={t('settings.username')}
               />
               {nickName === userData?.nickName ? (
-                <span className="text-[18px] text-white mx-[24px] cursor-pointer">{t('common.edit')}</span>
+                <span className="text-[14px] text-white mx-[24px] cursor-pointer">{t('common.edit')}</span>
               ) : (
                 <span
-                  className={`text-[18px] text-white mx-[24px] ${nickName === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
+                  className={`text-[14px] text-white mx-[24px] ${nickName === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
                   onClick={() => {
-                    debugger;
                     if (nickName) updateMemberInfo()
                   }}
                 >
@@ -147,10 +170,10 @@ export default function Setting() {
                 placeholder={t('settings.bioPlaceholder')}
               />
               {introduction === userData?.introduction ? (
-                <span className="text-[18px] text-white mx-[24px] cursor-pointer">{t('common.edit')}</span>
+                <span className="text-[14px] text-white mx-[24px] cursor-pointer">{t('common.edit')}</span>
               ) : (
                 <span
-                  className={`text-[18px] text-white mx-[24px] ${introduction === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
+                  className={`text-[14px] text-white mx-[24px] ${introduction === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
                   onClick={() => {
                     if (introduction) updateMemberInfo()
                   }}
@@ -184,10 +207,13 @@ export default function Setting() {
               <Input
                 value={inviteCode}
                 onChange={(e) => setInviteCode(e.target.value)}
-                className="flex-1 px-[24px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                className="flex-1 px-[24px] text-white text-[18px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                 placeholder={t('settings.inviteCodeTips')}
               />
-              <span className={`text-[18px] text-white mx-[24px] ${inviteCode === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}>{t('common.submit')}</span>
+              <span
+                className={`text-[14px] text-white mx-[24px] ${inviteCode === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
+                onClick={bindByInviteCode}
+              >{t('common.submit')}</span>
             </div>
           </div>
           {/*<div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">{t('settings.privateKey')}</div>*/}

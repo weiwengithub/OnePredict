@@ -61,7 +61,22 @@
     "afterTomorrow": "In 2 days",
     "in_days": "In {{count}} days",
     "finished": "finished",
-    "nothing": "Nothing yet"
+    "nothing": "Nothing yet",
+    "loading": "Loading...",
+    "loadingMore": "Loading more...",
+    "noMore": "No more",
+    "noData": "No data",
+    "noMoreData": "No more data",
+    "writeSomething": "Write something...",
+    "post": "Post",
+    "close": "Close",
+    "replies": "Replies",
+    "reply": "Reply",
+    "replyTo": "Reply to",
+    "replyContent": "Reply content",
+    "replyTime": "Reply time",
+    "replyUser": "Reply user",
+    "replyUserAvatar": "Reply user avatar"
   },
   "nav": {
     "home": "Home",
@@ -81,13 +96,18 @@
     "subtitle": "Please wait while we connect with {{name}}"
   },
   "search": {
-    "placeholder": "Search Markets.contract address",
+    "placeholder": "Search Markets,contract address",
     "trending": "Trending",
-    "noResults": "No results found"
+    "noResults": "No results found",
+    "recentSearches": "Recent Searches",
+    "clear": "Clear",
+    "settlement": "Settlement",
+    "closed": "Closed"
   },
   "predictions": {
     "buy": "Buy",
     "sell": "Sell",
+    "redeemed": "Redeemed",
     "outcomes": "Outcomes",
     "amount": "Amount",
     "balance": "Balance",
@@ -104,6 +124,7 @@
     "available": "Available",
     "noAvailablePositions": "No available positions.",
     "cashOut": "Cash Out",
+    "result": "Results Out",
     "resultsOut": "Results out: {{result}}",
     "waitingResolution": "Market closed - waiting resolution",
     "integralModal": {
@@ -114,6 +135,7 @@
       "transaction": "Transaction",
       "sale": "Sale",
       "claim": "Claim",
+      "claimed": "Claimed",
       "entryPrice": "Entry Price",
       "marketPrice": "Market Price",
       "bet": "Bet",
@@ -157,7 +179,12 @@
     "outcomeProposed": "Outcome proposed",
     "disputeWindow": "Dispute window",
     "finalOutcome": "Final outcome",
-    "opinions": "Opinions"
+    "opinions": "Opinions",
+    "replies": "Replies",
+    "cancel": "Cancel",
+    "reply": "Reply",
+    "allItemsLoaded": "All items Loaded.",
+    "result": "Result"
   },
   "time": {
     "justNow": "just now",
@@ -183,6 +210,7 @@
     "following": "Following",
     "opinions": "Opinions",
     "follow": "Follow",
+    "editProfile": "Edit Profile",
     "allMarkets": "All Markets",
     "position": "Position",
     "volume": "Volume Traded",
@@ -205,7 +233,8 @@
     "privateKey": "Private Key",
     "privateKeyWarning": "Warning: Never disclose Private key.",
     "privateKeyWarningContent": "Anyone with your private keys can steal any assets held in your account. You can export your private keys and store them in a secure location for backup.",
-    "showPrivateKey": "Show Private Key"
+    "showPrivateKey": "Show Private Key",
+    "bindSuccess": "Binding successful"
   },
   "leaderboard": {
     "title": "Top performers on OnePredict prediction platform",
@@ -215,16 +244,27 @@
     "monthly": "Monthly",
     "rank": "Rank",
     "trader": "Trader",
-    "pnL": "PnL",
+    "pnl": "Pnl",
     "volume": "Volume",
     "trades": "Trades",
-    "me": "Me"
+    "me": "Me",
+    "shareMyRank": "Share My Rank",
+    "share": "Share",
+    "download": "Download",
+    "or": "or",
+    "copy": "Copy",
+    "myRank": "MY RANK",
+    "allRank": "All {{type}} Rank",
+    "joinOnePredict": "Join OnePredict.",
+    "myInviteCode": "My Invite Code",
+    "imageCopied": "Image copied. Share it!"
   },
   "rewards": {
     "myRewards": "My Rewards",
+    "claim": "Claim",
     "onePredictPoints": "Invite your friends to make predictions, and each time your friends place a bet, you can make a profit.",
     "inviteToEarn": "Invite to Earn",
-    "rewardsCenter": "Rewards Center",
+    "rewardRecord": "Reward Record",
     "inviteEarn": "Invite & Earn",
     "getRewarded": "Get rewarded when your friend signs up with your invite code.",
     "inviteCode": "Invite Code",
@@ -234,6 +274,14 @@
     "totalPerson": "（A total of {{count}} person）",
     "invitee": "Invitee",
     "date": "Date",
-    "allItemsLoaded": "All items Loaded."
+    "allItemsLoaded": "All items Loaded.",
+    "totalRewards": "Total Rewards：",
+    "claimed": "Claimed：",
+    "claimable": "Claimable：",
+    "inviteeOrProject": "Invitee/project",
+    "investmentOrBonus": "Investment/bonus",
+    "project": "project",
+    "investmentAmount": "Investment amount",
+    "amountOfBonus": "amount of bonus"
   }
 }

@@ -61,7 +61,22 @@
     "afterTomorrow": "后天",
     "in_days": "{{count}} 天后",
     "finished": "已结束",
-    "nothing": "暂无内容"
+    "nothing": "暂无内容",
+    "loading": "加载中...",
+    "loadingMore": "加载更多...",
+    "noMore": "没有更多",
+    "noData": "暂无数据",
+    "noMoreData": "没有更多数据",
+    "writeSomething": "写点什么...",
+    "post": "发布",
+    "close": "关闭",
+    "replies": "回复",
+    "reply": "回复",
+    "replyTo": "回复给",
+    "replyContent": "回复内容",
+    "replyTime": "回复时间",
+    "replyUser": "回复用户",
+    "replyUserAvatar": "回复用户头像"
   },
   "nav": {
     "home": "首页",
@@ -71,7 +86,7 @@
   },
   "notFound": {
     "title": "页面未找到",
-    "description": "抱歉，你访问的页面不存在或已被移动。请检查网址或返回首页继续浏览。",
+    "description": "抱歉，您访问的页面不存在或已被移动。请检查网址或返回首页继续浏览。",
     "goHome": "返回首页",
     "goBack": "返回上一页",
     "quickLinks": "或访问以下页面："
@@ -83,16 +98,21 @@
   "search": {
     "placeholder": "搜索市场或合约地址",
     "trending": "热门搜索",
-    "noResults": "未找到相关结果"
+    "noResults": "未找到相关结果",
+    "recentSearches": "最近搜索",
+    "clear": "清除",
+    "settlement": "结算",
+    "closed": "已关闭"
   },
   "predictions": {
     "buy": "买入",
     "sell": "卖出",
+    "redeemed": "兑换",
     "outcomes": "结果",
     "amount": "金额",
     "balance": "余额",
     "toWin": "获胜",
-    "trading": "进行交易即表示你同意",
+    "trading": "进行交易即表示您同意",
     "terms": "使用条款",
     "buySuccess": "购买成功",
     "buyError": "购买失败",
@@ -104,6 +124,7 @@
     "available": "可用",
     "noAvailablePositions": "暂无可用持仓。",
     "cashOut": "套现",
+    "result": "结果公布",
     "resultsOut": "结果公布：{{result}}",
     "waitingResolution": "市场已关闭 - 等待结算",
     "integralModal": {
@@ -111,9 +132,10 @@
       "withdraw": "提现",
       "positions": "持仓",
       "trades": "交易",
-      "transaction": "交易记录",
+      "transaction": "历史记录",
       "sale": "卖出",
       "claim": "领取",
+      "claimed": "已领取",
       "entryPrice": "入场价格",
       "marketPrice": "市场价格",
       "bet": "下注",
@@ -131,7 +153,7 @@
     "address": "地址",
     "warning": "仅支持 OneChain 原生 USDH",
     "gotIt": "我知道了",
-    "tip": "你的地址已复制到剪贴板"
+    "tip": "您的地址已复制到剪贴板"
   },
   "send": {
     "send": "发送代币",
@@ -140,7 +162,7 @@
     "balance": "余额",
     "to": "收款地址",
     "onechainAddress": "OneChain 地址",
-    "warning": "请注意，这里仅支持 OneChain 网络。通过其他网络发送可能导致你的加密资产丢失。",
+    "warning": "请注意，这里仅支持 OneChain 网络。通过其他网络发送可能导致您的加密资产丢失。",
     "continue": "继续",
     "sendSuccess": "发送成功",
     "sendError": "发送失败"
@@ -157,7 +179,12 @@
     "outcomeProposed": "提议结果",
     "disputeWindow": "争议期",
     "finalOutcome": "最终结果",
-    "opinions": "意见"
+    "opinions": "意见",
+    "replies": "回复",
+    "cancel": "取消",
+    "reply": "回复",
+    "allItemsLoaded": "所有项目已加载。",
+    "result": "结果"
   },
   "time": {
     "justNow": "刚刚",
@@ -182,11 +209,12 @@
     "followers": "关注者",
     "following": "关注中",
     "opinions": "意见",
-    "follow": "编辑资料",
+    "follow": "关注",
+    "editProfile": "编辑资料",
     "allMarkets": "所有市场",
-    "position": "名次",
+    "position": "持仓",
     "volume": "成交量",
-    "rank": "损益排名"
+    "rank": "盈亏排名"
   },
   "settings": {
     "profile": "个人资料",
@@ -199,13 +227,14 @@
     "account": "账户",
     "email": "电子邮箱",
     "referral": "邀请",
-    "referralTips": "你是被朋友邀请的吗？输入他们的邀请码即可获得注册奖励！",
+    "referralTips": "您是由朋友邀请的吗？请输入他的邀请码。",
     "inviteCode": "邀请码",
     "inviteCodeTips": "是一个 6 位字符串",
     "privateKey": "私钥",
     "privateKeyWarning": "警告：切勿泄露私钥。",
     "privateKeyWarningContent": "任何人拥有您的私钥都可以盗取您账户中的任何资产。您可以导出您的私钥并存放在安全的地方作为备份。",
-    "showPrivateKey": "显示私钥"
+    "showPrivateKey": "显示私钥",
+    "bindSuccess": "绑定成功"
   },
   "leaderboard": {
     "title": "OnePredict 预测平台表现最佳榜",
@@ -215,18 +244,29 @@
     "monthly": "每月",
     "rank": "排名",
     "trader": "交易者",
-    "pnL": "盈亏",
+    "pnl": "盈亏",
     "volume": "成交量",
     "trades": "交易笔数",
-    "me": "我"
+    "me": "我",
+    "shareMyRank": "分享我的排名",
+    "share": "分享",
+    "download": "下载",
+    "or": "或",
+    "copy": "复制",
+    "myRank": "我的排名",
+    "allRank": "全部{{type}}名次",
+    "joinOnePredict": "加入 OnePredict。",
+    "myInviteCode": "我的邀请码",
+    "imageCopied": "图片已复制。立即分享！"
   },
   "rewards": {
     "myRewards": "我的奖励",
-    "onePredictPoints": "邀请好友参与预测，每次好友下注，你都可获得收益。",
-    "inviteToEarn": "邀请赚取奖励",
-    "rewardsCenter": "奖励中心",
+    "claim": "领取",
+    "onePredictPoints": "邀请好友参与预测，每次好友下注，您都可获得收益。",
+    "inviteToEarn": "邀请赚取",
+    "rewardRecord": "奖励记录",
     "inviteEarn": "邀请与赚取",
-    "getRewarded": "好友使用你的邀请码注册即可获得奖励。",
+    "getRewarded": "好友使用您的邀请码注册即可获得奖励。",
     "inviteCode": "邀请码",
     "inviteFriends": "邀请好友",
     "inviteFriendsCopyText": "加入 OnePredict —— 为所有人打造的次世代预测市场！使用我的邀请码 [{{code}}] 注册：https://poly.deltax.online/",
@@ -234,6 +274,14 @@
     "totalPerson": "（共 {{count}} 人）",
     "invitee": "被邀请人",
     "date": "日期",
-    "allItemsLoaded": "所有内容已加载。"
+    "allItemsLoaded": "所有内容已加载。",
+    "totalRewards": "总奖励：",
+    "claimed": "已领取：",
+    "claimable": "可领取：",
+    "inviteeOrProject": "邀请人/项目",
+    "investmentOrBonus": "投资/奖励",
+    "project": "项目",
+    "investmentAmount": "投资金额",
+    "amountOfBonus": "奖励金额"
   }
 }

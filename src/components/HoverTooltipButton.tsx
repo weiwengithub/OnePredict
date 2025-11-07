@@ -9,6 +9,7 @@ import {
   TooltipTrigger,
   TooltipArrow,
 } from "@radix-ui/react-tooltip";
+import { hexToRgbTriplet } from "@/lib/color";
 
 type ButtonOwnProps = Omit<
   React.ComponentProps<typeof Button>,
@@ -31,13 +32,14 @@ export interface HoverTooltipButtonProps {
   align?: React.ComponentProps<typeof TooltipContent>["align"];
   sideOffset?: number;
 
-  style?: Record<string, string>;
+  style?: Record<string, any>;
   /** 追加到 Button 的类名（会和默认样式合并） */
   className?: string;
 
   /** 传递给 Button 的其余原生/组件属性（如 variant/size/disabled 等） */
   buttonProps?: ButtonOwnProps;
   color?: string
+  isCurrent?: boolean;
   onMouseOver?: () => void;
   onMouseLeave?: () => void;
 }
@@ -57,29 +59,33 @@ export const HoverTooltipButton = React.memo(function HoverTooltipButton({
   className = "",
   buttonProps,
   color,
+  isCurrent,
   onMouseOver,
   onMouseLeave,
 }: HoverTooltipButtonProps) {
-  const mergedBtnClass =
-    [
-      // 默认风格（可按需改成你的设计系统）
-      "group h-[48px] border-none",
-      "text-[16px] font-semibold",
-      "transition-all duration-200 shadow-sm hover:shadow-md",
-      "hover:text-white",
-      "text-[#fff]",
-      "predict-btn",
-      // 允许外部覆盖/追加
-      className,
-    ]
-      .filter(Boolean)
-      .join(" ");
-
+  if(!style && color) {
+    const [r, g, b] = hexToRgbTriplet(color);
+    style = {
+      ['--btn-rgb' as any]: `${r} ${g} ${b}`,
+      ['--btn-hex' as any]: color,
+    } as React.CSSProperties;
+  }
   return (
     <TooltipProvider delayDuration={150}>
       <Tooltip>
         <TooltipTrigger asChild>
-          <Button className={mergedBtnClass} onClick={onClick} {...buttonProps} style={style || {background: color, width: '100%'}} onMouseOver={onMouseOver ? () => onMouseOver() : undefined} onMouseLeave={onMouseLeave ? () => onMouseLeave() : undefined}>
+          <Button
+            style={style}
+            className={`group w-full h-[48px] border-none text-[16px] font-semibold transition-all duration-200 shadow-sm hover:shadow-md ${
+              isCurrent
+                ? 'bg-[rgb(var(--btn-rgb))] text-white'
+                : 'bg-[rgb(var(--btn-rgb)/0.5)] text-[color:var(--btn-hex)] hover:bg-[rgb(var(--btn-rgb))] hover:text-white'
+            } ${className}`}
+            onClick={onClick}
+            {...buttonProps}
+            onMouseOver={onMouseOver ? () => onMouseOver() : undefined}
+            onMouseLeave={onMouseLeave ? () => onMouseLeave() : undefined}
+          >
             {hoverLabel ? (
               <>
                 <span className="group-hover:hidden">{label}</span>

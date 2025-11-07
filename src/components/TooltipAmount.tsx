@@ -10,6 +10,8 @@ export type TooltipAmountProps = {
   shares: string | number;
   /** 小数位（token 精度），默认 9 */
   decimals?: number;
+  /** 小数位舍入模式，默认 1 */
+  rounding?: BigNumber.RoundingMode;
   /** 触发器上显示的小数位（向下取整），默认 2 */
   precision?: number;
   /** 右侧的单位或名称（如 outcomeName） */
@@ -34,6 +36,7 @@ export const TooltipAmount = forwardRef<HTMLDivElement, TooltipAmountProps>(
       shares,
       decimals = 9,
       precision = 2,
+      rounding = 1,
       suffix,
       formatter,
       className,
@@ -48,7 +51,7 @@ export const TooltipAmount = forwardRef<HTMLDivElement, TooltipAmountProps>(
     // 完整可读数（不裁剪小数）
     const readable = toDisplayDenomAmount(shares, decimals);
     // 触发器上的精简展示：向下取 precision 位
-    const short = fix(readable, precision);
+    const short = fix(readable, precision, rounding);
 
     const displayShort = formatter ? formatter(short) : short;
     const displayFull = formatter ? formatter(readable) : readable;
@@ -57,7 +60,7 @@ export const TooltipAmount = forwardRef<HTMLDivElement, TooltipAmountProps>(
       <Tooltip.Root>
         <Tooltip.Trigger asChild>
           <span ref={ref}>
-            {displayShort} {suffix}
+            {Number(displayShort)} {suffix}
           </span>
         </Tooltip.Trigger>
 
@@ -67,7 +70,7 @@ export const TooltipAmount = forwardRef<HTMLDivElement, TooltipAmountProps>(
             align={align}
             sideOffset={sideOffset}
             className={cn(
-              "z-50 rounded-[8px] border px-[15px] py-[11px] text-[16px] shadow-lg backdrop-blur",
+              "z-[200] rounded-[8px] border px-[15px] py-[11px] text-[16px] shadow-lg backdrop-blur",
               "bg-[#5E6064] border-[#26282E] text-white",
               contentClassName
             )}

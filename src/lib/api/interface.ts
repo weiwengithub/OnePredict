@@ -1,4 +1,7 @@
 // Request response parameters (excluding data)
+import {number} from "echarts";
+import {string} from "valibot";
+
 export interface Result {
   code: number;
   msg: string;
@@ -80,12 +83,14 @@ export interface MarketOption {
   id: number;
   imageUrl: string;
   isDelete: boolean;
+  isFollow: boolean;
   marketDesc: string;
   marketId: string;
   marketName: string;
   marketParamsB: string;
   outcome: MarketOutcome[];
   packageId: string;
+  projectId: number;
   sellFee: number;
   startTime: string;
   status: string;
@@ -96,6 +101,7 @@ export interface MarketOption {
   vault: string;
   globalSequencerId: string;
   winnerId: string;
+  traderCount: number;
 }
 
 export interface MarketOutcome {
@@ -121,73 +127,76 @@ export interface ResMarketList {
 }
 
 export interface MarketPositionOption {
-  bet: string;
-  buyPrice: string;
+  betAmount: number;
+  channelId: number;
   coinType: string;
-  entryPrice: string;
-  eventMs: number;
-  marketId: string;
-  marketImage: string;
-  marketName: string;
-  marketPrice: string;
-  marketState: number;
-  outcome: number;
-  outcomeName: string;
-  packageId: string;
-  pnl: string;
-  positionValue: string;
-  shares: string;
-  userAddr: string;
-  winProfit: string;
+  createBy: string;
+  createTime: string;
+  currentOutcome: {
+    name: string;
+    outcomeId: number;
+  };
+  name: string;
+  outcomeId: number;
+  currentPrice: number;
+  entryPrice: number;
   globalSequencerId: string;
+  id: number;
+  imageUrl: string;
+  isRedeemed: number;
+  marketDesc: string;
+  marketId: string;
+  marketName: string;
+  memberId: number;
+  packageId: string;
+  pnl: number;
+  positionValue: number;
+  projectId: number;
+  shares: number;
+  status: string;
+  tags: string[]
+  traderCount: number;
+  updateTime: string;
+  userAddress: string;
+  winProfit: number;
+  winnerId: number;
 }
 
 export interface ResMarketPosition {
-  items: MarketPositionOption[];
+  rows: MarketPositionOption[];
   count: number;
-  userAddr: string;
 }
 
 export interface MarketTradeOption {
-  amount: string;
-  change: string;
-  createdMs: number;
-  deltaShares: string;
-  eventMs: number;
-  eventSeq: number;
-  fee: string;
+  amount: number;
+  betOption: string;
+  channelId: number;
+  createBy: string;
+  createTime: string;
+  delta: number;
+  entryPrice: number;
+  feeTrade: number;
+  id: number;
+  isDelete: boolean;
   kind: number;
   marketId: string;
   marketImage: string;
   marketName: string;
-  outcome: number;
-  payloadJson: {
-    delta: string;
-    fee_trade: string;
-    gross: string;
-    kind: number;
-    market_id: string;
-    outcome: string;
-    probs: string[];
-    protocol_vault_value: string;
-    refund: string;
-    t_ms: string;
-    vault_value: string;
-    who: string;
+  outcome: {
+    name: string;
+    outcomeId: number;
   }
-  side: string;
-  total: string;
+  total: number;
+  tradeTime: string;
+  tradeType: string;
+  traderCount: number;
   txDigest: string;
-  userAddr: string;
+  userAddress: string;
 }
 
 export interface ResMarketTradeHistory {
-  items: MarketTradeOption[];
+  rows: MarketTradeOption[];
   count: number;
-  limit: number;
-  offset: number;
-  marketId: null;
-  userAddr: string;
 }
 
 export interface TransactionOption {
@@ -197,6 +206,30 @@ export interface TransactionOption {
   amount: string;
   unit: string;
   date: string;
+}
+
+export interface TransactionInfo {
+  address: string;
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  createBy: string;
+  createTime: string;
+  icon: string;
+  id: number;
+  isDelete: boolean;
+  marketId: string;
+  projectId: number;
+  projectName: string;
+  total: number;
+  tradeTime: string;
+  tradeType: string;
+  txDigest: string;
+}
+
+export interface ResTransaction {
+  count: number;
+  rows: TransactionInfo[];
 }
 
 export interface ResTransactionHistory {
@@ -211,18 +244,33 @@ export interface ResContractRedeem {
 }
 
 export interface MarketDetailTradesOption {
-  amount: string;
-  deltaShares: string;
+  amount: number;
+  avatar: string;
+  channelCode: number;
+  channelId: number;
+  channelName: string;
+  createBy: string;
+  createTime: string;
+  deltaShares: number;
+  entryPrice: number;
   eventMs: number;
+  id: number;
+  isDelete: boolean;
   marketId: string;
-  outcome: number;
-  outcomeName: string;
+  nickName: string;
+  outcome: {
+    name: string;
+    outcomeId: number;
+  };
+  remark: string;
   side: string;
-  txDigest: string;
-  userAddr: string;
+  updateBy: string;
+  updateTime: string;
+  userAddress: string;
 }
 
 export interface MemberInfo {
+  avatar: string;
   channelCode: string;
   channelId: number;
   channelName: string;
@@ -244,11 +292,37 @@ export interface MemberInfo {
   introduction: string;
 }
 
+export interface MemberCenter {
+  avatar: string;
+  commentCount: number;
+  followBySessionMemberId: boolean;
+  followMeCount: number;
+  meFollowCount: number;
+  nickName: string;
+  pnlRank: number;
+  tradeValueNoFee: number;
+  loginAddress: string;
+  introduction: string;
+}
+
 export interface RankInfo {
   address: string;
-  profit: number;
+  avatar: string;
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  createTime: string;
+  id: number;
+  isDelete: boolean;
+  memberCode: string;
+  memberId: number;
+  nickName: string;
+  pnl: number;
   sort: number;
+  statPeriod: string;
+  summaryTime: string;
   tradeCount: number;
+  tradeValueNoFee: number;
   volume: number;
 }
 
@@ -262,7 +336,9 @@ export interface ReqRankList {
 export interface ResRankList {
   count: number;
   rows: [{
-    loginUserRank: RankInfo;
+    currentUser?: RankInfo;
+    // loginUserRank: RankInfo;
+    // memberList: MemberInfo[];
     rankList: RankInfo[];
   }];
 }
@@ -289,4 +365,124 @@ export interface BannerInfo {
 export interface ResBannerList {
   count: number;
   rows: BannerInfo[];
+}
+
+export interface LoginInfo {
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  isLocked: boolean;
+  loginAddress: string;
+  memberId: number;
+  token: string;
+  tokenExpires: number;
+}
+
+export interface ResInviteInfo {
+  avatar: string;
+  inviteTime: string;
+  loginAddress: string;
+  memberId: number;
+  nickName: string;
+}
+
+export interface ResInviteList {
+  count: number;
+  rows: ResInviteInfo[];
+}
+
+export interface DictInfo {
+  label: string;
+  labelEn: string;
+  value: string;
+}
+
+export interface ProjectCommentListItem {
+  avatar: string;
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  commentTime: string;
+  content: string;
+  createTime: string;
+  id: number;
+  isDelete: boolean;
+  isMyPraise: number;
+  marketId: string;
+  memberId: number;
+  nickName: string;
+  praiseCount: number;
+  projectId: number;
+  replyCount: number;
+  updateTime: string;
+}
+
+export interface ResProjectCommentList {
+  count: number;
+  rows: ProjectCommentListItem[];
+}
+
+export interface ReplyCommentItem {
+  avatar: string;
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  commentId: number;
+  content: string;
+  createTime: string;
+  id: number;
+  memberId: number;
+  nickName: string;
+  projectId: number;
+  replyTime: string;
+  updateTime: string;
+}
+
+export interface ResProjectCommentReplyList {
+  count: number;
+  rows: ReplyCommentItem[];
+}
+
+export interface KlineInfo {
+  channelId: number;
+  klines: Kline[];
+}
+
+export interface Kline {
+  timestamp: number;
+  outcomes: KlineOutcome[];
+}
+
+export interface KlineOutcome {
+  outcomeId: number;
+  outcomeName: string;
+  prob: string;
+}
+
+export interface MemberMoneyRecord {
+  channelCode: string;
+  channelId: number;
+  channelName: string;
+  createBy: string;
+  createTime: string;
+  feeAmount: number;
+  fromMemberId: number;
+  fromNickName: string;
+  id: number;
+  inviteRate: number;
+  isDelete: boolean;
+  memberId: number;
+  nickName: string;
+  projectId: number;
+  projectName: string;
+  totalAmount: number;
+  type: string;
+}
+
+export interface ResMemberMoneyRecord {
+  avaAmount: number;
+  claimedAmount: number;
+  count: number;
+  rows: MemberMoneyRecord[];
+  totalInviteAmount: number;
 }

@@ -167,7 +167,7 @@ export default function CustomCarousel({
   const showNavigation = !['cube', 'fade', 'flip', 'cards'].includes(effect);
 
   return (
-    <div className={`relative w-full ${isMobile ? 'my-[16px]' : 'my-[40px]'}`}>
+    <div className={`group relative w-full ${isMobile ? 'my-[16px]' : 'my-[40px]'}`}>
       <Swiper
         modules={getAllModules()}
         centeredSlides={centeredSlides}
@@ -254,27 +254,19 @@ export default function CustomCarousel({
         ))}
       </Swiper>
 
-      {isMobile ? (
-        <div className="absolute left-0 right-0 bottom-1 z-20">
-          <div className="swiper-pagination-custom w-full flex justify-center gap-[8px]"></div>
-        </div>
-      ) : (
-        <div className="mt-[26px] mx-auto max-w-[1020px] flex items-center justify-between">
-          {/* Custom Pagination */}
-          <div className="swiper-pagination-custom flex gap-[8px]"></div>
-          {/* Custom Navigation Buttons - 只在支持的效果下显示 */}
-          {showNavigation && (
-            <div className="mr-[52px] flex gap-[13px]">
-              <button className="swiper-button-prev-custom w-[42px] h-[42px] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white flex items-center justify-center transition-all duration-300 hover:scale-110">
-                <ChevronLeft />
-              </button>
+      <div className="absolute left-0 right-0 bottom-1 z-20">
+        <div className="swiper-pagination-custom w-full flex justify-center gap-[8px]"></div>
+      </div>
+      {!isMobile && showNavigation && (
+        <>
+          <button className="swiper-button-prev-custom w-[42px] h-[42px] absolute left-[36px] top-1/2 -translate-y-1/2 z-20 bg-[#051A3D] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white hidden group-hover:flex items-center justify-center transition-all duration-300 hover:scale-110">
+            <ChevronLeft />
+          </button>
 
-              <button className="swiper-button-next-custom w-[42px] h-[42px] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white flex items-center justify-center transition-all duration-300 hover:scale-110">
-                <ChevronRight />
-              </button>
-            </div>
-          )}
-        </div>
+          <button className="swiper-button-next-custom w-[42px] h-[42px] absolute right-[36px] top-1/2 -translate-y-1/2 z-20 bg-[#051A3D] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white hidden group-hover:flex items-center justify-center transition-all duration-300 hover:scale-110">
+            <ChevronRight />
+          </button>
+        </>
       )}
 
       <style jsx global>{`

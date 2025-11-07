@@ -118,9 +118,9 @@ export default function PredictionCard({
               <span className="inline-block leading-[24px]">{prediction.tradeVolume ? `${Number(prediction.tradeVolume).toFixed(2)}${t('common.volume')}` : t('common.new')}</span>
             </div>
             <div className="flex items-center space-x-[12px]">
-              <Image src="/images/icon/icon-calendar.png" alt="" width={12} height={12} />
+              <Image src="/images/icon/icon-calendar.png?v=1" alt="" width={12} height={12} />
               <RelativeFutureTime target={new Date(prediction.endTime)} />
-              <Collecting collecting={false} followType="Project" followId={prediction.id} />
+              <Collecting collecting={prediction.isFollow} followType="Project" followId={prediction.id} />
               <SharePopover
                 trigger={<ExportIcon className="text-white/60 hover:text-white text-[12px]" />}
                 content={

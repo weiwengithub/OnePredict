@@ -21,7 +21,6 @@ export interface MetaInput {
     description: string;
     imageUrl: string;
     outcomes: string[];
-    endTimeMs: number; // u64 epoch ms
 }
 
 export interface CreateMarketArgs {
@@ -79,7 +78,6 @@ export interface ResolveArgs extends AdminArgsBase {
 export interface MarketView {
     marketId: string;
     state: number;
-    endTimeMs: number;
     disputeWindowMs: number;
     b: string;
     buyFeeBps: number;
@@ -416,31 +414,21 @@ export function calcFeeAmount(base: number | string | bigint, feeBps: number | s
     return (amount * fee) / BPS_SCALE;
 }
 
-export function calcTotalFromCost(cost: number | string | bigint, feeBps: number | string | bigint): bigint {
-    return calcGrossFromNet(cost, feeBps);
+export function calcTotalFromCost(cost: number | string | bigint, _feeBps: number | string | bigint): bigint {
+    // Fees are now handled within the contract, so the external payer only covers the quoted cost.
+    return toBigIntNonNegative(cost, 'cost');
 }
 
-export function calcCostFromTotal(total: number | string | bigint, feeBps: number | string | bigint): bigint {
-    return calcNetFromGross(total, feeBps);
+export function calcCostFromTotal(total: number | string | bigint, _feeBps: number | string | bigint): bigint {
+    return toBigIntNonNegative(total, 'total');
 }
 
-export function calcNetFromGross(gross: number | string | bigint, feeBps: number | string | bigint): bigint {
-    const grossAmount = toBigIntNonNegative(gross, 'gross');
-    if (grossAmount === 0n) return 0n;
-    const fee = calcFeeAmount(grossAmount, feeBps);
-    return grossAmount > fee ? grossAmount - fee : 0n;
+export function calcNetFromGross(gross: number | string | bigint, _feeBps: number | string | bigint): bigint {
+    return toBigIntNonNegative(gross, 'gross');
 }
 
-export function calcGrossFromNet(net: number | string | bigint, feeBps: number | string | bigint): bigint {
-    const netAmount = toBigIntNonNegative(net, 'net');
-    if (netAmount === 0n) return 0n;
-    const fee = normalizeFeeBps(feeBps);
-    if (fee >= BPS_SCALE) {
-        throw new Error('feeBps must be less than 10_000 to recover gross amount');
-    }
-    const denom = BPS_SCALE - fee;
-    const numerator = netAmount * BPS_SCALE;
-    return (numerator + denom - 1n) / denom;
+export function calcGrossFromNet(net: number | string | bigint, _feeBps: number | string | bigint): bigint {
+    return toBigIntNonNegative(net, 'net');
 }
 
 export class MarketClient {
@@ -617,7 +605,6 @@ export class MarketClient {
                 this.str(tx, a.meta.description),
                 this.str(tx, a.meta.imageUrl),
                 this.vecStr(tx, a.meta.outcomes),
-                this.u64(tx, a.meta.endTimeMs),
                 seedLiquidity,
                 this.vecU64(tx, a.initProbsBps),
                 tx.object(this.clockId),
@@ -795,7 +782,6 @@ export class MarketClient {
         return {
             marketId,
             state: Number(fields.state ?? 0),
-            endTimeMs: Number(meta.end_time_ms ?? 0),
             disputeWindowMs: Number(params.dispute_window_ms ?? 0),
             b: String(params.b ?? '0'),
             buyFeeBps: Number(params.buy_fee_bps ?? 0),

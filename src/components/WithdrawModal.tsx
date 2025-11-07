@@ -20,6 +20,7 @@ import { toast } from "sonner";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import WarningIcon from "@/assets/icons/warning_1.svg";
 import {useIsMobile} from "@/contexts/viewport";
+import {tokenIcon} from "@/assets/config";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -118,7 +119,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} className="z-[60]">
+    <Dialog open={open} onOpenChange={onOpenChange} className="z-[120]">
       <DialogContent className={`p-0 bg-transparent border-none ${isMobile ? "w-full left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "w-[450px]"}`}>
         <div className="w-full h-full relative rounded-[20px] bg-[#051A3D] p-[24px] overflow-hidden">
           <div className="h-[20px] leading-[20px] text-[20px] text-white font-bold text-center relative">
@@ -138,7 +139,7 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
               <SelectTrigger className="h-[48px] w-full bg-white/10 border-none rounded-[8px] text-white text-[14px] px-[12px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none">
                 <SelectValue placeholder={t('categories.pickOne')}>
                   <div className="flex items-center gap-1">
-                    <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
+                    <Image src={tokenIcon} alt="" width={20} height={20} />
                     {token}
                   </div>
                 </SelectValue>

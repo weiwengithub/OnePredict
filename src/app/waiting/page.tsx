@@ -155,10 +155,8 @@ const WaitingPage = () => {
           }
           dispatch(setZkLoginData(zkloginData));
           dispatch(setIsZkLogin(true));
-          debugger;
           window.location.href = '/'
         } catch (error) {
-          debugger;
           window.location.href = '/'
         } finally {
         }

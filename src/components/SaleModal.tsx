@@ -21,6 +21,7 @@ import {fix, toDisplayDenomAmount} from "@/lib/numbers";
 import {useDispatch} from "react-redux";
 import {toast} from "sonner";
 import {useIsMobile} from "@/contexts/viewport";
+import {tokenIcon} from "@/assets/config";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -35,7 +36,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
   const [progress, setProgress] = useState(0);
   const suiClient = useSuiClient() as any;
   const executeTransaction = useExecuteTransaction();
-  const available = position ? toDisplayDenomAmount(position.shares, 9).toString() : '';
+  const available = position ? toDisplayDenomAmount(position.shares, 0).toString() : '';
   const dispatch = useDispatch();
 
   const currentAccount = useCurrentAccount();
@@ -100,7 +101,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
       }
       const tx = await marketClient.buildSellTx({
         marketId: position.marketId,
-        outcome: position.outcome,
+        outcome: position.currentOutcome.outcomeId,
         deltaShares: Number(amount) * Math.pow(10, 9),
         minCoinOut: 0,
       });
@@ -123,15 +124,15 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
   }, [currentAccount, zkLoginData])
 
   const cashOut = useMemo(() => {
-    return amount ? Number(position?.marketPrice) * Number(amount) : 0
+    return amount ? Number(position?.currentPrice) * Number(amount) : 0
   }, [position, amount])
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange} className="z-[60]">
+    <Dialog open={open} onOpenChange={onOpenChange} className="z-[120]">
       <DialogContent className={`p-0 bg-transparent border-none ${isMobile ? "w-full left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "w-[450px]"}`}>
         <div className="w-full h-full relative rounded-[20px] bg-[#051A3D] p-[20px] overflow-hidden">
           <div className="mt-[20px] flex items-center">
-            <div className="flex-1 h-[24px] leading-[24px] text-[22px] text-white font-bold">{t('predictions.sell')} {position?.outcome ? 'No' : 'Yes'}</div>
+            <div className="flex-1 h-[24px] leading-[24px] text-[22px] text-white font-bold">{t('predictions.sell')} {position?.currentOutcome.name}</div>
             <CloseIcon
               className="text-[28px] text-[#D2D1D1] hover:text-white cursor-pointer"
               onClick={() => {
@@ -210,7 +211,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
           {!!amount && (
             <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
               <span className="inline-block text-white/60">{t('predictions.cashOut')}</span>
-              <Image src="/images/icon/icon-token.png" alt="" width={16} height={16} />
+              <Image src={tokenIcon} alt="" width={16} height={16} />
               <span className="inline-block text-[#043FCA]">{Number(cashOut).toFixed(2)}</span>
             </div>
           )}
@@ -221,7 +222,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
               disabled={!amount}
               onClick={handleSale}
             >
-              {`${t('predictions.sell')} ${position?.outcome ? 'No' : 'Yes'}`}
+              {`${t('predictions.sell')} ${position?.currentOutcome.name}`}
             </Button>
           ) : (
             <Button

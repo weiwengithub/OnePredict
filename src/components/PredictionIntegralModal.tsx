@@ -19,7 +19,7 @@ import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
 import {addPoint, onCopyToText, timeAgoEn} from "@/lib/utils";
 import { TabSkeleton } from "@/components/SkeletonScreens";
-import { MarketPositionOption, MarketTradeOption, TransactionOption } from "@/lib/api/interface";
+import {MarketPositionOption, MarketTradeOption, TransactionInfo, TransactionOption} from "@/lib/api/interface";
 import SaleModal from "@/components/SaleModal";
 import { TooltipAmount } from "@/components/TooltipAmount";
 import {useRouter} from "next/navigation";
@@ -31,6 +31,8 @@ import SharePopover from "@/components/SharePopover";
 import DepositModal from "@/components/DepositModal";
 import WithdrawModal from "@/components/WithdrawModal";
 import {useIsMobile} from "@/contexts/viewport";
+import {formatNumberWithSeparator} from '@/lib/numbers';
+import {tokenIcon} from "@/assets/config";
 
 interface PredictionIntegralModalProps {
   isOpen: boolean;
@@ -42,13 +44,13 @@ export default function PredictionIntegralModal({
   onClose,
 }: PredictionIntegralModalProps) {
   const isMobile = useIsMobile();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const router = useRouter();
   const [amount, setAmount] = useState<number>(0);
   const [currentTab, setCurrentTab] = useState<'positions' | 'trades' | 'transaction'>('positions');
   const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [tradeList, setTradeList] = useState<MarketTradeOption[]>([]);
-  const [transactionList, setTransactionList] = useState<TransactionOption[]>([]);
+  const [transactionList, setTransactionList] = useState<TransactionInfo[]>([]);
 
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -95,11 +97,29 @@ export default function PredictionIntegralModal({
     try {
       setLoading(true);
       setError(null);
-      const res = await apiService.getMarketPosition(owner);
+      const res = await apiService.getMarketPosition({userAddress: owner, address: owner || ''});
 
-      // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
-        setPositionList(res.data.items);
+        const rows = res.data.rows.filter(item => {
+          // 不显示已领取收益的数据
+          if (item.status === 'Redeemed') {
+            return false;
+          }
+          // 不显示已完成且竞猜失败的数据
+          if (item.status === 'Completed' && item.winnerId !== item.currentOutcome.outcomeId) {
+            return false;
+          }
+          return true
+        });
+        rows.sort((a, b) => {
+          const createTimeA = new Date(a.createTime).getTime();
+          const createTimeB = new Date(a.createTime).getTime();
+          if (a.status !== b.status) {
+            return a.status === 'Completed' ? -1 : 1;
+          }
+          return createTimeA > createTimeB ? 1 : -1;
+        })
+        setPositionList(rows);
       } else {
         setPositionList([]);
       }
@@ -123,11 +143,15 @@ export default function PredictionIntegralModal({
     try {
       setLoading(true);
       setError(null);
-      const res = await apiService.getMarketTradeHistory(owner);
-
-      // 假设API返回的数据格式，你需要根据实际API响应调整
+      const res = await apiService.getMarketTradeHistory({userAddress: owner, address: owner});
       if (res && res.data) {
-        setTradeList(res.data.items);
+        const rows = res.data.rows;
+        rows.sort((a, b) => {
+          const createTimeA = new Date(a.tradeTime).getTime();
+          const createTimeB = new Date(a.tradeTime).getTime();
+          return createTimeA > createTimeB ? 1 : -1;
+        })
+        setTradeList(rows);
       } else {
         setTradeList([]);
       }
@@ -152,16 +176,15 @@ export default function PredictionIntegralModal({
     try {
       setLoading(true);
       setError(null);
-      console.log('Fetching transaction history...');
+      const {data} = await apiService.getTransactionHistory({projectId: '', address: owner});
 
-      // 调用交易历史API
-      const res = await apiService.getTransactionHistory(owner);
-
-      if (res && res.data) {
-        setTransactionList(res.data.items);
-      } else {
-        setTransactionList([]);
-      }
+      const rows = data.rows;
+      rows.sort((a, b) => {
+        const createTimeA = new Date(a.tradeTime).getTime();
+        const createTimeB = new Date(a.tradeTime).getTime();
+        return createTimeA > createTimeB ? 1 : -1;
+      })
+      setTransactionList(rows);
     } catch (err) {
       console.error('Error fetching transaction history:', err);
       setError('Failed to fetch transaction history');
@@ -192,8 +215,6 @@ export default function PredictionIntegralModal({
 
   const contractRedeem = async (position: MarketPositionOption) => {
     try {
-      setLoading(true);
-      setError(null);
       const marketClient = new MarketClient(suiClient, {
         packageId: position.packageId,
         coinType: position.coinType,
@@ -208,9 +229,8 @@ export default function PredictionIntegralModal({
       }, 2000);
     } catch (e: any) {
       console.error('redeem error:', e);
-      setError(e?.message || 'Redeem failed');
     } finally {
-      setLoading(false);
+      // setLoading(false);
     }
   };
 
@@ -220,12 +240,12 @@ export default function PredictionIntegralModal({
     <>
       {/* 背景遮罩 */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-40 transition-opacity duration-300"
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] transition-opacity duration-300"
         onClick={onClose}
       />
 
       {/* 右侧滑出弹窗 */}
-      <div className={`fixed flex flex-col bg-[#051A3D] p-[24px] z-50 transform transition-transform duration-300
+      <div className={`fixed flex flex-col bg-[#051A3D] p-[24px] z-[110] transform transition-transform duration-300
         ${isOpen ? 'translate-x-0' : 'translate-x-full'} 
         ${isMobile ? 'left-0 top-[90px] bottom-0 w-full pb-[30px]' : 'right-0 top-0 h-full w-full max-w-[432px]'}`}>
         {!!zkLoginData && (
@@ -253,7 +273,7 @@ export default function PredictionIntegralModal({
         <div className="flex-none mt-[35px] h-[220px] bg-[url(/images/card-bg.png)] bg-no-repeat bg-cover bg-center rounded-[16px] p-[16px]">
           <div className="leading-[16px] text-[16px] text-white">{t('predictions.balance')}</div>
           <div className="flex items-end mt-[24px]">
-            <span className="leading-[24px] text-[32px] text-white">{usdhBalance}</span>
+            <span className="leading-[24px] text-[32px] text-white">{formatNumberWithSeparator(usdhBalance, {style: language === 'zh' ? 'cn' : 'western'})}</span>
             <span className="ml-[4px] leading-[19px] text-[20px] text-white/60">USDH</span>
           </div>
           <div className="mt-[56px] flex gap-[16px]">
@@ -281,24 +301,24 @@ export default function PredictionIntegralModal({
         {/* Positions/Trades/Transaction 选项卡 */}
         <div className="flex-1 overflow-hidden mt-[37px] flex flex-col">
           <div className="flex gap-[12px]">
-              <span
-                className={`leading-[24px] text-[20px] font-bold ${currentTab === 'positions' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
-                onClick={() => {setCurrentTab('positions');}}
-              >
-                {t('predictions.integralModal.positions')}
-              </span>
+            <span
+              className={`leading-[24px] text-[20px] font-bold ${currentTab === 'positions' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
+              onClick={() => {setCurrentTab('positions');}}
+            >
+              {t('predictions.integralModal.positions')}
+            </span>
             <span
               className={`leading-[24px] text-[20px] font-bold ${currentTab === 'trades' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
               onClick={() => {setCurrentTab('trades');}}
             >
-                {t('predictions.integralModal.trades')}
-              </span>
-            {/*<span*/}
-            {/*  className={`leading-[24px] text-[20px] font-bold ${currentTab === 'transaction' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}*/}
-            {/*  onClick={() => {setCurrentTab('transaction');}}*/}
-            {/*>*/}
-            {/*    {t('predictions.integralModal.transaction')}*/}
-            {/*  </span>*/}
+              {t('predictions.integralModal.trades')}
+            </span>
+            <span
+              className={`leading-[24px] text-[20px] font-bold ${currentTab === 'transaction' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
+              onClick={() => {setCurrentTab('transaction');}}
+            >
+              {t('predictions.integralModal.transaction')}
+            </span>
           </div>
 
           {/* 骨架屏加载状态 */}
@@ -324,7 +344,7 @@ export default function PredictionIntegralModal({
                     >
                       <div className="flex items-center">
                         <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
-                          <AvatarImage src={position.marketImage} alt="avatar" />
+                          <AvatarImage src={position.imageUrl} alt="avatar" />
                         </Avatar>
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
@@ -332,12 +352,10 @@ export default function PredictionIntegralModal({
                           </div>
                           <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
                             <TooltipAmount
-                              shares={position.shares} // 最小单位
-                              decimals={9}             // 精度
-                              precision={2}            // 触发器上显示两位小数
-                              suffix={position.outcomeName}
-                              // 可选：自定义格式（加千分位等）
-                              // formatter={(s) => formatNumberWithSeparator(s)}
+                              shares={position.shares}
+                              decimals={0}
+                              precision={2}
+                              suffix={position.currentOutcome.name}
                             />
                           </div>
                         </div>
@@ -362,7 +380,7 @@ export default function PredictionIntegralModal({
                             lockScroll
                           />
                         </div>
-                        {position.marketState === 1 && (
+                        {(position.status === 'OnGoing' || position.status === 'Resolved') && (
                           <div
                             className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px] cursor-pointer"
                             onClick={(e) => {
@@ -372,53 +390,61 @@ export default function PredictionIntegralModal({
                             }}
                           >{t('predictions.integralModal.sale')}</div>
                         )}
-                        {(position.marketState === 3 || position.marketState === 4) && (
+                        {(position.status === 'Completed' && position.winnerId === position.currentOutcome.outcomeId) && (
                           <div
-                            className="h-[32px] leading-[32px] px-[16px] bg-[#29C04E] rounded-[8px] text-white text-[16px] cursor-pointer"
+                            className={`h-[32px] leading-[32px] px-[16px] bg-[#29C04E] rounded-[8px] text-white text-[16px] cursor-pointer ${position.isRedeemed ? 'bg-[#999999]' : ''}`}
                             onClick={(e) => {
                               e.stopPropagation();
-                              contractRedeem(position)
+                              if (!position.isRedeemed) {
+                                contractRedeem(position)
+                              }
                             }}
-                          >{t('predictions.integralModal.claim')}</div>
+                          >{position.isRedeemed ? t('predictions.integralModal.claimed') : t('predictions.integralModal.claim')}</div>
                         )}
                       </div>
                       <div className="mt-[24px] flex pt-[24px] border-t border-white/10">
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.entryPrice')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
                             <TooltipAmount shares={position.entryPrice} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.marketPrice')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            <TooltipAmount shares={position.marketPrice} decimals={0} precision={2}/>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.currentPrice} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.bet')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            <TooltipAmount shares={position.bet} decimals={0} precision={2}/>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.betAmount} decimals={0} precision={2} />
                           </div>
                         </div>
                       </div>
                       <div className="mt-[16px] flex">
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.current')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
                             <TooltipAmount shares={position.positionValue} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.pnl')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
                             <TooltipAmount shares={position.pnl} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div className="flex-1">
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.toWin')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            <TooltipAmount shares={position.winProfit} decimals={0} precision={2}/>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.shares} decimals={0} precision={2}/>
                           </div>
                         </div>
                       </div>
@@ -429,7 +455,7 @@ export default function PredictionIntegralModal({
               ) : (
                 <>
                   <div className="mt-[40px] mx-auto size-[48px]">
-                    <Image src="/images/empty.png" alt="" width={48} height={48} />
+                    <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
                   </div>
                   <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
                 </>
@@ -459,10 +485,10 @@ export default function PredictionIntegralModal({
                           </div>
                           <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
                             <TooltipAmount
-                              shares={trade.deltaShares}
-                              decimals={9}
+                              shares={trade.amount}
+                              decimals={0}
                               precision={2}
-                              suffix={trade.outcome ? 'NO' : 'YES'}
+                              suffix={trade.outcome.name}
                             />
                           </div>
                         </div>
@@ -470,26 +496,40 @@ export default function PredictionIntegralModal({
                       <div className="mt-[24px] flex justify-between pt-[24px] border-t border-white/10">
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.type')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white">
-                            {trade.side === 'buy' ? t('predictions.buy') : trade.side === 'sell' ? t('predictions.sell') : ''}
-                          </div>
+                          {trade.tradeType === 'Bought' && (
+                            <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                              {t('predictions.buy')}
+                            </div>
+                          )}
+                          {trade.tradeType === 'Sold' && (
+                            <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                              {t('predictions.sell')}
+                            </div>
+                          )}
+                          {trade.tradeType === 'Redeemed' && (
+                            <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                              {t('predictions.redeemed')}
+                            </div>
+                          )}
                         </div>
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.price')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            <TooltipAmount shares={trade.amount} decimals={9} precision={2}/>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={trade.entryPrice} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.value')}</div>
-                          <div className="mt-[8px] leading-[16px] text-[16px] text-white pl-[20px] bg-[url(/images/icon/icon-token.png)] bg-no-repeat bg-[length:16px_16px]">
-                            <TooltipAmount shares={trade.amount} decimals={9} precision={2}/>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={trade.amount} decimals={0} precision={2}/>
                           </div>
                         </div>
                         <div>
                           <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.date')}</div>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white">
-                            {timeAgoEn(trade.createdMs)}
+                            {timeAgoEn(trade.tradeTime)}
                           </div>
                         </div>
                       </div>
@@ -500,7 +540,7 @@ export default function PredictionIntegralModal({
               ) : (
                 <div>
                   <div className="mt-[40px] mx-auto size-[48px]">
-                    <Image src="/images/empty.png" alt="" width={48} height={48} />
+                    <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
                   </div>
                   <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
                 </div>
@@ -510,41 +550,48 @@ export default function PredictionIntegralModal({
           {currentTab === 'transaction' && !loading && (
             <>
               {transactionList.length > 0 ? (
-                <div className="mt-[24px] flex-1">
-                  <div className="space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
-                    {transactionList.map((transaction, index) => (
-                      <div key={transaction.id || index} className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0">
-                        <div className="size-[32px] flex-none">
-                          <Image src="/images/icon/icon-token.png" alt="" width={32} height={32} />
-                        </div>
-                        <div className="mx-[12px] flex-1">
-                          <div className="leading-[16px] text-[16px] text-white">
-                            {transaction.title || "Task rewards"}
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                  {transactionList.map((transaction, index) => (
+                    <div
+                      key={transaction.id || index}
+                      className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      onClick={() => {
+                        router.push(`/details?marketId=${transaction.marketId}`);
+                      }}
+                    >
+                      <Image src={transaction.icon} alt="" width={32} height={32} className="size-[32px] flex-none rounded-[8px]" />
+                      <div className="ml-[12px] flex-1">
+                        {transaction.tradeType === 'Sold' && (
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.sell')}</span>
+                            <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.total} decimals={0} precision={2}/></span>
                           </div>
-                          <div className="mt-[6px] leading-[16px] text-[16px] text-white/40">
-                            {transaction.description || "Bonus for your sign up"}
+                        )}
+                        {transaction.tradeType === 'Bought' && (
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.buy')}</span>
+                            <span className="text-white font-bold">-<TooltipAmount shares={transaction.total} decimals={0} precision={2}/></span>
                           </div>
-                        </div>
-                        <div className="flex-none text-right">
-                          <div className="leading-[16px] text-[16px] text-white/60">
-                            <span className="mr-1 text-[#28C04E] font-bold">
-                              {transaction.amount || "+500"}
-                            </span>
-                            {transaction.unit || "Points"}
+                        )}
+                        {transaction.tradeType === 'Redeemed' && (
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.redeemed')}</span>
+                            <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.total} decimals={0} precision={2}/></span>
                           </div>
-                          <div className="mt-[6px] leading-[16px] text-[16px] text-white/60">
-                            {transaction.date || "4 days ago"}
-                          </div>
+                        )}
+                        <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                          <span className="flex-1 text-white/40 truncate">{transaction.projectName}</span>
+                          <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))}
                   <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
                 </div>
               ) : (
                 <div>
                   <div className="mt-[40px] mx-auto size-[48px]">
-                    <Image src="/images/empty.png" alt="" width={48} height={48} />
+                    <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
                   </div>
                   <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
                 </div>

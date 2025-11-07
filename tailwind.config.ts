@@ -56,28 +56,24 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
       },
-      backgroundImage: {
-        slideshow: "url('/images/slideshow-bg.png')",
-        card: "url('/images/card-bg.png')",
-      },
       container: {
-      center: true,
-      padding: {
-        DEFAULT: '1rem',
-        sm: '2rem',
-        lg: '4rem',
-        xl: '5rem',
-        '2xl': '6rem',
+        center: true,
+        padding: {
+          DEFAULT: '1rem',
+          sm: '2rem',
+          lg: '4rem',
+          xl: '5rem',
+          '2xl': '6rem',
+        },
       },
-      screens: {
-        sm: '800px',
-        md: '1200px',
-        lg: '1600px',
-        xl: '2000px',
-        '2xl': '2280px',
-      },
-      },
-    }
+    },
+    screens: {
+      sm: '840px',
+      md: '1260px',
+      lg: '1680px',
+      xl: '2000px',
+      '2xl': '2280px',
+    },
   },
   plugins: [require("tailwindcss-animate")],
 } satisfies Config;

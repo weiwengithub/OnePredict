@@ -4,21 +4,28 @@ import React, { useState, useRef } from "react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import apiService from "@/lib/api/services";
+import axios from "axios";
 import { toast } from "sonner";
+import {useLanguage} from "@/contexts/LanguageContext";
 
 interface ImageUploaderProps {
   uploadUrl?: string; // 可选：后端上传接口地址
   maxSizeMB?: number; // 文件大小限制
+  showPreview?: boolean; // 是否显示本地预览
   onUploadSuccess?: (url: string) => void; // 上传成功回调
 }
 
 export default function ImageUploader({
-                                        uploadUrl = "/ext/common/upload",
-                                        maxSizeMB = 5,
-                                        onUploadSuccess,
-                                      }: ImageUploaderProps) {
+  maxSizeMB = 5,
+  showPreview = true,
+  onUploadSuccess,
+}: ImageUploaderProps) {
+  const { t } = useLanguage();
+
   const [preview, setPreview] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const [uploading, setUploading] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleSelect = () => {
@@ -39,36 +46,48 @@ export default function ImageUploader({
     }
 
     // 生成本地预览
-    const localPreview = URL.createObjectURL(file);
-    setPreview(localPreview);
+    if(showPreview) {
+      const localPreview = URL.createObjectURL(file);
+      setPreview(localPreview);
+    }
 
-    // 上传到后端
-    if (uploadUrl) {
+    try {
+      setUploading(true);
+      const formData = new FormData();
+      formData.append("file", file);
+
       try {
         setUploading(true);
-        const formData = new FormData();
-        formData.append("file", file);
+        setProgress(0);
 
-        // const res = await fetch(uploadUrl, {
-        //   method: "POST",
-        //   body: formData,
-        // });
-        const res = await apiService.upload(formData, {});
-        console.log(res)
-        // const data = await res.json();
-        //
-        // if (res.ok && data.url) {
-        //   toast.success("Upload successful!");
-        //   onUploadSuccess?.(data.url);
-        //   setPreview(data.url); // 替换为后端返回的最终URL
-        // } else {
-        //   throw new Error(data.message || "Upload failed");
-        // }
+        abortRef.current = new AbortController();
+
+        const res = await apiService.upload(formData, {
+          signal: abortRef.current.signal,
+          onUploadProgress: (evt) => {
+            if (!evt.total) return;
+            const percent = Math.round((evt.loaded * 100) / evt.total);
+            setProgress(percent);
+          },
+        });
+        console.log("上传成功：", res.data);
+        if (onUploadSuccess) onUploadSuccess(res.data.url)
       } catch (err: any) {
-        toast.error(err.message);
+        if (axios.isCancel(err) || err?.code === "ERR_CANCELED") {
+          console.log("上传已取消");
+        } else {
+          console.error("上传失败：", err?.message || err);
+        }
       } finally {
         setUploading(false);
+        setProgress(0);
+        // 清空 input，便于再次选择同一个文件还能触发 onChange
+        if (fileInputRef.current) fileInputRef.current.value = "";
       }
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setUploading(false);
     }
   };
 
@@ -79,31 +98,33 @@ export default function ImageUploader({
 
   return (
     <div className="flex flex-col items-center justify-center gap-3">
-      <div
-        className="relative w-40 h-40 border-2 border-dashed border-gray-400 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden hover:border-blue-500 transition"
-        onClick={handleSelect}
-      >
-        {preview ? (
-          <Image
-            src={preview}
-            alt="Preview"
-            fill
-            className="object-cover"
-            sizes="160px"
-          />
-        ) : (
-          <span className="text-gray-400 text-sm text-center px-3">
-            Click to upload image
-          </span>
-        )}
-      </div>
-
-      {preview && (
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={handleRemove}>
-            Remove
-          </Button>
-          <Button disabled>{uploading ? "Uploading..." : "Uploaded"}</Button>
+      {preview ? (
+        <>
+          <div
+            className="relative w-40 h-40 border-2 border-dashed border-gray-400 rounded-xl flex items-center justify-center cursor-pointer overflow-hidden hover:border-blue-500 transition"
+            onClick={handleSelect}
+          >
+            <Image
+              src={preview}
+              alt="Preview"
+              fill
+              className="object-cover"
+              sizes="160px"
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={handleRemove}>
+              Remove
+            </Button>
+            <Button disabled>{uploading ? "Uploading..." : "Uploaded"}</Button>
+          </div>
+        </>
+      ) : (
+        <div
+          className="h-[36px] leading-[36px] border border-white/40 rounded-[24px] px-[12px] text-white text-[16px] cursor-pointer"
+          onClick={handleSelect}
+        >
+          {t('settings.upload')} ({t('settings.max', {count: `${maxSizeMB}MB`})})
         </div>
       )}
 

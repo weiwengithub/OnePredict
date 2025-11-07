@@ -34,3 +34,15 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+
+## 市场状态
+All,//h5端所有
+Auditing,//审核中6
+Rejected,//审核失败5 拒绝
+ToPublish,//待发布1
+UpComing,//未开始2
+Paused, // 暂停中
+OnGoing,//进行中3
+Resolved, // 已结束，存在争议期
+Redeemed, // 已领取
+Completed//已完成4

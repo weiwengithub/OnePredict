@@ -61,7 +61,22 @@
     "afterTomorrow": "後天",
     "in_days": "{{count}} 天後",
     "finished": "已結束",
-    "nothing": "暫無內容"
+    "nothing": "暫無內容",
+    "loading": "載入中...",
+    "loadingMore": "載入更多...",
+    "noMore": "沒有更多",
+    "noData": "暫無數據",
+    "noMoreData": "沒有更多數據",
+    "writeSomething": "寫點什麼...",
+    "post": "發布",
+    "close": "關閉",
+    "replies": "回復",
+    "reply": "回復",
+    "replyTo": "回復給",
+    "replyContent": "回復內容",
+    "replyTime": "回復時間",
+    "replyUser": "回復用戶",
+    "replyUserAvatar": "回復用戶頭像"
   },
   "nav": {
     "home": "首頁",
@@ -71,10 +86,10 @@
   },
   "notFound": {
     "title": "頁面未找到",
-    "description": "抱歉，你訪問的頁面不存在或已被移動。請檢查網址或返回首頁繼續瀏覽。",
+    "description": "抱歉，您訪問的頁面不存在或已被移動。請檢查網址或返回首頁繼續瀏覽。",
     "goHome": "返回首頁",
     "goBack": "返回上一頁",
-    "quickLinks": "或造訪以下頁面："
+    "quickLinks": "或前往以下頁面："
   },
   "waiting": {
     "title": "正在等待 {{name}} 連接...",
@@ -83,16 +98,21 @@
   "search": {
     "placeholder": "搜尋市場或合約地址",
     "trending": "熱門搜尋",
-    "noResults": "未找到相關結果"
+    "noResults": "未找到相關結果",
+    "recentSearches": "最近搜尋",
+    "clear": "清除",
+    "settlement": "結算",
+    "closed": "已關閉"
   },
   "predictions": {
     "buy": "買入",
     "sell": "賣出",
+    "redeemed": "兌換",
     "outcomes": "結果",
     "amount": "金額",
     "balance": "餘額",
-    "toWin": "可贏得",
-    "trading": "進行交易即表示你同意",
+    "toWin": "獲勝",
+    "trading": "進行交易即表示您同意",
     "terms": "使用條款",
     "buySuccess": "購買成功",
     "buyError": "購買失敗",
@@ -104,6 +124,7 @@
     "available": "可用",
     "noAvailablePositions": "暫無可用持倉。",
     "cashOut": "套現",
+    "result": "結果公布",
     "resultsOut": "結果公布：{{result}}",
     "waitingResolution": "市場已關閉 - 等待結算",
     "integralModal": {
@@ -111,9 +132,10 @@
       "withdraw": "提現",
       "positions": "持倉",
       "trades": "交易",
-      "transaction": "交易記錄",
+      "transaction": "歷史記錄",
       "sale": "賣出",
       "claim": "領取",
+      "claimed": "已領取",
       "entryPrice": "入場價格",
       "marketPrice": "市場價格",
       "bet": "下注",
@@ -131,7 +153,7 @@
     "address": "地址",
     "warning": "僅支援 OneChain 原生 USDH",
     "gotIt": "我知道了",
-    "tip": "你的地址已複製到剪貼簿"
+    "tip": "您的地址已複製到剪貼簿"
   },
   "send": {
     "send": "發送代幣",
@@ -140,7 +162,7 @@
     "balance": "餘額",
     "to": "收款地址",
     "onechainAddress": "OneChain 地址",
-    "warning": "請注意，這裡僅支援 OneChain 網路。透過其他網路發送可能導致你的加密資產遺失。",
+    "warning": "請注意，這裡僅支援 OneChain 網路。透過其他網路發送可能導致您的加密資產遺失。",
     "continue": "繼續",
     "sendSuccess": "發送成功",
     "sendError": "發送失敗"
@@ -157,7 +179,12 @@
     "outcomeProposed": "提議結果",
     "disputeWindow": "爭議期",
     "finalOutcome": "最終結果",
-    "opinions": "意見"
+    "opinions": "意見",
+    "replies": "回覆",
+    "cancel": "取消",
+    "reply": "回覆",
+    "allItemsLoaded": "所有項目已載入。",
+    "result": "結果"
   },
   "time": {
     "justNow": "剛剛",
@@ -179,54 +206,67 @@
     "day_future_other": "{{count}} 天後"
   },
   "profile": {
-    "followers": "粉絲",
-    "following": "追蹤中",
+    "followers": "關注者",
+    "following": "關注中",
     "opinions": "意見",
-    "follow": "編輯資料",
+    "follow": "關注",
+    "editProfile": "編輯資料",
     "allMarkets": "所有市場",
-    "position": "名次",
+    "position": "持倉",
     "volume": "成交量",
     "rank": "損益排名"
   },
   "settings": {
     "profile": "個人資料",
     "upload": "上傳新圖片",
-    "max": "最多 {{count}}",
+    "max": "最大{{count}}",
     "username": "使用者名稱",
     "bio": "個人簡介",
-    "bioPlaceholder": "向別人介紹一下您自己",
+    "bioPlaceholder": "向他人介紹一下您自己",
     "UID": "使用者 ID",
     "account": "帳戶",
     "email": "電子郵件",
     "referral": "邀請",
-    "referralTips": "你是被朋友邀請的嗎？輸入他們的邀請碼即可獲得註冊獎勵！",
+    "referralTips": "您是由朋友邀請的嗎？請輸入他的邀請碼。",
     "inviteCode": "邀請碼",
-    "inviteCodeTips": "為一個 6 位字串",
+    "inviteCodeTips": "是一個 6 位字串",
     "privateKey": "私鑰",
-    "privateKeyWarning": "警告：切勿洩露私鑰。",
-    "privateKeyWarningContent": "任何人擁有您的私鑰都可以竊走您帳戶中的任何資產。您可以匯出私鑰並存放在安全的位置作為備份。",
-    "showPrivateKey": "顯示私鑰"
+    "privateKeyWarning": "警告：切勿洩漏私鑰。",
+    "privateKeyWarningContent": "任何人擁有您的私鑰都可以竊取您帳戶中的任何資產。您可以匯出私鑰並安全保存作為備份。",
+    "showPrivateKey": "顯示私鑰",
+    "bindSuccess": "綁定成功"
   },
   "leaderboard": {
-    "title": "OnePredict 預測平台表現最佳榜",
+    "title": "OnePredict 預測平台最佳表現榜",
     "all": "全部",
     "daily": "每日",
     "weekly": "每週",
     "monthly": "每月",
     "rank": "排名",
     "trader": "交易者",
-    "pnL": "損益",
+    "pnl": "損益",
     "volume": "成交量",
     "trades": "交易筆數",
-    "me": "我"
+    "me": "我",
+    "shareMyRank": "分享我的排名",
+    "share": "分享",
+    "download": "下載",
+    "or": "或",
+    "copy": "複製",
+    "myRank": "我的排名",
+    "allRank": "全部{{type}}名次",
+    "joinOnePredict": "加入 OnePredict。",
+    "myInviteCode": "我的邀請碼",
+    "imageCopied": "圖片已複製。立即分享！"
   },
   "rewards": {
     "myRewards": "我的獎勵",
-    "onePredictPoints": "邀請好友參與預測，每次好友下注，你都可獲得收益。",
-    "inviteToEarn": "邀請賺取獎勵",
-    "rewardsCenter": "獎勵中心",
+    "claim": "領取",
+    "onePredictPoints": "邀請好友參與預測，每次好友下注，您都可獲得收益。",
+    "inviteToEarn": "邀請賺取",
+    "rewardRecord": "獎勵記錄",
     "inviteEarn": "邀請與賺取",
-    "getRewarded": "好友使用你的邀請碼註冊即可獲得獎勵。",
+    "getRewarded": "好友使用您的邀請碼註冊即可獲得獎勵。",
     "inviteCode": "邀請碼",
     "inviteFriends": "邀請好友",
     "inviteFriendsCopyText": "加入 OnePredict —— 為所有人打造的次世代預測市場！使用我的邀請碼 [{{code}}] 註冊：https://poly.deltax.online/",
@@ -234,6 +274,14 @@
     "totalPerson": "（共 {{count}} 人）",
     "invitee": "被邀請人",
     "date": "日期",
-    "allItemsLoaded": "所有內容已載入。"
+    "allItemsLoaded": "所有內容已載入。",
+    "totalRewards": "总奖励：",
+    "claimed": "已领取：",
+    "claimable": "可领取：",
+    "inviteeOrProject": "邀请人/项目",
+    "investmentOrBonus": "投资/奖励",
+    "project": "项目",
+    "investmentAmount": "投资金额",
+    "amountOfBonus": "奖励金额"
   }
 }

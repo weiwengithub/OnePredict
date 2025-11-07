@@ -24,7 +24,7 @@ import Zklogin from '../Zklogin';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ConnectWallet from '../ConnectWallet';
 import Loading from '../Loading';
-import { store, clearLoginData, setSigninOpen, setSigninLoading } from '@/store';
+import {store, clearLoginData, setSigninOpen, setSigninLoading, setMemberId, setUsdhBalance} from '@/store';
 import { useDispatch, useSelector } from 'react-redux';
 import GoogleIcon from '@/assets/icons/google.svg';
 import AppleIcon from '@/assets/icons/apple.svg';
@@ -85,7 +85,7 @@ const Signin = () => {
           userSignature:signature.signature
         });
 
-        const data: ApiResult = await apiService.memberLogin({
+        const {data} = await apiService.memberLogin({
           address: address,
           zkLoginAccount: (zkLoginData as any).email,
           originalMessage: signMessage,
@@ -93,11 +93,10 @@ const Signin = () => {
           chain: 'onechain',
           chainNet: Number(process.env.NEXT_PUBLIC_IS_MAINNET) ? 'mainnet' : 'testnet'
         });
-        // debugger;
         console.log('data', data)
-
-        localStorage.setItem('predict-token-'+address, (data.data as any).token);
-        localStorage.setItem('predict-token', (data.data as any).token);
+        store.dispatch(setMemberId(data.memberId));
+        localStorage.setItem('predict-token-'+address, data.token);
+        // localStorage.setItem('predict-memberid-'+address, data.memberId);
 
       } else {
         signPersonalMessage({
@@ -107,16 +106,16 @@ const Signin = () => {
             onSuccess: async (result: { signature: string }) => {
               console.log('signature', result.signature);
               console.log('result', result);
-              const data: ApiResult = await apiService.memberLogin({
+              const {data} = await apiService.memberLogin({
                 address: address, originalMessage: signMessage,
                 signedMessage:result.signature,
                 zkLoginAccount: null,
                 chain: 'onechain',
                 chainNet: Number(process.env.UMI_APP_IS_MAINNET) ? 'mainnet' : 'testnet'
               });
-              console.log('data', (data.data as any).token)
-              localStorage.setItem('predict-token-'+address, (data.data as any).token);
-              localStorage.setItem('predict-token', (data.data as any).token);
+              store.dispatch(setMemberId(data.memberId));
+              localStorage.setItem('predict-token-'+address, data.token);
+              // localStorage.setItem('predict-memberid-'+address, data.memberId);
             }
           });
       }
@@ -238,7 +237,7 @@ const Signin = () => {
                   openDown ? (
                     <div className="absolute top-[36px] w-full pt-[14px]">
                       <div className="bg-[#04122B] rounded-[16px] p-[12px] space-y-[12px]">
-                        <Link href="/profile" className="inline-block w-full">
+                        <Link href={`/profile?memberId=${store.getState().memberId}`} className="inline-block w-full">
                           <div className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10">
                             <ProfileIcon />
                             <span className="inline-block ml-[12px] h-[16px] leading-[16px]">{t('header.profile')}</span>
@@ -254,13 +253,9 @@ const Signin = () => {
                           <div
                             className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
                             onClick={() => {
-                              if(zkLoginData){
-                                dispatch(clearLoginData())
-                                disconnect()
-                                window.location.reload()
-                              }else{
-                                disconnect()
-                              }
+                              dispatch(clearLoginData())
+                              disconnect()
+                              window.location.reload()
                             }}
                           >
                             <LogoutIcon />
@@ -274,7 +269,7 @@ const Signin = () => {
               </div>
             )}
           </>
-        ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-50 hover:opacity-100 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => dispatch(setSigninOpen(true))}>
+        ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-100 hover:opacity-50 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => dispatch(setSigninOpen(true))}>
           {t('header.signIn')}
         </button>
       }
@@ -285,8 +280,7 @@ const Signin = () => {
             <span className='inline-block h-[16px] leading-[16px] text-[24px] text-white font-bold'>{t('header.signIn')}</span>
             <CloseIcon className="text-[16px] text-white/40 hover:text-white cursor-pointer" onClick={() => dispatch(setSigninOpen(false))} />
           </div>
-          <div className="mt-[24px] h-[16px] leading-[16px] text-[12px] text-white/60">{t('header.desc')}</div>
-          <div className="mt-[24px]">
+          <div className="mt-[36px]">
             <Zklogin onJump={() => {
               dispatch(setSigninOpen(false))
               dispatch(setSigninLoading(true))

@@ -86,7 +86,7 @@ export default function CountdownToStart({
 
   // 默认倒计时样式：11 H 39 M 51 S
   return (
-    <div className="h-[48px] flex items-center justify-center gap-1 border border-white/60 rounded-[8px] mb-[12px]">
+    <div className="h-[48px] flex items-center justify-center gap-1 border border-white/60 rounded-[8px] mb-[28px]">
       <LockIcon className="text-white text-[16px]" />
       <span className="h-[20px] leading-[20px] bg-white/10 rounded-[4px] px-1 text-white text-[12px]">{hours}</span>
       <span className="text-white text-[12px]">H</span>

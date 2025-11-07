@@ -33,6 +33,8 @@ import SystemIcon from "@/assets/icons/menu/system.svg";
 import LogoutIcon from "@/assets/icons/menu/logout.svg";
 import ArrowIcon from "@/assets/icons/menu/arrow.svg";
 import CheckedIcon from "@/assets/icons/menu/checked.svg";
+import {tokenIcon} from "@/assets/config";
+import { abbreviateNumber } from "@/lib/numbers";
 
 interface MobileNavigationProps {
   onCategoryChange?: (category: string) => void;
@@ -164,7 +166,15 @@ export default function MobileNavigation({
                       <div
                         className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
                         onClick={() => {
-                          router.push("/profile")
+                          const address = (zkLoginData as any)?.zkloginUserAddress || currentAccount?.address;
+                          if (address) {
+                            const mid = typeof window !== 'undefined' ? localStorage.getItem('predict-memberid-'+address) : null;
+                            if (mid) {
+                              router.push(`/profile/${mid}`);
+                              return;
+                            }
+                          }
+                          router.push("/profile");
                         }}
                       >
                         <ProfileIcon className="text-[16px] text-white" />
@@ -292,7 +302,7 @@ export default function MobileNavigation({
 
             <Link href="/" className="block transition-transform hover:scale-105">
               <Image
-                src="/images/logo.png"
+                src="/images/logo.png?v=1"
                 alt="OnePredict"
                 width={195}
                 height={64}
@@ -303,8 +313,10 @@ export default function MobileNavigation({
 
           {/* Right: Balance and Notifications */}
           <div className="flex items-center cursor-pointer" onClick={handleButtonClick}>
-            <Image src="/images/icon/icon-token.png" alt="" width={20} height={20} />
-            <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[24px] font-bold text-white/60 hover:text-white">{usdhBalance}</span>
+            <Image src={tokenIcon} alt="" width={20} height={20} />
+            <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[24px] font-bold text-white/60 hover:text-white">
+              {abbreviateNumber(usdhBalance, {style: language === 'zh' ? 'cn' : 'western', decimals: 2})}
+            </span>
           </div>
         </div>
       </div>

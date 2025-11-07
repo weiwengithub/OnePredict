@@ -150,17 +150,27 @@ export function truncateDecimals(str: string | number, decimalPlaces: number): s
   return truncated ? `${i}.${truncated}` : i;
 }
 
+type AbbrevStyle = 'western' | 'cn';
+
+
 /**
  * 千分位分隔符格式化
  */
-export function formatNumberWithSeparator(num: number | string, separator = ','): string {
+type SeparatorOptions = {
+  style?: AbbrevStyle;
+  separator?: string
+}
+export function formatNumberWithSeparator(num: number | string, options: SeparatorOptions = {}): string {
+  const {
+    style = 'western',
+    separator = ','
+  } = options;
   const s = String(num);
   const [i, d] = s.split('.');
-  const fi = i.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
+  const fi = style === 'cn' ? i.replace(/\B(?=(\d{4})+(?!\d))/g, separator) : i.replace(/\B(?=(\d{3})+(?!\d))/g, separator);
   return d ? `${fi}.${d}` : fi;
 }
 
-type AbbrevStyle = 'western' | 'cn';
 type FormatOptions = {
   decimals?: number;       // 最多保留小数位，默认 1
   minDecimals?: number;    // 最少保留小数位，默认 0
@@ -169,7 +179,6 @@ type FormatOptions = {
   style?: AbbrevStyle;     // 'western' => K/M/B/T；'cn' => 万/亿/兆，默认 'western'
   threshold?: number;      // 触发缩写的阈值，默认 1000（中文样式默认 10000）
 };
-
 export function abbreviateNumber(
   input: number | string | null | undefined,
   options: FormatOptions = {}

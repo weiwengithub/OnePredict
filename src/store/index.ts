@@ -21,12 +21,16 @@ export const setUsdhBalance = createAction<{
 }>('usdh/setBalance')
 export const clearUsdhBalance = createAction('usdh/clearBalance')
 
+export const setMemberId = createAction<number>('member/setId')
+export const clearMemberId = createAction('member/clearId')
+
 export type AuthState = {
   connect: boolean
   account: string
   zkLoginData: unknown | null
   isZkLogin: boolean
   isWalletLogin: 0 | 1 | 2 | number
+  memberId: number
   loading: {
     isLoading: boolean
     message?: string
@@ -44,9 +48,12 @@ export type AuthState = {
 const initialState: AuthState = {
   connect: false,
   account: '',
-  zkLoginData: null,
-  isZkLogin: false,
-  isWalletLogin: 0,
+  zkLoginData: (typeof window !== 'undefined' && window.localStorage.getItem('zkloginData'))
+    ? JSON.parse(window.localStorage.getItem('zkloginData') || 'null')
+    : null,
+  isZkLogin: (typeof window !== 'undefined' && window.localStorage.getItem('isZkLogin') === '1') ? true : false,
+  isWalletLogin: (typeof window !== 'undefined' && window.localStorage.getItem('isWalletLogin') === '1') ? 1 : 0,
+  memberId: 0,
   loading: {
     isLoading: false,
     message: undefined
@@ -91,6 +98,7 @@ const reducer = createReducer(initialState, (builder) =>
       state.zkLoginData = null
       state.isZkLogin = false
       state.isWalletLogin = 0
+      state.memberId = 0
     })
     .addCase(showLoading, (state, action: PayloadAction<string | undefined>) => {
       state.loading.isLoading = true
@@ -114,6 +122,12 @@ const reducer = createReducer(initialState, (builder) =>
       state.usdhBalance.balance = '0.00'
       state.usdhBalance.rawBalance = '0'
     })
+    .addCase(setMemberId, (state, action: PayloadAction<number>) => {
+      state.memberId = action.payload
+    })
+    .addCase(clearMemberId, (state) => {
+      state.memberId = 0
+    })
 )
 
 export const store = configureStore({ reducer })
@@ -127,6 +141,18 @@ export const SigninModal = {
   close: () => store.dispatch(setSigninOpen(false)),
   showLoading: () => store.dispatch(setSigninLoading(true)),
   hideLoading: () => store.dispatch(setSigninLoading(false)),
+}
+
+export const Member = {
+  save(id: number) {
+    store.dispatch(setMemberId(id))
+  },
+  get(): number {
+    return (store.getState() as RootState).memberId
+  },
+  clear() {
+    store.dispatch(clearMemberId())
+  },
 }
 
 // 可选：仅在浏览器订阅变化并持久化（防止 reducer 内侧写 localStorage）
@@ -153,7 +179,11 @@ function setupPersistence() {
         } else {
           localStorage.removeItem('isWalletLogin')
         }
-        // 一般不需要持久化弹窗状态，避免刷新后误开弹窗
+        if (state.memberId && state.memberId > 0) {
+          localStorage.setItem('memberId', String(state.memberId))
+        } else {
+          localStorage.removeItem('memberId')
+        }
       } catch (e) {
         console.warn('persist error:', e)
       } finally {
@@ -161,5 +191,15 @@ function setupPersistence() {
       }
     })
   })
+
+  try {
+    const cachedMemberId = localStorage.getItem('memberId')
+    if (cachedMemberId) {
+      const n = Number(cachedMemberId)
+      if (Number.isFinite(n) && n > 0) {
+        store.dispatch(setMemberId(n))
+      }
+    }
+  } catch {}
 }
 setupPersistence()
