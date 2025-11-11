@@ -143,7 +143,7 @@ export default function SemicircleGauge({ outcomes, activeIndex }: SemicircleGau
   }, [activeIndex]);
 
   return (
-    <div className="w-full flex items-center justify-center">
+    <div className="-mt-[14px] w-full flex items-center justify-center">
       <div ref={containerRef} style={{ width: '100%', height: 120 }} />
     </div>
   );

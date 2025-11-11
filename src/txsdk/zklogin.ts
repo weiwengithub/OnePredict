@@ -26,12 +26,12 @@ export class ZkloginClient {
   async sendTransaction(tx: Transaction, donotuseGasPool: boolean = false) {
     //init zklogindata
     const {
-        zkProof,
-        zkloginUserAddress,
-        userSalt,
-        decodedJwt,
-        ephemeralKeyPairSecret,
-        maxEpoch
+      zkProof,
+      zkloginUserAddress,
+      userSalt,
+      decodedJwt,
+      ephemeralKeyPairSecret,
+      maxEpoch
     } = await this.initZkliginData()
 
     const ephemeralKeyPair = Ed25519Keypair.fromSecretKey(ephemeralKeyPairSecret);
@@ -67,25 +67,25 @@ export class ZkloginClient {
       const executeRes: any = await this.executeTransaction(reservationId, txBytesBase64, zkLoginSignature);
       return executeRes
     } else {
-        tx.setSender(zkloginUserAddress || '')
-        const { bytes, signature: userSignature } = await this.signTransaction(tx, ephemeralKeyPair);
-          const addressSeed: string = genAddressSeed(
-            BigInt(userSalt),
-            "sub",
-            decodedJwt.sub,
-            decodedJwt.aud as string
-          ).toString();
-          // 生成 zkLogin 签名
-          const zkLoginSignature = getZkLoginSignature({
-            inputs: {
-              ...zkProof,
-              addressSeed,
-            },
-            maxEpoch,
-            userSignature,
-          });
-          const result = await this.signAndExecuteTransaction(bytes, zkLoginSignature);
-          return result
+      tx.setSender(zkloginUserAddress || '')
+      const { bytes, signature: userSignature } = await this.signTransaction(tx, ephemeralKeyPair);
+      const addressSeed: string = genAddressSeed(
+        BigInt(userSalt),
+        "sub",
+        decodedJwt.sub,
+        decodedJwt.aud as string
+      ).toString();
+      // 生成 zkLogin 签名
+      const zkLoginSignature = getZkLoginSignature({
+        inputs: {
+          ...zkProof,
+          addressSeed,
+        },
+        maxEpoch,
+        userSignature,
+      });
+      const result = await this.signAndExecuteTransaction(bytes, zkLoginSignature);
+      return result
     }
   }
 
@@ -127,30 +127,30 @@ export class ZkloginClient {
   }
 
   async reserveGas(gasBudget: number, reserveDurationSecs: number): Promise<BudgetResult> {
-    const budgetResult = await apiClient.post('/api/market/gas/reserve',{
+    const {data} = await apiClient.post('/api/ext/gas/reserve',{
       "gas_budget": gasBudget,
       "reserve_duration_secs": reserveDurationSecs
     })
     // @ts-expect-error -- TS类型报错
-    return budgetResult?.result as BudgetResult
+    return data?.result as BudgetResult
   }
 
   async executeTransaction(reservationId: string, txBytes: string, zkLoginSignature: string) {
-        const executeRes: any = await apiClient.post('/api/market/executeTx', {
-            reservation_id: reservationId,
-            tx_bytes: txBytes,
-            user_sig: zkLoginSignature,
-        });
-        if(executeRes?.data?.error) {
-            throw new Error(executeRes?.data?.error)
-        }
-        return executeRes
+    const executeRes: any = await apiClient.post('/api/ext/gas/executeTx', {
+      reservation_id: reservationId,
+      tx_bytes: txBytes,
+      user_sig: zkLoginSignature,
+    });
+    if(executeRes?.data?.error) {
+      throw new Error(executeRes?.data?.error)
+    }
+    return executeRes
   }
   async signAndExecuteTransaction(txBytes: string, zkLoginSignature: string) {
     const result = await this.suiClient.executeTransactionBlock({
-        transactionBlock: txBytes,
-        signature: zkLoginSignature,
-      });
+      transactionBlock: txBytes,
+      signature: zkLoginSignature,
+    });
     return result
   }
 
@@ -161,6 +161,5 @@ export class ZkloginClient {
     });
     return { bytes, signature: userSignature }
   }
-
 }
 

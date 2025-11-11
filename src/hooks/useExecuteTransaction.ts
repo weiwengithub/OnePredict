@@ -21,6 +21,7 @@ export function useExecuteTransaction() {
         tx.setSender(currentAccount?.address || '0x0')
         tx.setGasPayment(budgetResult.gas_coins)
         tx.setGasOwner(budgetResult.sponsor_address)
+        tx.setGasBudget(currentNetwork.gasBudget)
         console.log(tx)
         return await new Promise((resolve, reject) => {
           signTransaction(
@@ -33,8 +34,8 @@ export function useExecuteTransaction() {
                     reject(new Error(executeTxRes.error))
                     return
                   }
-                  if(executeTxRes?.effects){
-                    resolve(executeTxRes)
+                  if(executeTxRes?.data?.effects){
+                    resolve(executeTxRes.data)
                     return
                   }
                   reject(new Error('execute transaction failed'))

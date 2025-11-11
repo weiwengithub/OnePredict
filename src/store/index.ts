@@ -24,6 +24,12 @@ export const clearUsdhBalance = createAction('usdh/clearBalance')
 export const setMemberId = createAction<number>('member/setId')
 export const clearMemberId = createAction('member/clearId')
 
+export const setUserInfo = createAction<{
+  nickName: string
+  avatar: string
+  loginAddress: string
+}>('user/setUserInfo')
+
 export type AuthState = {
   connect: boolean
   account: string
@@ -42,6 +48,11 @@ export type AuthState = {
   usdhBalance: {
     balance: string
     rawBalance: string
+  }
+  userInfo: {
+    nickName: string
+    avatar: string
+    loginAddress: string
   }
 }
 
@@ -66,6 +77,11 @@ const initialState: AuthState = {
     balance: '0.00',
     rawBalance: '0',
   },
+  userInfo: {
+    nickName: '',
+    avatar: '',
+    loginAddress: ''
+  }
 }
 
 const reducer = createReducer(initialState, (builder) =>
@@ -127,6 +143,11 @@ const reducer = createReducer(initialState, (builder) =>
     })
     .addCase(clearMemberId, (state) => {
       state.memberId = 0
+    })
+    .addCase(setUserInfo, (state, action: PayloadAction<{ nickName: string; avatar: string; loginAddress: string }>) => {
+      state.userInfo.nickName = action.payload.nickName
+      state.userInfo.avatar = action.payload.avatar
+      state.userInfo.loginAddress = action.payload.loginAddress
     })
 )
 

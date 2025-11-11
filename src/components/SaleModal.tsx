@@ -22,6 +22,7 @@ import {useDispatch} from "react-redux";
 import {toast} from "sonner";
 import {useIsMobile} from "@/contexts/viewport";
 import {tokenIcon} from "@/assets/config";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -131,8 +132,11 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
     <Dialog open={open} onOpenChange={onOpenChange} className="z-[120]">
       <DialogContent className={`p-0 bg-transparent border-none ${isMobile ? "w-full left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "w-[450px]"}`}>
         <div className="w-full h-full relative rounded-[20px] bg-[#051A3D] p-[20px] overflow-hidden">
-          <div className="mt-[20px] flex items-center">
-            <div className="flex-1 h-[24px] leading-[24px] text-[22px] text-white font-bold">{t('predictions.sell')} {position?.currentOutcome.name}</div>
+          <div className="mt-[20px] flex items-center gap-[20px]">
+            <EllipsisWithTooltip
+              text={`${t('predictions.sell')} ${position?.currentOutcome.name}`}
+              className="flex-1 h-[24px] leading-[24px] text-[22px] text-white font-bold"
+            />
             <CloseIcon
               className="text-[28px] text-[#D2D1D1] hover:text-white cursor-pointer"
               onClick={() => {
@@ -222,7 +226,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
               disabled={!amount}
               onClick={handleSale}
             >
-              {`${t('predictions.sell')} ${position?.currentOutcome.name}`}
+              <span className="truncate">{`${t('predictions.sell')} ${position?.currentOutcome.name}`}</span>
             </Button>
           ) : (
             <Button

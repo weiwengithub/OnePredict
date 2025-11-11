@@ -20,6 +20,7 @@ import {
   LoginInfo,
   ResInviteList,
   ResTransaction,
+  ResBalanceChange,
   DictInfo,
   ResProjectCommentList,
   ResProjectCommentReplyList,
@@ -65,6 +66,11 @@ export const apiService = {
   // 交易流水
   getTransactionHistory: (data: {projectId: string; address: string}) => {
     return apiClient.post<ResTransaction>('/api/ext/payRecord/list', data);
+  },
+
+  // 钱包余额变化列表
+  getBalanceChangeList: (data: {pageSize: number; address: string}) => {
+    return apiClient.post<ResBalanceChange>('/api/ext/balanceChange/list', data);
   },
 
   // 首页banner图查询

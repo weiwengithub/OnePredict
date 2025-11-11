@@ -123,7 +123,12 @@ export default function Home() {
       return data;
     },
   });
-  const categories: DictInfo[] = dictList || [];
+  const categories: DictInfo[] = [{
+    label: '全部',
+    labelEn: 'All',
+    value: ''
+  }];
+  if(dictList) categories.push(...dictList);
 
   const swiperRef = useRef<SwiperType | null>(null);
   const handleSwiperInit = (swiper: SwiperType) => {

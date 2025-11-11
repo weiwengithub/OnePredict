@@ -68,7 +68,7 @@ export default function RankingModal({ open, rankType, value, sort, memberCode, 
               }}
             />
           </div>
-          <div className="mt-[32px] rounded-[12px] overflow-hidden">
+          <div className="h-[300px] max-w-[300px] mt-[32px] mx-auto rounded-[12px] overflow-hidden">
             <RankCardImage
               labels={{
                 title: t('leaderboard.myRank'),

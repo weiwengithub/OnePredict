@@ -31,6 +31,8 @@ import OutcomeProposed from "@/assets/icons/outcomeProposed.svg";
 import DisputeWindow from "@/assets/icons/disputeWindow.svg";
 import FinalOutcome from "@/assets/icons/finalOutcome.svg";
 import ResultIcon from "@/assets/icons/succeedResult.svg";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
+import {HoverTooltipButton} from "@/components/HoverTooltipButton";
 
 interface TradingFormProps {
   prediction: MarketOption;
@@ -173,12 +175,28 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
     try {
       const res = await apiService.getMarketPosition({userAddress: owner, address: owner || ''});
 
-      // 假设API返回的数据格式，你需要根据实际API响应调整
       if (res && res.data) {
-        const list = res.data.rows.filter(item => item.marketId === prediction.marketId);
+        const list = res.data.rows.filter(item => {
+          if(item.marketId === prediction.marketId) {
+            // 不显示持仓数量为0的数据
+            if(item.shares === 0) {
+              return false;
+            }
+            // 不显示已领取收益的数据
+            if (item.status === 'Redeemed') {
+              return false;
+            }
+            // 不显示已完成且竞猜失败的数据
+            if (item.status === 'Completed' && item.winnerId !== item.currentOutcome.outcomeId) {
+              return false;
+            }
+            return true
+          } else {
+            return false
+          }
+        });
         list.sort((a, b) => a.currentOutcome.outcomeId > b.currentOutcome.outcomeId ? 1 : -1);
         if (list.length > 0) {
-          // setSellOutcome(list[0].outcome)
           setSellAvailable(toDisplayDenomAmount(list[0].shares, 0).toString())
         }
         setPositionList(list);
@@ -315,16 +333,51 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               <div className="mt-[24px]">
                 <div className="flex items-center justify-between h-[24px] leading-[24px] text-[16px] font-bold text-white/60 mb-[12px]">
                   <span>{t('predictions.outcomes')}</span>
-                  {/*<RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" onClick={getMarketPosition}/>*/}
+                  <RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" onClick={getMarketPosition}/>
                 </div>
                 {startTime > Date.now() ? (
                   <Countdown
                     target={startTime}
                     onEnd={() => console.log("time over")}
                   />
+                ) : prediction.outcome.length > 2 ? (
+                  <div className="mb-[12px] w-full space-y-[12px] pr-[6px] overflow-hidden">
+                    {prediction.outcome.map((outcome, index) => {
+                      const color = colors[index];
+                      const [r, g, b] = hexToRgbTriplet(color);
+                      const style = {
+                        ['--btn-rgb' as any]: `${r} ${g} ${b}`,
+                        ['--btn-hex' as any]: color,
+                      } as React.CSSProperties;
+
+                      return (
+                        <div key={index} className="h-[24px] flex gap-[24px]">
+                          <EllipsisWithTooltip
+                            text={outcome.name}
+                            className="flex-1 h-[24px] leading-[24px] text-white text-[16px] font-bold"
+                          />
+                          <div className="h-[24px] leading-[24px] text-white/80 text-[16px]">{`${(100 * Number(outcome.prob)).toFixed(2)}%`}</div>
+                          <button
+                            key={index}
+                            onClick={() => {
+                              setBuyOutcome(index)
+                              outcomeChange && outcomeChange(index)
+                            }}
+                            style={style}
+                            className={`h-[24px] rounded-[4px] border-none text-[14px] font-bold px-2 transition-all ${
+                              buyOutcome === index
+                                ? 'bg-[rgb(var(--btn-rgb))] text-white'
+                                : 'bg-[rgb(var(--btn-rgb)/0.5)] text-[color:var(--btn-hex)] hover:bg-[rgb(var(--btn-rgb))] hover:text-white'
+                            }`}
+                          >
+                            {t('common.buy')}
+                          </button>
+                        </div>
+                      )
+                    })}
+                  </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3">
-
                     {
                       prediction.outcome?.map((item, index) => {
                         const color = colors[index];
@@ -475,7 +528,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   disabled={!amount || new Date(prediction.endTime).getTime() < Date.now()}
                   className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {`${t('predictions.buy')} ${prediction.outcome?prediction.outcome[buyOutcome].name:''}`}
+                  <span className="truncate">{`${t('predictions.buy')} ${prediction.outcome?prediction.outcome[buyOutcome].name:''}`}</span>
                 </Button>
               ) : (
                 <Button
@@ -494,14 +547,17 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               <div className="mt-[24px]">
                 <div className="flex items-center justify-between h-[24px] leading-[24px] text-[16px] font-bold text-white/60 mb-[12px]">
                   <span>{t('predictions.position')}</span>
-                  {/*<RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" onClick={getMarketPosition}/>*/}
+                  <RefreshIcon className="w-4 h-4 cursor-pointer transition-transform duration-300 ease-out hover:text-white hover:rotate-90" onClick={getMarketPosition}/>
                 </div>
                 <div className="bg-[#051A3D] h-[56px] border border-white/20 rounded-[8px] relative">
                   {positionList.length > 0 ? (
                     <div className="flex items-center p-[8px] cursor-pointer" onClick={() => setShowCheckPosition(!showCheckPosition)}>
                       <div className="w-[36px] h-[36px] rounded-full" style={{backgroundColor: colors[positionList[sellOutcome]?.currentOutcome.outcomeId || 0]}}></div>
-                      <div className="flex-1 ml-[12px]">
-                        <div className="h-[14px] leading-[14px] text-[14px] text-white">{positionList[sellOutcome]?.currentOutcome.name}</div>
+                      <div className="flex-1 mx-[12px] overflow-hidden">
+                        <EllipsisWithTooltip
+                          text={positionList[sellOutcome]?.currentOutcome.name}
+                          className="h-[14px] leading-[14px] text-[14px] text-white"
+                        />
                         <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={positionList[sellOutcome]?.shares} decimals={0} precision={2}/>  {t('predictions.shares')}</div>
                       </div>
                       <ArrowDownIcon className={`text-white text-[16px] mr-[4px] transition-transform duration-300 ease-out ${showCheckPosition ? 'rotate-180' : ''}`} />
@@ -520,11 +576,14 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                               }}
                             >
                               <div className="w-[36px] h-[36px] rounded-full" style={{backgroundColor: colors[item.currentOutcome.outcomeId]}}></div>
-                              <div className="flex-1 ml-[12px]">
-                                <div className="h-[14px] leading-[14px] text-[14px] text-white">{item.currentOutcome.name}</div>
+                              <div className="flex-1 mx-[12px] overflow-hidden">
+                                <EllipsisWithTooltip
+                                  text={item.currentOutcome.name}
+                                  className="h-[14px] leading-[14px] text-[14px] text-white"
+                                />
                                 <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={item.shares} decimals={0} precision={2}/>  {t('predictions.shares')}</div>
                               </div>
-                              {item.currentOutcome.outcomeId === sellOutcome && <CheckedIcon className="text-[#00AE66] text-[24px] mr-[4px]" />}
+                              {i === sellOutcome && <CheckedIcon className="text-[#00AE66] text-[24px] mr-[4px]" />}
                             </div>
                           ))}
                         </div>
@@ -624,7 +683,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   disabled={!sellAmount || new Date(prediction.endTime).getTime() < Date.now()}
                   className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {`${t('predictions.sell')} ${prediction.outcome[sellOutcome].name}`}
+                  <span className="truncate">{`${t('predictions.sell')} ${positionList[sellOutcome]?.currentOutcome.name}`}</span>
                 </Button>
               ) : (
                 <Button

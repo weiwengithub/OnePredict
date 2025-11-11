@@ -31,7 +31,7 @@ interface Props {
 export default function CategoryTabs({
   categories,
   onChange,
-  initialCategory = '',
+  initialCategory = '全部',
   initialSortBy = '',
 }: Props) {
   const isMobile = useIsMobile();
@@ -49,6 +49,7 @@ export default function CategoryTabs({
 
   // 点分类按钮时
   const handleCategoryClick = (id: string) => {
+    setShowFollowed(false);
     setActiveCategory(id);
   };
 
@@ -62,11 +63,11 @@ export default function CategoryTabs({
 
   // 监听变化并通知外层触发查询
   useEffect(() => {
-    onChange?.({ category: activeCategory, sortBy, direction: sortBy === 'endTime' ? expireTimeDirection : volumeDirection, showFollowed });
+    onChange?.({ category: activeCategory === "全部" ? "" : activeCategory, sortBy, direction: sortBy === 'endTime' ? expireTimeDirection : volumeDirection, showFollowed });
   }, [activeCategory, sortBy, expireTimeDirection, volumeDirection, showFollowed, onChange]);
 
   const items = categories.map((category) => {
-    const isActive = activeCategory === category.label;
+    const isActive = !showFollowed && activeCategory === category.label;
 
     return (
       <Button
@@ -91,13 +92,19 @@ export default function CategoryTabs({
   })
 
   return (
-    <div className={`flex ${isMobile ? 'flex-col mb-[16px]' : 'justify-between items-center gap-[50px] mb-[36px]'}`}>
+    <div className={`flex bg-[#051A3D] sticky ${isMobile ? 'flex-col mb-[16px] top-[48px]' : 'justify-between items-center gap-[50px] mb-[36px] top-[64px]'} z-20`}>
       <div className={`flex-1 flex flex-nowrap gap-[4px] rounded-[8px] overflow-hidden`}>
-        <InlineOverflowList
-          items={items}
-          itemGapPx={8}
-          openOnHover
-        />
+        {isMobile ? (
+          <div className={`flex flex-nowrap gap-[4px] border border-white/20 rounded-[8px] px-[4px] py-[2px] ${isMobile ? 'w-full overflow-x-auto overflow-y-hidden' : ''}`}>
+            {items}
+          </div>
+        ) : (
+          <InlineOverflowList
+            items={items}
+            itemGapPx={8}
+            openOnHover
+          />
+        )}
       </div>
       <div className={`flex items-center justify-between ${isMobile ? 'mt-[16px]' : 'flex-none'}`}>
         <div className="h-[36px] flex items-center gap-[16px]">

@@ -35,6 +35,10 @@ import {MemberMoneyRecord, ResInviteInfo} from "@/lib/api/interface";
 import Link from "next/link";
 import {TooltipAmount} from "@/components/TooltipAmount";
 import {tokenIcon} from "@/assets/config";
+import Avatar from "boring-avatars";
+import {useGlobalLoading} from "@/hooks/useGlobalLoading";
+import {toast} from "sonner";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 export default function Rewards() {
   const { t } = useLanguage();
@@ -42,6 +46,7 @@ export default function Rewards() {
   const [copiedCode, setCopiedCode] = useState(false);
   const [currentTab, setCurrentTab] = useState<string>("invite");
   const [memberCode, setMemberCode] = useState<string>("");
+  const { show, hide } = useGlobalLoading();
 
   const currentAccount = useCurrentAccount();
   const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
@@ -95,20 +100,31 @@ export default function Rewards() {
       address: userAddress
     })
     setMemberMoneyTotal({
-      avaAmount: data.avaAmount,
-      claimedAmount: data.claimedAmount,
-      totalInviteAmount: data.totalInviteAmount
+      avaAmount: data.avaAmount || 0,
+      claimedAmount: data.claimedAmount || 0,
+      totalInviteAmount: data.totalInviteAmount || 0
     })
     setMemberMoneyRecords(data.rows)
   }
 
   const claimMemberMoney = async () => {
-    const { data } = await apiService.claimMemberMoney({coinType: '0x72eba41c73c4c2ce2bcfc6ec1dc0896ba1b5c17bfe7ae7c6c779943f84912b41::usdh::USDH', address: userAddress})
-    console.log(data)
+    try {
+      show(t('rewards.claiming') || 'Claiming...');
+      const { data } = await apiService.claimMemberMoney({coinType: '0x72eba41c73c4c2ce2bcfc6ec1dc0896ba1b5c17bfe7ae7c6c779943f84912b41::usdh::USDH', address: userAddress})
+      console.log(data)
+      toast.success(t('rewards.claimSuccess'));
+      // 刷新数据
+      await getMemberMoneyRecord()
+    } catch (error) {
+      console.error('Claim failed:', error)
+      toast.success(t('rewards.claimError'));
+    } finally {
+      hide()
+    }
   }
 
   return (
-    <div className={`min-h-screen bg-[#051A3D] ${isMobile ? '自定义工具栏…' : ''}`}>
+    <div className={`min-h-screen bg-[#051A3D] ${isMobile ? 'pb-20' : ''}`}>
       {/* Header */}
       {isMobile ? (
         <MobileNavigation
@@ -215,14 +231,23 @@ export default function Rewards() {
                     </div>
                     {inviteRecords.map((record, index) => (
                       <div key={index} className="flex pb-[16px] border-b border-white/10">
-                        <img src={record.avatar} alt="" className="size-[40px]" />
+                        {record.avatar ? (
+                          <Image src={record.avatar} alt="" width={40} height={40} />
+                        ) : (
+                          <Avatar
+                            size={40}
+                            name={record.loginAddress}
+                            variant={'marble'}
+                          />
+                        )}
+                        {/*<img src={record.avatar} alt="" className="size-[40px]" />*/}
                         <div className="ml-[12px] flex-1">
                           <Link href={`/profile?memberId=${record.memberId}`}>
                             <div className="leading-[16px] text-[16px] text-white font-bold truncate">{record.nickName}</div>
                           </Link>
                           <div className="mt-[8px] leading-[16px] text-[16px] text-white/60 font-bold truncate">{addPoint(record.loginAddress)}</div>
                         </div>
-                        <div className="mt-[24px] leading-[16px] text-[16px] text-white">{timeAgoEn(new Date(record.inviteTime).getTime())}</div>
+                        <div className="mt-[24px] leading-[16px] text-[16px] text-white">{timeAgoEn(record.inviteTime)}</div>
                       </div>
                     ))}
                     <div className="mt-[40px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('rewards.allItemsLoaded')}</div>
@@ -277,9 +302,12 @@ export default function Rewards() {
                         </div>
                         {memberMoneyRecords.map((record, index) => (
                           <div key={index} className="flex leading-[16px] text-[16px] text-white/60 font-bold pb-[8px] border-b border-white/10">
-                            <div className="flex-1">
+                            <div className="flex-1 overflow-hidden">
                               <div className="leading-[16px] text-[16px] text-white font-bold truncate">{record.fromNickName}</div>
-                              <div className="mt-[8px] leading-[16px] text-[16px] text-white/60 truncate">{record.projectName}</div>
+                              <EllipsisWithTooltip
+                                text={record.projectName}
+                                className="mt-[8px] leading-[16px] text-[16px] text-white/60"
+                              />
                             </div>
                             <div className="flex-1">
                               <div className="flex justify-end gap-[20px]">
@@ -310,7 +338,10 @@ export default function Rewards() {
                         {memberMoneyRecords.map((record, index) => (
                           <div key={index} className="flex leading-[16px] text-[16px] text-white/60 font-bold pb-[25px] border-b border-white/10">
                             <div className="flex-[2] truncate">{record.fromNickName}</div>
-                            <div className="flex-[3] text-center truncate">{record.projectName}</div>
+                            <EllipsisWithTooltip
+                              text={record.projectName}
+                              className="flex-[3] text-center leading-[16px] text-[16px] text-white/60"
+                            />
                             <div className="flex-[3] flex items-center justify-center gap-[8px]">
                               <Image src={tokenIcon} alt="" width={16} height={16} />
                               <TooltipAmount shares={record.totalAmount} decimals={0} precision={2} />

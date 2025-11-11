@@ -10,7 +10,7 @@ import {useDispatch, useSelector} from 'react-redux';
 import {useCurrentAccount, useDisconnectWallet} from "@onelabs/dapp-kit";
 import {useUsdhBalance} from "@/hooks/useUsdhBalance";
 import {useRouter} from "next/navigation";
-import {clearLoginData, setSigninOpen} from "@/store";
+import {store, clearLoginData, setSigninOpen, setMemberId, setUserInfo, setUsdhBalance} from "@/store";
 import {RootState} from "@/lib/interface";
 import PredictionIntegralModal from "@/components/PredictionIntegralModal";
 import SearchModal from "@/components/SearchModal";
@@ -35,6 +35,9 @@ import ArrowIcon from "@/assets/icons/menu/arrow.svg";
 import CheckedIcon from "@/assets/icons/menu/checked.svg";
 import {tokenIcon} from "@/assets/config";
 import { abbreviateNumber } from "@/lib/numbers";
+import FooterIconT from "@/assets/icons/footer-6.svg";
+import FooterIconX from "@/assets/icons/footer-2.svg";
+import {toast} from "sonner";
 
 interface MobileNavigationProps {
   onCategoryChange?: (category: string) => void;
@@ -117,24 +120,22 @@ export default function MobileNavigation({
                   <Menu className="w-5 h-5 text-white" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-[280px] p-0 bg-[#051A3D]">
-                <div className="px-[16px] py-[22px]">
-                  <Signin />
-
-                  <div
-                    className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
-                    onClick={() => {
-                      if (zkLoginData || currentAccount) {
-                        // router.push("/setting")
-                      } else {
-                        setIsOpen(false);
-                        dispatch(setSigninOpen(true))
-                      }
-                    }}
-                  >
-                    <NotificationIcon className="text-[16px] text-white" />
-                    <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.notification')}</div>
-                  </div>
+              <SheetContent side="left" className="w-[280px] flex flex-col p-0 bg-[#051A3D]">
+                <div className="flex-1 px-[16px] py-[22px]">
+                  {/*<div*/}
+                  {/*  className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"*/}
+                  {/*  onClick={() => {*/}
+                  {/*    if (zkLoginData || currentAccount) {*/}
+                  {/*      // router.push("/setting")*/}
+                  {/*    } else {*/}
+                  {/*      setIsOpen(false);*/}
+                  {/*      dispatch(setSigninOpen(true))*/}
+                  {/*    }*/}
+                  {/*  }}*/}
+                  {/*>*/}
+                  {/*  <NotificationIcon className="text-[16px] text-white" />*/}
+                  {/*  <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.notification')}</div>*/}
+                  {/*</div>*/}
 
                   <div
                     className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
@@ -166,15 +167,7 @@ export default function MobileNavigation({
                       <div
                         className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
                         onClick={() => {
-                          const address = (zkLoginData as any)?.zkloginUserAddress || currentAccount?.address;
-                          if (address) {
-                            const mid = typeof window !== 'undefined' ? localStorage.getItem('predict-memberid-'+address) : null;
-                            if (mid) {
-                              router.push(`/profile/${mid}`);
-                              return;
-                            }
-                          }
-                          router.push("/profile");
+                          router.push(`/profile?memberId=${store.getState().memberId}`);
                         }}
                       >
                         <ProfileIcon className="text-[16px] text-white" />
@@ -283,12 +276,25 @@ export default function MobileNavigation({
                     <div
                       className="h-[48px] flex items-center rounded-[12px] hover:bg-white/20 pl-[24px] pr-[16px]"
                       onClick={() => {
-                        if(zkLoginData){
+                        try {
                           dispatch(clearLoginData())
                           disconnect()
-                          window.location.reload()
-                        }else{
-                          disconnect()
+                          toast.success(t('header.logoutSuccess'))
+                          store.dispatch(setMemberId(0));
+                          const address = currentAccount?.address || zkLoginData?.zkloginUserAddress
+                          localStorage.removeItem('predict-token-'+ address);
+                          store.dispatch(setUserInfo({
+                            nickName: '',
+                            avatar: '',
+                            loginAddress: ''
+                          }));
+                          store.dispatch(setUsdhBalance({
+                            balance: '0.00',
+                            rawBalance: '0',
+                          }));
+                          router.push('/');
+                        } catch (error) {
+                          toast.error(t('header.logoutError'))
                         }
                       }}
                     >
@@ -296,6 +302,51 @@ export default function MobileNavigation({
                       <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white px-[24px]">{t('header.logout')}</div>
                     </div>
                   )}
+                </div>
+                <div className="p-[16px] space-y-[24px]">
+                  <div className="flex items-center space-x-[8px]">
+                    <a
+                      href="https://t.me/onePredict"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-[24px] h-[24px] border border-white/10 rounded-full flex items-center justify-center text-[12px] text-white transition-colors"
+                    >
+                      <FooterIconT />
+                    </a>
+                    <a
+                      href="https://x.com/OPredict54879"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-[24px] h-[24px] border border-white/10 rounded-full flex items-center justify-center text-[12px] text-white transition-colors"
+                    >
+                      <FooterIconX />
+                    </a>
+                  </div>
+                  <div className="flex gap-[12px]">
+                    {/* Privacy */}
+                    <Link href="/doc/privacy" className="block h-[16px] leading-[16px] text-[12px] text-white font-bold transition-colors">
+                      {t('footer.privacy')}
+                    </Link>
+
+                    {/* Terms of use */}
+                    <Link href="/doc/items" className="block h-[16px] leading-[16px] text-[12px] text-white font-bold transition-colors">
+                      {t('footer.termsOfUse')}
+                    </Link>
+
+                    {/* Learn */}
+                    <Link href="/doc/about" className="block h-[16px] leading-[16px] text-[12px] text-white font-bold transition-colors">
+                      {t('footer.learn')}
+                    </Link>
+
+                    {/* FAQ */}
+                    <Link href="/doc/faq" className="block h-[16px] leading-[16px] text-[12px] text-white font-bold transition-colors">
+                      {t('footer.FAQ')}
+                    </Link>
+                  </div>
+                  {/* Copyright */}
+                  <div className="leading-[16px] text-white text-[12px]">
+                    {t('footer.copyright')}
+                  </div>
                 </div>
               </SheetContent>
             </Sheet>
@@ -312,11 +363,15 @@ export default function MobileNavigation({
           </div>
 
           {/* Right: Balance and Notifications */}
-          <div className="flex items-center cursor-pointer" onClick={handleButtonClick}>
-            <Image src={tokenIcon} alt="" width={20} height={20} />
-            <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[24px] font-bold text-white/60 hover:text-white">
+          <div className="flex items-center">
+            <div className="flex items-center cursor-pointer" onClick={handleButtonClick}>
+              <Image src={tokenIcon} alt="" width={16} height={16} />
+              <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[14px] font-bold text-white/60 hover:text-white">
               {abbreviateNumber(usdhBalance, {style: language === 'zh' ? 'cn' : 'western', decimals: 2})}
             </span>
+            </div>
+
+            <Signin />
           </div>
         </div>
       </div>

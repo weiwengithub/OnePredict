@@ -19,7 +19,13 @@ import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
 import {addPoint, onCopyToText, timeAgoEn} from "@/lib/utils";
 import { TabSkeleton } from "@/components/SkeletonScreens";
-import {MarketPositionOption, MarketTradeOption, TransactionInfo, TransactionOption} from "@/lib/api/interface";
+import {
+  BalanceChangeItem,
+  MarketPositionOption,
+  MarketTradeOption,
+  TransactionInfo,
+  TransactionOption
+} from "@/lib/api/interface";
 import SaleModal from "@/components/SaleModal";
 import { TooltipAmount } from "@/components/TooltipAmount";
 import {useRouter} from "next/navigation";
@@ -33,6 +39,9 @@ import WithdrawModal from "@/components/WithdrawModal";
 import {useIsMobile} from "@/contexts/viewport";
 import {formatNumberWithSeparator} from '@/lib/numbers';
 import {tokenIcon} from "@/assets/config";
+import {useGlobalLoading} from "@/hooks/useGlobalLoading";
+import {toast} from "sonner";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 interface PredictionIntegralModalProps {
   isOpen: boolean;
@@ -46,11 +55,14 @@ export default function PredictionIntegralModal({
   const isMobile = useIsMobile();
   const { language, t } = useLanguage();
   const router = useRouter();
+  const { show, hide } = useGlobalLoading();
+  const tokenAddress = process.env.NEXT_PUBLIC_USDH_TYPE || ''
+
   const [amount, setAmount] = useState<number>(0);
   const [currentTab, setCurrentTab] = useState<'positions' | 'trades' | 'transaction'>('positions');
   const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [tradeList, setTradeList] = useState<MarketTradeOption[]>([]);
-  const [transactionList, setTransactionList] = useState<TransactionInfo[]>([]);
+  const [transactionList, setTransactionList] = useState<BalanceChangeItem[]>([]);
 
   const [showDeposit, setShowDeposit] = useState(false);
   const [showWithdraw, setShowWithdraw] = useState(false);
@@ -101,6 +113,10 @@ export default function PredictionIntegralModal({
 
       if (res && res.data) {
         const rows = res.data.rows.filter(item => {
+          // 不显示持仓数量为0的数据
+          if(item.shares === 0) {
+            return false;
+          }
           // 不显示已领取收益的数据
           if (item.status === 'Redeemed') {
             return false;
@@ -113,11 +129,11 @@ export default function PredictionIntegralModal({
         });
         rows.sort((a, b) => {
           const createTimeA = new Date(a.createTime).getTime();
-          const createTimeB = new Date(a.createTime).getTime();
+          const createTimeB = new Date(b.createTime).getTime();
           if (a.status !== b.status) {
             return a.status === 'Completed' ? -1 : 1;
           }
-          return createTimeA > createTimeB ? 1 : -1;
+          return createTimeA < createTimeB ? 1 : -1;
         })
         setPositionList(rows);
       } else {
@@ -148,8 +164,8 @@ export default function PredictionIntegralModal({
         const rows = res.data.rows;
         rows.sort((a, b) => {
           const createTimeA = new Date(a.tradeTime).getTime();
-          const createTimeB = new Date(a.tradeTime).getTime();
-          return createTimeA > createTimeB ? 1 : -1;
+          const createTimeB = new Date(b.tradeTime).getTime();
+          return createTimeA < createTimeB ? 1 : -1;
         })
         setTradeList(rows);
       } else {
@@ -176,13 +192,14 @@ export default function PredictionIntegralModal({
     try {
       setLoading(true);
       setError(null);
-      const {data} = await apiService.getTransactionHistory({projectId: '', address: owner});
+      // const res = await apiService.getTransactionHistory({projectId: '', address: owner});
+      const {data} = await apiService.getBalanceChangeList({pageSize: 10, address: owner});
 
-      const rows = data.rows;
+      const rows = data.list.filter(item => item.coinType === tokenAddress);
       rows.sort((a, b) => {
         const createTimeA = new Date(a.tradeTime).getTime();
-        const createTimeB = new Date(a.tradeTime).getTime();
-        return createTimeA > createTimeB ? 1 : -1;
+        const createTimeB = new Date(b.tradeTime).getTime();
+        return createTimeA < createTimeB ? 1 : -1;
       })
       setTransactionList(rows);
     } catch (err) {
@@ -215,6 +232,7 @@ export default function PredictionIntegralModal({
 
   const contractRedeem = async (position: MarketPositionOption) => {
     try {
+      show(t('rewards.claiming') || 'Claiming...');
       const marketClient = new MarketClient(suiClient, {
         packageId: position.packageId,
         coinType: position.coinType,
@@ -223,14 +241,16 @@ export default function PredictionIntegralModal({
       const tx = await marketClient.buildRedeemTx({
         marketId: position.marketId,
       });
-      await executeTransaction(tx, true);
+      await executeTransaction(tx, false);
+      toast.success(t('rewards.claimSuccess'));
       setTimeout(() => {
         getMarketPosition();
       }, 2000);
     } catch (e: any) {
       console.error('redeem error:', e);
+      toast.success(t('rewards.claimError'));
     } finally {
-      // setLoading(false);
+      hide()
     }
   };
 
@@ -284,7 +304,7 @@ export default function PredictionIntegralModal({
               <div className="size-[16px] bg-white rounded-full flex items-center justify-center">
                 <DownIcon className="text-[8px] text-black" />
               </div>
-              <div className="ml-[10px] leading-[24px] text-white text-[16px]">{t('predictions.integralModal.deposit')}</div>
+              <div className="ml-[10px] leading-[24px] text-white text-[16px]">{t('predictions.deposit')}</div>
             </div>
             <div
               className="flex-1 h-[56px] flex items-center justify-center bg-[#FAFAFA] rounded-[16px] cursor-pointer"
@@ -293,7 +313,7 @@ export default function PredictionIntegralModal({
               <div className="size-[16px] bg-black rounded-full flex items-center justify-center">
                 <UpIcon className="text-[8px] text-white" />
               </div>
-              <div className="ml-[10px] leading-[24px] text-black text-[16px]">{t('predictions.integralModal.withdraw')}</div>
+              <div className="ml-[10px] leading-[24px] text-black text-[16px]">{t('predictions.withdraw')}</div>
             </div>
           </div>
         </div>
@@ -347,15 +367,19 @@ export default function PredictionIntegralModal({
                           <AvatarImage src={position.imageUrl} alt="avatar" />
                         </Avatar>
                         <div className="ml-[12px] flex-1 overflow-hidden">
-                          <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
-                            {position.marketName}
-                          </div>
-                          <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
+                          <EllipsisWithTooltip
+                            text={position.marketName}
+                            className="h-[16px] w-full leading-[16px] text-[16px] text-white"
+                          />
+                          <div className="flex gap-2 mt-[4px] h-[20px] leading-[20px] rounded-[4px] text-[#28C04E] text-[16px]">
                             <TooltipAmount
                               shares={position.shares}
                               decimals={0}
                               precision={2}
-                              suffix={position.currentOutcome.name}
+                            />
+                            <EllipsisWithTooltip
+                              text={position.currentOutcome.name}
+                              className="flex-1 h-[20px] leading-[20px] text-[#28C04E] text-[16px]"
                             />
                           </div>
                         </div>
@@ -478,17 +502,20 @@ export default function PredictionIntegralModal({
                         <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
                           <AvatarImage src={trade.marketImage} alt="avatar" />
                         </Avatar>
-                        {/*<Image src={trade.marketImage} alt="" width={40} height={40} />*/}
                         <div className="ml-[12px] flex-1 overflow-hidden">
-                          <div className="h-[16px] w-full truncate leading-[16px] text-[16px] text-white">
-                            {trade.marketName}
-                          </div>
-                          <div className="inline-block mt-[4px] h-[20px] leading-[20px] rounded-[4px] bg-[rgba(40,192,78,0.5)] px-[4px] text-[#28C04E] text-[16px]">
+                          <EllipsisWithTooltip
+                            text={trade.marketName}
+                            className="h-[16px] w-full leading-[16px] text-[16px] text-white"
+                          />
+                          <div className="flex gap-2 mt-[4px] h-[20px] leading-[20px] rounded-[4px] text-[#28C04E] text-[16px]">
                             <TooltipAmount
                               shares={trade.amount}
                               decimals={0}
                               precision={2}
-                              suffix={trade.outcome.name}
+                            />
+                            <EllipsisWithTooltip
+                              text={trade.outcome.name}
+                              className="flex-1 h-[20px] leading-[20px] text-[#28C04E] text-[16px]"
                             />
                           </div>
                         </div>
@@ -552,39 +579,78 @@ export default function PredictionIntegralModal({
               {transactionList.length > 0 ? (
                 <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
                   {transactionList.map((transaction, index) => (
-                    <div
-                      key={transaction.id || index}
-                      className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
-                      onClick={() => {
-                        router.push(`/details?marketId=${transaction.marketId}`);
-                      }}
-                    >
-                      <Image src={transaction.icon} alt="" width={32} height={32} className="size-[32px] flex-none rounded-[8px]" />
-                      <div className="ml-[12px] flex-1">
-                        {transaction.tradeType === 'Sold' && (
+                    transaction.tradeType === 'Deposit' ? (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      >
+                        <Image src={tokenIcon} alt="" width={32} height={32} />
+                        <div className="ml-[12px] flex-1">
                           <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
-                            <span className="text-white">{t('predictions.sell')}</span>
-                            <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.total} decimals={0} precision={2}/></span>
+                            <span className="text-white">{t('predictions.deposit')}</span>
+                            <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
                           </div>
-                        )}
-                        {transaction.tradeType === 'Bought' && (
-                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
-                            <span className="text-white">{t('predictions.buy')}</span>
-                            <span className="text-white font-bold">-<TooltipAmount shares={transaction.total} decimals={0} precision={2}/></span>
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <span className="flex-1 text-white/40 truncate">{addPoint(transaction.sendAddress)}</span>
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
                           </div>
-                        )}
-                        {transaction.tradeType === 'Redeemed' && (
-                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
-                            <span className="text-white">{t('predictions.redeemed')}</span>
-                            <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.total} decimals={0} precision={2}/></span>
-                          </div>
-                        )}
-                        <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
-                          <span className="flex-1 text-white/40 truncate">{transaction.projectName}</span>
-                          <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
                         </div>
                       </div>
-                    </div>
+                    ) : transaction.tradeType === 'Withdraw' ? (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      >
+                        <Image src={tokenIcon} alt="" width={32} height={32} />
+                        <div className="ml-[12px] flex-1">
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.withdraw')}</span>
+                            <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                          </div>
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <span className="flex-1 text-white/40 truncate">{addPoint(transaction.receiveAddress)}</span>
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                        onClick={() => {
+                          router.push(`/details?marketId=${transaction.marketId}`);
+                        }}
+                      >
+                        <Image src={transaction.icon} alt="" width={32} height={32} className="size-[32px] flex-none rounded-[8px]" />
+                        <div className="ml-[12px] flex-1">
+                          {transaction.tradeType === 'Sold' && (
+                            <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                              <span className="text-white">{t('predictions.sell')}</span>
+                              <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                            </div>
+                          )}
+                          {transaction.tradeType === 'Bought' && (
+                            <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                              <span className="text-white">{t('predictions.buy')}</span>
+                              <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                            </div>
+                          )}
+                          {transaction.tradeType === 'Redeemed' && (
+                            <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                              <span className="text-white">{t('predictions.redeemed')}</span>
+                              <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                            </div>
+                          )}
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <EllipsisWithTooltip
+                              text={transaction.projectName}
+                              className="flex-1 text-white/40"
+                            />
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
                   ))}
                   <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
                 </div>

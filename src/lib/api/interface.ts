@@ -232,6 +232,25 @@ export interface ResTransaction {
   rows: TransactionInfo[];
 }
 
+export interface BalanceChangeItem {
+  amount: number;
+  coinType: string;
+  digest: string;
+  icon: string;
+  marketId: string;
+  projectName: string;
+  receiveAddress: string;
+  sendAddress: string;
+  tradeTime: number;
+  tradeType: string;
+}
+
+export interface ResBalanceChange {
+  hasNextPage: boolean;
+  list: BalanceChangeItem[];
+  nextcursor: string;
+}
+
 export interface ResTransactionHistory {
   items: TransactionOption[];
   count: number;

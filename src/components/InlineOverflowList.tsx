@@ -20,14 +20,14 @@ interface Props {
 }
 
 export default function InlineOverflowList({
-                                             items,
-                                             className,
-                                             itemGapPx = 8,
-                                             itemClassName,
-                                             moreLabel = '更多',
-                                             renderMoreButton,
-                                             openOnHover = true,
-                                           }: Props) {
+  items,
+  className,
+  itemGapPx = 8,
+  itemClassName,
+  moreLabel = '更多',
+  renderMoreButton,
+  openOnHover = true,
+}: Props) {
   const rowRef = React.useRef<HTMLDivElement | null>(null);           // 可见行
   const measureRowRef = React.useRef<HTMLDivElement | null>(null);     // 隐形测量行
   const ghostMoreBtnRef = React.useRef<HTMLButtonElement | null>(null);// 幽灵“更多”按钮（测宽）

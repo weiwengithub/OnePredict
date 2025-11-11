@@ -11,6 +11,7 @@ import {useSelector} from "react-redux";
 import {RootState} from "@/lib/interface";
 import {MarketOption} from "@/lib/api/interface";
 import CloseIcon from "@/assets/icons/close.svg";
+import {toast} from "sonner";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -45,10 +46,15 @@ export default function SaySomethingModal({ open, prediction, onOpenChange, onSu
     return currentAccount?.address || zkLoginData?.zkloginUserAddress;
   }, [currentAccount, zkLoginData]);
   const handleSave = useCallback(async () => {
-    const {data} = await apiService.createProjectComment({projectId: prediction.id, content, address: userAddress || ''});
-    setContent('');
-    onOpenChange(false);
-    setTimeout(() => onSuccess(), 1000);
+    try {
+      const {data} = await apiService.createProjectComment({projectId: prediction.id, content, address: userAddress || ''});
+      toast.success(t('detail.postSuccess'));
+      setContent('');
+      onOpenChange(false);
+      setTimeout(() => onSuccess(), 1000);
+    } catch (error) {
+      toast.error(t('detail.postError'));
+    }
   }, [prediction, content, userAddress, onOpenChange, onSuccess]);
 
   return (
@@ -67,7 +73,7 @@ export default function SaySomethingModal({ open, prediction, onOpenChange, onSu
             value={content}
             onChange={(e) => setContent(e.target.value)}
             placeholder={t('common.writeSomething')}
-            className="w-full p-3 bg-transparent border-white/20 text-white text-[16px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+            className="w-full p-3 bg-transparent border-white/20 text-white text-[16px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus:outline-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
           />
           <div className="flex justify-end">
             <Button

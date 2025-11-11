@@ -16,6 +16,7 @@ import { useCurrentAccount } from "@onelabs/dapp-kit";
 import {useDispatch, useSelector} from "react-redux";
 import {RootState} from "@/lib/interface";
 import {setSigninOpen} from "@/store";
+import {toast} from "sonner";
 
 interface ReplyCommentModalProps {
   isOpen: boolean;
@@ -94,11 +95,17 @@ export default function ReplyCommentModal({
   // 留言回复
   const handleSave = async (commentId: number) => {
     if (zkLoginData || currentAccount) {
-      const {data} = await apiService.replyProjectComment({projectId: comment.projectId, commentId, content: commentMessages, address: userAddress || ''});
-      setCommentMessages('');
-      setTextareaFocus(false);
-      getReplyComment();
-      onRefreshComment()
+      try {
+        const {data} = await apiService.replyProjectComment({projectId: comment.projectId, commentId, content: commentMessages, address: userAddress || ''});
+        toast.success(t('detail.replySuccess'));
+        setCommentMessages('');
+        setTextareaFocus(false);
+        getReplyComment();
+        onRefreshComment()
+      } catch (err) {
+        console.error('Error saving comment', err);
+        toast.error(t('detail.replyError'));
+      }
     } else {
       dispatch(setSigninOpen(true))
     }

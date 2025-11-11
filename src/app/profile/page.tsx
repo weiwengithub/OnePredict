@@ -14,6 +14,7 @@ import Image from "next/image";
 import apiService from "@/lib/api/services";
 import {useLanguage} from "@/contexts/LanguageContext";
 import CopyIcon from "@/assets/icons/copy_1.svg";
+import * as Popover from '@radix-ui/react-popover';
 import SharePopover from "@/components/SharePopover";
 import {useIsMobile} from "@/contexts/viewport";
 import {useRouter, useSearchParams} from "next/navigation";
@@ -28,6 +29,8 @@ import {setSigninOpen, store} from "@/store";
 import {onCopyToText} from "@/lib/utils";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {tokenIcon} from "@/assets/config";
+import {toast} from "sonner";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 interface PositionItemApi {
   marketId: string;
@@ -69,6 +72,7 @@ export default function ProfileClient() {
   const userMemberId = store.getState().memberId
 
   const [userData, setUserData] = useState<MemberCenter | null>(null);
+  const [following, setFollowing] = useState<boolean>(false);
   const [marketList, setMarketList] = useState<marketListItem[]>([]);
   const currentAccount = useCurrentAccount();
   const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
@@ -85,9 +89,25 @@ export default function ProfileClient() {
         const { data: centerData } = await apiService.getMemberCenter({memberId, address: userAddress || ''});
         console.log('centerData', centerData);
         setUserData(centerData);
+        setFollowing(centerData.followBySessionMemberId)
 
         const {data} = await apiService.getMarketPosition({memberId, address: userAddress || ''});
-        setMarketList(groupByMarketId(data.rows))
+        const list = data.rows.filter(item => {
+          // 不显示持仓数量为0的数据
+          if(item.shares === 0) {
+            return false;
+          }
+          // 不显示已领取收益的数据
+          if (item.status === 'Redeemed') {
+            return false;
+          }
+          // 不显示已完成且竞猜失败的数据
+          if (item.status === 'Completed' && item.winnerId !== item.currentOutcome.outcomeId) {
+            return false;
+          }
+          return true
+        })
+        setMarketList(groupByMarketId(list))
       } catch (e: any) {
         if (e.name !== 'CanceledError') {
           console.log(e);
@@ -100,13 +120,25 @@ export default function ProfileClient() {
     };
   }, [memberId, userAddress]);
 
+  const updateMarketList = (index: number, current: number) => {
+    const newMarketList: marketListItem[] = JSON.parse(JSON.stringify(marketList));
+    newMarketList[index].current = current;
+    setMarketList(newMarketList)
+  }
+
   const handleFollowClick = async () => {
     if ((zkLoginData || currentAccount) && memberId) {
-      const res = await apiService.addMemberFollow({
-        followType: 'People',
-        followId: Number(memberId),
-        address: userAddress || ''
-      });
+      try {
+        const res = await apiService.addMemberFollow({
+          followType: 'People',
+          followId: Number(memberId),
+          address: userAddress || ''
+        });
+        toast.success(t('profile.followedSuccess'));
+        setFollowing(true)
+      } catch (e: any) {
+        toast.error(t('profile.followError'));
+      }
     } else {
       dispatch(setSigninOpen(true))
     }
@@ -114,11 +146,17 @@ export default function ProfileClient() {
 
   const handleFollowingClick = async () => {
     if ((zkLoginData || currentAccount) && memberId) {
-      const res = await apiService.delMemberFollow({
-        followType: 'People',
-        followId: Number(memberId),
-        address: userAddress || ''
-      });
+      try {
+        const res = await apiService.delMemberFollow({
+          followType: 'People',
+          followId: Number(memberId),
+          address: userAddress || ''
+        });
+        toast.success(t('profile.unfollowSuccess'));
+        setFollowing(false)
+      } catch (error) {
+        toast.error(t('profile.unfollowError'));
+      }
     } else {
       dispatch(setSigninOpen(true))
     }
@@ -179,7 +217,7 @@ export default function ProfileClient() {
                   >{t('profile.editProfile')}</div>
                 ) : (
                   <>
-                    {userData?.followBySessionMemberId ? (
+                    {following ? (
                       <div
                         className="h-[32px] leading-[32px] rounded-[24px] border border-white/40 text-[12px] px-[12px] text-white cursor-pointer"
                         onClick={handleFollowingClick}
@@ -219,7 +257,7 @@ export default function ProfileClient() {
               <Image src="/images/icon/icon-profile-1.png?v=1" alt="" width={36} height={36} />
               <div className="flex-1 leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.position')}</div>
               <div className="leading-[24px] text-[24px] text-white font-bold">
-                4
+                {marketList.length}
               </div>
             </div>
 
@@ -228,18 +266,14 @@ export default function ProfileClient() {
               <div className="flex-1 leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.volume')}</div>
               <div className="flex gap-[8px] leading-[24px] text-[24px] text-white font-bold">
                 <Image src={tokenIcon} alt="" width={24} height={24} />
-                <span>{
-                  userData?.tradeValueNoFee.toFixed(2)
-                }</span>
+                <span>{userData?.tradeValueNoFee || 0}</span>
               </div>
             </div>
 
             <div className="flex items-center gap-[16px] h-[72px] px-[16px] bg-[#04122B] rounded-[16px]">
               <Image src="/images/icon/icon-profile-3.png?v=1" alt="" width={36} height={36} />
               <div className="flex-1 leading-[24px] text-[16px] text-white/60 font-bold">{t('profile.rank')}</div>
-              <div className="leading-[24px] text-[24px] text-white font-bold">{
-                userData?.pnlRank.toFixed(2)
-              }</div>
+              <div className="leading-[24px] text-[24px] text-white font-bold">{userData?.pnlRank}</div>
             </div>
           </div>
         ) : (
@@ -271,27 +305,76 @@ export default function ProfileClient() {
           </div>
         )}
 
-        <div className="mt-[32px] bg-[#04122B] rounded-[16px] p-[24px] overflow-hidden">
+        <div className={`mt-[32px] bg-[#04122B] rounded-[16px] overflow-hidden ${isMobile ? 'px-[14px] py-[16px]' : 'p-[24px]'}`}>
           <div className="mb-[24px] leading-[24px] text-[18px] text-white font-bold">{t('profile.allMarkets')}</div>
-          <div className="space-y-[12px]">
+          <div className="space-y-[16px]">
             {marketList.length > 0 ? (
               <>
-                {marketList.map((item, index) => (
+                {marketList.map((item, marketIndex) => (
                   isMobile ? (
                     <div
                       key={item.marketId}
                       className="flex items-center cursor-pointer"
-                      onClick={() => {
-                        router.push(`/details?marketId=${item.marketId}`);
-                      }}
                     >
-                      <img src={item.imageUrl} alt=""/>
-                      <div className="flex-1 ml-[8px]">
-                        <div className="leading-[16px] text-[16px] text-white truncate">{item.marketName}</div>
+                      <img src={item.imageUrl} alt="" className="size-[40px] flex-none rounded-[8px]" />
+                      <div className="flex-1 ml-[8px] overflow-hidden">
+                        <div onClick={() => {router.push(`/details?marketId=${item.marketId}`);}}>
+                          <EllipsisWithTooltip
+                            text={item.marketName}
+                            className="h-[16px] w-full leading-[16px] text-[16px] text-white"
+
+                          />
+                        </div>
                         <div className="mt-[4px] flex gap-[8px]">
-                          <div className="h-[20px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center px-[4px]">
-                            {/*<span className="text-[#28C04E] text-[14px]">{item.marketPrice} Up</span>*/}
-                          </div>
+                          {item.list.length > 1 ? (
+                            <Popover.Root>
+                              {/* 触发按钮：点击后打开/关闭 */}
+                              <Popover.Trigger asChild>
+                                <div className="w-auto h-[24px] flex items-center gap-1 bg-[rgba(40,192,78,0.5)] rounded-[4px] text-[#28C04E] text-[16px]  px-[8px] py-0">
+                                  <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
+                                  <EllipsisWithTooltip
+                                    text={item.list[item.current].currentOutcome.name}
+                                    className="h-[20px] max-w-[120px] leading-[20px] text-[14px] text-[#28C04E]"
+                                  />
+                                  <ArrowDownIcon className="text-[12px]" />
+                                </div>
+                              </Popover.Trigger>
+
+                              {/* 气泡内容 */}
+                              <Popover.Portal>
+                                <Popover.Content
+                                  side="top"
+                                  align="start"
+                                  sideOffset={6}
+                                  className="z-50 bg-[#010A2C] border-none rounded-[12px] p-[16px] space-y-[16px] outline-none leading-relaxed"
+                                >
+                                  {item.list.map((market, index) => (
+                                    <Popover.Close asChild key={market.id}>
+                                      <div
+                                        className="h-[32px] flex items-center justify-between gap-[12px] px-[12px] rounded-[12px] hover:bg-[#051A3D] focus:bg-[#051A3D] cursor-pointer"
+                                        onClick={() => updateMarketList(marketIndex, index)}
+                                      >
+                                        <EllipsisWithTooltip
+                                          text={market.currentOutcome.name}
+                                          className="h-[20px] max-w-[120px] leading-[20px] text-[14px] text-white"
+                                        />
+                                        <span className="h-[20px] leading-[20px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] text-[14px] rounded-[4px] px-[4px]">{Number(market.shares).toFixed(2)}</span>
+                                      </div>
+                                    </Popover.Close>
+                                  ))}
+                                </Popover.Content>
+                              </Popover.Portal>
+                            </Popover.Root>
+                          ) : (
+                            <div className="h-[20px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center gap-1 px-[8px] text-[#28C04E] text-[14px]">
+                              <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
+                              <EllipsisWithTooltip
+                                text={item.list[item.current].currentOutcome.name}
+                                className="h-[20px] max-w-[120px] leading-[20px] text-[14px] [#28C04E]"
+                              />
+                              {item.list.length > 1 && <ArrowDownIcon className="text-[12px]" />}
+                            </div>
+                          )}
                           <div className="mt-[5px] h-[12px] flex items-end">
                             <UserIcon className="text-white text-[12px]"/>
                             <span className="inline-block ml-[7px] h-[12px] leading-[12px] text-[12px] text-white/60">{item.traderCount}</span>
@@ -303,40 +386,66 @@ export default function ProfileClient() {
                     <div
                       key={item.marketId}
                       className="flex items-center px-[12px] pt-[14px] pb-[13px] rounded-[16px] hover:bg-white/20 cursor-pointer"
-                      onClick={() => {
-                        router.push(`/details?marketId=${item.marketId}`);
-                      }}
                     >
-                      <img src={item.imageUrl} alt="" className="size-[40px]" />
-                      <div className="flex-1 ml-[12px]">
-                        <div className="leading-[24px] text-[16px] text-white truncate">{item.marketName}</div>
+                      <img src={item.imageUrl} alt="" className="size-[40px] flex-none rounded-[8px]" />
+                      <div
+                        className="flex-1 ml-[12px]"
+                        onClick={() => {
+                          router.push(`/details?marketId=${item.marketId}`);
+                        }}
+                      >
+                        <EllipsisWithTooltip
+                          text={item.marketName}
+                          className="h-[24px] w-full leading-[24px] text-[16px] text-white"
+                        />
                         <div className="h-[16px] flex items-end"><UserIcon className="text-white text-[14px]"/><span className="inline-block ml-[7px] h-[16px] leading-[22px] text-[12px] text-white/60">{item.traderCount}</span></div>
                       </div>
                       {item.list.length > 1 ? (
-                        <Select value={item.current.toString()} onValueChange={(v) => console.log(v)}>
-                          <SelectTrigger className="w-auto h-[24px] bg-[rgba(40,192,78,0.5)] rounded-[4px] border-none text-[#28C04E] text-[16px]  px-[8px] py-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none">
-                            <SelectValue placeholder={t('categories.pickOne')}>
-                              <div className="h-[24px] flex items-center gap-1">
-                                <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
-                                <span>{item.list[item.current].currentOutcome.name}</span>
-                              </div>
-                            </SelectValue>
-                          </SelectTrigger>
-                          <SelectContent className="mt-[4px] w-full bg-[#010A2C] border-none rounded-[12px] p-[16px] space-y-[16px]">
-                            {item.list.map((item, index) => (
-                              <SelectItem key={item.id} value={index.toString()} className="h-[32px] rounded-[12px] hover:bg-[#051A3D] focus:bg-[#051A3D]">
-                                <div className="flex items-center justify-between px-[12px]">
-                                  <span className="text-[16px] text-white">{item.currentOutcome.name}</span>
-                                  <span className="h-[24px] leading-[24px] bg-[rgba(40,192,78,0.5)]] text-[#28C04E] text-[16px] rounded-[4px] px-[4px]">{Number(item.shares).toFixed(2)}</span>
-                                </div>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                        <Popover.Root>
+                          {/* 触发按钮：点击后打开/关闭 */}
+                          <Popover.Trigger asChild>
+                            <div className="w-auto h-[24px] flex items-center gap-1 bg-[rgba(40,192,78,0.5)] rounded-[4px] text-[#28C04E] text-[16px]  px-[8px] py-0">
+                              <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
+                              <EllipsisWithTooltip
+                                text={item.list[item.current].currentOutcome.name}
+                                className="h-[24px] max-w-[120px] leading-[24px] text-[16px] text-[#28C04E]"
+                              />
+                              <ArrowDownIcon className="text-[12px]" />
+                            </div>
+                          </Popover.Trigger>
+
+                          {/* 气泡内容 */}
+                          <Popover.Portal>
+                            <Popover.Content
+                              side="top"
+                              align="end"
+                              sideOffset={6}
+                              className="z-50 bg-[#010A2C] border-none rounded-[12px] p-[16px] space-y-[16px] outline-none leading-relaxed"
+                            >
+                              {item.list.map((market, index) => (
+                                <Popover.Close asChild key={market.id}>
+                                  <div
+                                    className="h-[32px] flex items-center justify-between gap-[12px] px-[12px] rounded-[12px] hover:bg-[#051A3D] focus:bg-[#051A3D] cursor-pointer"
+                                    onClick={() => updateMarketList(marketIndex, index)}
+                                  >
+                                    <EllipsisWithTooltip
+                                      text={market.currentOutcome.name}
+                                      className="h-[24px] max-w-[120px] leading-[24px] text-[16px] text-white"
+                                    />
+                                    <span className="h-[24px] leading-[24px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] text-[16px] rounded-[4px] px-[4px]">{Number(market.shares).toFixed(2)}</span>
+                                  </div>
+                                </Popover.Close>
+                              ))}
+                            </Popover.Content>
+                          </Popover.Portal>
+                        </Popover.Root>
                       ) : (
                         <div className="h-[24px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center gap-1 px-[8px] text-[#28C04E] text-[16px]">
                           <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
-                          <span>{item.list[item.current].currentOutcome.name}</span>
+                          <EllipsisWithTooltip
+                            text={item.list[item.current].currentOutcome.name}
+                            className="h-[24px] max-w-[120px] leading-[24px] text-[16px] [#28C04E]"
+                          />
                           {item.list.length > 1 && <ArrowDownIcon className="text-[12px]" />}
                         </div>
                       )}

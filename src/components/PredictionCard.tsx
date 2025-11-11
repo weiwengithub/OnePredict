@@ -63,12 +63,12 @@ export default function PredictionCard({
         className="bg-[#010A2C] border border-[#26282E] hover:shadow-lg rounded-[16px] transition-all duration-300 hover:border-[#467DFF]">
         <CardContent className="p-[24px]">
           {/* Header with avatar and question */}
-          <div className="flex items-start space-x-[12px] mb-[20px]">
+          <div className="flex items-start space-x-[12px] pb-[20px] overflow-hidden">
             <Avatar className="w-[48px] h-[48px] rounded-[8px] transition-all">
               <AvatarImage src={prediction.imageUrl} alt="avatar" />
             </Avatar>
             <div
-              className="flex-1 min-w-0 h-[96px] leading-[24px] text-white text-[16px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-line-clamp:4] [-webkit-box-orient:vertical] cursor-pointer"
+              className={`flex-1 min-w-0 leading-[24px] text-white text-[16px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-box-orient:vertical] cursor-pointer ${prediction.outcome.length > 2 ? 'h-[48px] [-webkit-line-clamp:2]' : 'h-[96px] [-webkit-line-clamp:4]'}`}
               onClick={handleCardClick}
             >
               {prediction.marketName}
@@ -91,11 +91,11 @@ export default function PredictionCard({
               {new Date(prediction.endTime).getTime() < Date.now() ? (
                 <>
                   {prediction.winnerId ? (
-                    <div className="mb-[24px] leading-[24px] text-[#29C04F] text-[16px] font-bold pt-[28px]">
+                    <div className={`mb-[12px] h-[48px] leading-[48px] text-[#29C04F] text-[16px] font-bold ${prediction.outcome.length > 2 ? 'mt-[48px]' : ''}`}>
                       {t('predictions.resultsOut', {result: prediction.outcome[Number(prediction.winnerId)].name})}
                     </div>
                   ) : (
-                    <div className="mb-[24px] leading-[24px] text-[#A63130] text-[16px] font-bold pt-[28px]">
+                    <div className={`mb-[12px] h-[48px] leading-[48px] text-[#29C04F] text-[16px] font-bold ${prediction.outcome.length > 2 ? 'mt-[48px]' : ''}`}>
                       {t('predictions.waitingResolution')}
                     </div>
                   )}
@@ -105,7 +105,6 @@ export default function PredictionCard({
                   prediction={prediction}
                   clickFn={handleButtonClick}
                   onHover={(idx) => {
-                    console.log('hoverOutcome', idx);
                     setHoverOutcome(idx)}}
                 />
               )}
@@ -126,10 +125,10 @@ export default function PredictionCard({
                 content={
                   <div className="max-w-[260px] text-sm leading-5">
                     <div
-                      className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] cursor-pointer"
+                      className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] cursor-pointer whitespace-nowrap"
                       onClick={() => onCopyToText(`${window.location.origin}/details?marketId=${prediction.marketId}`)}
                     >
-                      <CopyIcon />
+                      <CopyIcon className="text-[14px] text-[#9BA3B1] hover:text-white" />
                       {t('predictions.copyLink')}
                     </div>
                   </div>

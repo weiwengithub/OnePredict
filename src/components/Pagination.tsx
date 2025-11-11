@@ -256,7 +256,7 @@ export const Pagination: React.FC<PaginationProps> = ({
               setShowItemsPerPageDropdown(true);
             }
           }}
-          className="h-[32px] w-[98px] border border-white/40 rounded-[8px] flex items-center justify-center cursor-pointer text-[16px] text-white/40 hover:text-white transition-all gap-1 focus:outline-none focus:ring-2 focus:ring-white/50 focus:text-white"
+          className="h-[32px] w-[98px] border border-white/40 rounded-[8px] flex items-center justify-center cursor-pointer text-[16px] text-white/40 hover:text-white transition-all gap-1 focus:outline-none focus:ring-0 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none focus:text-white"
         >
           {itemsPerPage}/{t('common.page')}
           <ChevronDown size={12} />
@@ -265,7 +265,7 @@ export const Pagination: React.FC<PaginationProps> = ({
         {/* Dropdown */}
         {showItemsPerPageDropdown && onItemsPerPageChange && (
           <div
-            className="absolute bottom-full mb-1 right-0 bg-gray-800 border border-white/40 rounded-[8px] overflow-hidden shadow-lg"
+            className="absolute bottom-full mb-1 right-0 bg-[#04122B] border border-[#051A3D] rounded-[8px] px-[5px] py-[8px] space-y-[8px] overflow-hidden shadow-lg"
             role="listbox"
             aria-label="Items per page options"
           >
@@ -295,10 +295,10 @@ export const Pagination: React.FC<PaginationProps> = ({
                     setShowItemsPerPageDropdown(false);
                   }
                 }}
-                className={`w-full px-4 py-2 text-left text-[14px] transition-all focus:outline-none focus:bg-white/20 focus:text-white ${
+                className={`w-full h-[24px] px-4 leading-[24px] text-left text-[14px] rounded-[8px] transition-all focus:outline-none focus:bg-white/20 focus:text-white ${
                   option === itemsPerPage
-                    ? 'bg-white/20 text-white'
-                    : 'text-white/60 hover:bg-white/10 hover:text-white'
+                    ? 'bg-[#051A3D] text-white'
+                    : 'text-white/40 hover:bg-[#051A3D] hover:text-white'
                 }`}
               >
                 {option}/{t('common.page')}

@@ -24,7 +24,15 @@ import Zklogin from '../Zklogin';
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import ConnectWallet from '../ConnectWallet';
 import Loading from '../Loading';
-import {store, clearLoginData, setSigninOpen, setSigninLoading, setMemberId, setUsdhBalance} from '@/store';
+import {
+  store,
+  clearLoginData,
+  setSigninOpen,
+  setSigninLoading,
+  setMemberId,
+  setUsdhBalance,
+  setUserInfo
+} from '@/store';
 import { useDispatch, useSelector } from 'react-redux';
 import GoogleIcon from '@/assets/icons/google.svg';
 import AppleIcon from '@/assets/icons/apple.svg';
@@ -38,9 +46,11 @@ import ArrowDownIcon from '@/assets/icons/arrowDown.svg';
 import { ZkLoginData, CurrentAccount, RootState, ApiResult, LoginResponse } from "@/lib/interface";
 import CopyIcon from "@/assets/icons/copy_1.svg";
 import {useIsMobile} from "@/contexts/viewport";
+import {toast} from "sonner";
 
 const Signin = () => {
   const { t } = useLanguage();
+  const router = useRouter();
   const isMobile = useIsMobile();
   const dispatch = useDispatch();
   const currentAccount = useCurrentAccount();
@@ -96,7 +106,8 @@ const Signin = () => {
         console.log('data', data)
         store.dispatch(setMemberId(data.memberId));
         localStorage.setItem('predict-token-'+address, data.token);
-        // localStorage.setItem('predict-memberid-'+address, data.memberId);
+
+        getUserInfo(data.memberId.toString(), address)
 
       } else {
         signPersonalMessage({
@@ -107,7 +118,8 @@ const Signin = () => {
               console.log('signature', result.signature);
               console.log('result', result);
               const {data} = await apiService.memberLogin({
-                address: address, originalMessage: signMessage,
+                address: address,
+                originalMessage: signMessage,
                 signedMessage:result.signature,
                 zkLoginAccount: null,
                 chain: 'onechain',
@@ -115,15 +127,31 @@ const Signin = () => {
               });
               store.dispatch(setMemberId(data.memberId));
               localStorage.setItem('predict-token-'+address, data.token);
-              // localStorage.setItem('predict-memberid-'+address, data.memberId);
+
+              getUserInfo(data.memberId.toString(), address)
             }
           });
       }
-
+      toast.success(t('header.signSuccess'))
     } catch (error) {
       console.error('Failed to check sign and signin:', error);
+      toast.error(t('header.signFailure'));
     }
   }, [signPersonalMessage]);
+
+  const getUserInfo = async (memberId: string, address: string) => {
+    try {
+      const { data } = await apiService.getMemberCenter({memberId, address});
+      store.dispatch(setUserInfo({
+        nickName: data.nickName || '',
+        avatar: data.avatar || '',
+        loginAddress: address
+      }));
+      console.log(data)
+    } catch (e) {
+      console.log(e)
+    }
+  }
 
   // Check whitelist when wallet connects
   useEffect(() => {
@@ -193,22 +221,23 @@ const Signin = () => {
         zkLoginData || currentAccount ? (
           <>
             {isMobile ? (
-              <div className="flex-none flex items-center justify-between gap-[12px]">
-                <div className="text-[48px]">
-                  {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
-                </div>
-                <div className="flex-1">
-                  {zkLoginData ? (
-                    <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
-                  ) : (
-                    <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
-                  ) }
-                  <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
-                    <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
-                    <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
-                  </div>
-                </div>
-              </div>
+              <></>
+              // <div className="flex-none flex items-center justify-between gap-[12px]">
+              //   <div className="text-[48px]">
+              //     {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
+              //   </div>
+              //   <div className="flex-1">
+              //     {zkLoginData ? (
+              //       <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
+              //     ) : (
+              //       <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
+              //     ) }
+              //     <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
+              //       <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
+              //       <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
+              //     </div>
+              //   </div>
+              // </div>
             ) : (
               <div
                 onMouseEnter={() => {
@@ -253,9 +282,26 @@ const Signin = () => {
                           <div
                             className="flex px-[12px] py-[8px] text-[16px] text-white rounded-[8px] hover:bg-white/10"
                             onClick={() => {
-                              dispatch(clearLoginData())
-                              disconnect()
-                              window.location.reload()
+                              try {
+                                dispatch(clearLoginData())
+                                disconnect()
+                                toast.success(t('header.logoutSuccess'))
+                                store.dispatch(setMemberId(0));
+                                const address = currentAccount?.address || zkLoginData?.zkloginUserAddress
+                                localStorage.removeItem('predict-token-'+ address);
+                                store.dispatch(setUserInfo({
+                                  nickName: '',
+                                  avatar: '',
+                                  loginAddress: ''
+                                }));
+                                store.dispatch(setUsdhBalance({
+                                  balance: '0.00',
+                                  rawBalance: '0',
+                                }));
+                                router.push('/');
+                              } catch (error) {
+                                toast.error(t('header.logoutError'))
+                              }
                             }}
                           >
                             <LogoutIcon />
@@ -269,13 +315,17 @@ const Signin = () => {
               </div>
             )}
           </>
-        ) : <button className="ml-[8px] h-[36px] px-[24px] bg-[#467DFF] text-[16px] text-white opacity-100 hover:opacity-50 rounded-[20px] font-medium transition-all duration-200" id="connect-wallet-btn" onClick={() => dispatch(setSigninOpen(true))}>
+        ) : <button
+          className={`ml-[8px] ${isMobile ? 'h-[24px] text-[12px] px-[11px] ml-[16px]' : 'h-[36px] text-[16px] px-[24px]'} bg-[#467DFF] text-white opacity-100 hover:opacity-50 rounded-[20px] font-medium transition-all duration-200`}
+          id="connect-wallet-btn"
+          onClick={() => dispatch(setSigninOpen(true))}
+        >
           {t('header.signIn')}
         </button>
       }
 
       <Dialog open={open}>
-        <DialogContent className="max-w-[400px] w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[16px] shadow-2xl shadow-black/50">
+        <DialogContent className={`max-w-[400px] w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[16px] shadow-2xl shadow-black/50 ${isMobile ? "left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : ""}`}>
           <div className="flex items-center justify-between">
             <span className='inline-block h-[16px] leading-[16px] text-[24px] text-white font-bold'>{t('header.signIn')}</span>
             <CloseIcon className="text-[16px] text-white/40 hover:text-white cursor-pointer" onClick={() => dispatch(setSigninOpen(false))} />

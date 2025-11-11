@@ -199,7 +199,14 @@ export default function RankCardImageOnly({ labels, value, rank, inviteCode, ava
       {src ? (
         <img src={src} alt="rank-card" className="block w-full" />
       ) : (
-        <div className="w-full h-full rounded-lg bg-gray-100 animate-pulse" />
+        <div
+          className="w-full h-full rounded-lg bg-white/10 z-20 inset-0 animate-shimmer"
+          style={{
+            backgroundImage: `linear-gradient(100deg,transparent 0%,rgba(255,255,255,0.15) 40%,rgba(255,255,255,0.3) 50%,transparent 60%)`,
+            backgroundSize: "220% 100%",
+            animationDuration: "1800ms"
+          }}
+        />
       )}
     </>
   );

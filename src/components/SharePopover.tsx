@@ -38,21 +38,64 @@ export default function SharePopover({
   const popRef = useRef<HTMLDivElement | null>(null);
   const [style, setStyle] = useState<React.CSSProperties>({});
 
+  const viewportPadding = 8;   // 离视口边缘的安全间距
+  const [placement, setPlacement] = useState<'top' | 'bottom'>('bottom');
+  const [arrowOffset, setArrowOffset] = useState(0); // 小三角的水平偏移（px）
+
   // Portal 宿主是否可用
   useEffect(() => setMounted(true), []);
 
   // 计算弹层位置（正下方居中）
   const updatePosition = () => {
-    const el = anchorRef.current;
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    const top = rect.bottom + offset + window.scrollY;
-    const left = rect.left + rect.width / 2 + window.scrollX;
+    const anchor = anchorRef.current;
+    const pop = popRef.current;
+    if (!anchor || !pop) return;
+
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    const scrollX = window.scrollX;
+    const scrollY = window.scrollY;
+
+    const a = anchor.getBoundingClientRect();
+
+    // 先获取弹层尺寸
+    // 注意：必须在弹层可见后测量（open=true 且已渲染）
+    const p = pop.getBoundingClientRect();
+    const popW = p.width;
+    const popH = p.height;
+
+    // 目标“中心点”（触发器水平中心）
+    const desiredCenterX = a.left + a.width / 2;
+
+    // 计算水平“中心点”的限位边界（避免溢出）
+    const minCenter = viewportPadding + popW / 2;
+    const maxCenter = vw - viewportPadding - popW / 2;
+    const clampedCenterX = Math.min(Math.max(desiredCenterX, minCenter), maxCenter);
+
+    // 箭头需要跟随中心点差值偏移（正数 = 向右）
+    const deltaX = desiredCenterX - clampedCenterX; // 若发生限位，deltaX != 0
+    setArrowOffset(deltaX);
+
+    // 先假设放在下方
+    let nextPlacement: 'top' | 'bottom' = 'bottom';
+    let topPx = a.bottom + offset; // 视口坐标系
+    // 如果下方放不下，就翻转到上方
+    if (topPx + popH + viewportPadding > vh) {
+      nextPlacement = 'top';
+      topPx = a.top - offset - popH;
+      // 如果上方还是不够（极端小屏），再兜底夹在视口里
+      if (topPx < viewportPadding) {
+        topPx = Math.max(viewportPadding, vh / 2 - popH / 2);
+      }
+    }
+    setPlacement(nextPlacement);
+
+    // 计算最终样式（继续用 translateX(-50%)，left 给“限位后的中心点”）
     setStyle({
-      position: "absolute",
-      top,
-      left,
-      transform: "translateX(-50%)", // 居中
+      position: 'absolute',
+      top: topPx + scrollY,
+      left: clampedCenterX + scrollX,
+      transform: 'translateX(-50%)',
       zIndex: 1000,
     });
   };
@@ -60,7 +103,16 @@ export default function SharePopover({
   useLayoutEffect(() => {
     if (!open) return;
     updatePosition();
+    const r = requestAnimationFrame(updatePosition);
+    return () => cancelAnimationFrame(r);
   }, [open, offset]);
+
+  useEffect(() => {
+    if (!open || !popRef.current) return;
+    const ro = new ResizeObserver(() => updatePosition());
+    ro.observe(popRef.current);
+    return () => ro.disconnect();
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -148,13 +200,22 @@ export default function SharePopover({
             className={`relative select-none ${portalClassName}`}
           >
             {/* 气泡主体 */}
-            <div className="rounded-[8px] border border-white/20 bg-[#010A2C] text-white shadow-xl p-3">
+            <div
+              className={`rounded-[8px] border border-white/20 bg-[#010A2C] text-white shadow-xl p-3 ${
+                placement === 'top' ? 'mt-0 mb-2' : 'mt-2 mb-0'
+              }`}
+            >
               {content}
             </div>
             {/* 小三角（朝上） */}
             <div
               aria-hidden
-              className="absolute -top-2 left-1/2 h-0 w-0 -translate-x-1/2 border-x-8 border-b-8 border-x-transparent border-b-white/20"
+              className={`absolute left-1/2 h-0 w-0 -translate-x-1/2
+                ${placement === 'top'
+                ? 'bottom-0 translate-y-full border-x-8 border-t-8 border-x-transparent border-t-white/20'
+                : 'top-0 -translate-y-full border-x-8 border-b-8 border-x-transparent border-b-white/20'
+              }`}
+              style={{ transform: `translate(calc(-50% + ${arrowOffset}px), ${placement === 'top' ? '0.25rem' : '-0.25rem'})` }}
             />
           </div>,
           document.body

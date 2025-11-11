@@ -19,7 +19,11 @@
     "forYou": "為你推薦",
     "search": "搜尋",
     "assets": "資產",
-    "more": "更多"
+    "more": "更多",
+    "signSuccess": "簽名成功",
+    "signError": "簽名失敗",
+    "logoutSuccess": "登出成功",
+    "logoutError": "登出失敗"
   },
   "categories": {
     "trending": "熱門",
@@ -76,7 +80,8 @@
     "replyContent": "回復內容",
     "replyTime": "回復時間",
     "replyUser": "回復用戶",
-    "replyUserAvatar": "回復用戶頭像"
+    "replyUserAvatar": "回復用戶頭像",
+    "buy": "買入"
   },
   "nav": {
     "home": "首頁",
@@ -108,6 +113,8 @@
     "buy": "買入",
     "sell": "賣出",
     "redeemed": "兌換",
+    "deposit": "充值",
+    "withdraw": "提現",
     "outcomes": "結果",
     "amount": "金額",
     "balance": "餘額",
@@ -128,8 +135,6 @@
     "resultsOut": "結果公布：{{result}}",
     "waitingResolution": "市場已關閉 - 等待結算",
     "integralModal": {
-      "deposit": "充值",
-      "withdraw": "提現",
       "positions": "持倉",
       "trades": "交易",
       "transaction": "歷史記錄",
@@ -184,7 +189,13 @@
     "cancel": "取消",
     "reply": "回覆",
     "allItemsLoaded": "所有項目已載入。",
-    "result": "結果"
+    "result": "結果",
+    "postSuccess": "發布成功",
+    "postError": "發布失敗",
+    "replySuccess": "回覆成功",
+    "replyError": "回覆失敗",
+    "at": "價格",
+    "cost": "總成本"
   },
   "time": {
     "justNow": "剛剛",
@@ -214,7 +225,11 @@
     "allMarkets": "所有市場",
     "position": "持倉",
     "volume": "成交量",
-    "rank": "損益排名"
+    "rank": "損益排名",
+    "followedSuccess": "關注成功",
+    "followError": "關注失敗",
+    "unfollowSuccess": "取消關注成功",
+    "unfollowError": "取消關注失敗"
   },
   "settings": {
     "profile": "個人資料",
@@ -229,7 +244,7 @@
     "referral": "邀請",
     "referralTips": "您是由朋友邀請的嗎？請輸入他的邀請碼。",
     "inviteCode": "邀請碼",
-    "inviteCodeTips": "是一個 6 位字串",
+    "inviteCodeTips": "是一個 4 位字串",
     "privateKey": "私鑰",
     "privateKeyWarning": "警告：切勿洩漏私鑰。",
     "privateKeyWarningContent": "任何人擁有您的私鑰都可以竊取您帳戶中的任何資產。您可以匯出私鑰並安全保存作為備份。",
@@ -262,6 +277,9 @@
   "rewards": {
     "myRewards": "我的獎勵",
     "claim": "領取",
+    "claiming": "領取中...",
+    "claimSuccess": "領取成功",
+    "claimError": "領取失敗",
     "onePredictPoints": "邀請好友參與預測，每次好友下注，您都可獲得收益。",
     "inviteToEarn": "邀請賺取",
     "rewardRecord": "獎勵記錄",

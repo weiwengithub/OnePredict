@@ -19,7 +19,11 @@
     "forYou": "For You",
     "search": "Search",
     "assets": "Assets",
-    "more": "More"
+    "more": "More",
+    "signSuccess": "Sign successful",
+    "signError": "Sign failed",
+    "logoutSuccess": "Logout successful",
+    "logoutError": "Logout failed"
   },
   "categories": {
     "trending": "Trending",
@@ -76,7 +80,8 @@
     "replyContent": "Reply content",
     "replyTime": "Reply time",
     "replyUser": "Reply user",
-    "replyUserAvatar": "Reply user avatar"
+    "replyUserAvatar": "Reply user avatar",
+    "buy": "Buy"
   },
   "nav": {
     "home": "Home",
@@ -108,6 +113,8 @@
     "buy": "Buy",
     "sell": "Sell",
     "redeemed": "Redeemed",
+    "deposit": "Deposit",
+    "withdraw": "Withdraw",
     "outcomes": "Outcomes",
     "amount": "Amount",
     "balance": "Balance",
@@ -128,8 +135,6 @@
     "resultsOut": "Results out: {{result}}",
     "waitingResolution": "Market closed - waiting resolution",
     "integralModal": {
-      "deposit": "Deposit",
-      "withdraw": "Withdraw",
       "positions": "Positions",
       "trades": "Trades",
       "transaction": "Transaction",
@@ -184,7 +189,13 @@
     "cancel": "Cancel",
     "reply": "Reply",
     "allItemsLoaded": "All items Loaded.",
-    "result": "Result"
+    "result": "Result",
+    "postSuccess": "Post successful",
+    "postError": "Post failed",
+    "replySuccess": "Reply successful",
+    "replyError": "Reply failed",
+    "at": "at",
+    "cost": "cost"
   },
   "time": {
     "justNow": "just now",
@@ -214,7 +225,11 @@
     "allMarkets": "All Markets",
     "position": "Position",
     "volume": "Volume Traded",
-    "rank": "PnL Rank"
+    "rank": "PnL Rank",
+    "followedSuccess": "Follow successful",
+    "followError": "Follow failed",
+    "unfollowSuccess": "Unfollow successful",
+    "unfollowError": "Unfollow failed"
   },
   "settings": {
     "profile": "Profile",
@@ -229,7 +244,7 @@
     "referral": "Referral",
     "referralTips": "Were you invited by a friend? Please enter his invitation code.",
     "inviteCode": "Invite Code",
-    "inviteCodeTips": "Is an 6-digit string",
+    "inviteCodeTips": "Is an 4-digit string",
     "privateKey": "Private Key",
     "privateKeyWarning": "Warning: Never disclose Private key.",
     "privateKeyWarningContent": "Anyone with your private keys can steal any assets held in your account. You can export your private keys and store them in a secure location for backup.",
@@ -262,6 +277,9 @@
   "rewards": {
     "myRewards": "My Rewards",
     "claim": "Claim",
+    "claiming": "Claiming...",
+    "claimSuccess": "Successful claim",
+    "claimError": "Claim failed",
     "onePredictPoints": "Invite your friends to make predictions, and each time your friends place a bet, you can make a profit.",
     "inviteToEarn": "Invite to Earn",
     "rewardRecord": "Reward Record",

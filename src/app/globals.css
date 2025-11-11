@@ -210,6 +210,30 @@
     border: none;
   }
 
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: theme(colors.white) transparent;
+  }
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: linear-gradient(180deg, #010A2C 0%, #1E386F 50%, #010A2C 100%);
+  }
+  .scrollbar-track-gradient::-webkit-scrollbar-corner {
+    background: linear-gradient(180deg, #010A2C 0%, #1E386F 50%, #010A2C 100%);
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background-color: theme(colors.white / 60%);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-custom:hover::-webkit-scrollbar-thumb {
+    background-color: theme(colors.white / 80%);
+  }
+
   /* Hide lightweight-charts watermark/logo inside #container */
   #tv-attr-logo {
     display: none !important;
@@ -223,4 +247,10 @@
       opacity: 1;
     }
   }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0 }
+    100% { background-position: 200% 0 }
+  }
+  .animate-shimmer { animation: shimmer 1.4s linear infinite }
 }

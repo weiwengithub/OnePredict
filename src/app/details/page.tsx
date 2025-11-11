@@ -58,7 +58,9 @@ import LikeIcon from "@/assets/icons/like.svg";
 import ReplyIcon from "@/assets/icons/reply.svg";
 import SucceedIcon from "@/assets/icons/succeedResult.svg";
 import FailIcon from "@/assets/icons/close.svg";
-import {setSigninOpen} from "@/store";
+import {setSigninOpen, store} from "@/store";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
+import {PredictionTradingModal} from "@/components/predictionTrading";
 
 export default function PredictionDetailsClient() {
   const { t } = useLanguage();
@@ -72,10 +74,12 @@ export default function PredictionDetailsClient() {
   const userAddress = useMemo(() => {
     return currentAccount?.address || zkLoginData?.zkloginUserAddress;
   }, [currentAccount, zkLoginData]);
+  const userInfo = store.getState()?.userInfo;
 
   const [currentOutcome, setCurrentOutcome] = useState(0);
   const [loading, setLoading] = useState(false);
   const [predictionDetail, setPredictionDetail] = useState<MarketOption | null>(null);
+  const [showTradingModal, setShowTradingModal] = useState(false);
 
   useEffect(() => {
     if (!marketId) return;
@@ -309,6 +313,7 @@ export default function PredictionDetailsClient() {
   const [commentPageNum, setCommentPageNum] = useState(1);
   const [commentPageSize, setCommentPageSize] = useState(10);
   const [commentTotal, setCommentTotal] = useState(0);
+  const [commentTotalPage, setCommentTotalPage] = useState(0);
   const [showSaySomething, setShowSaySomething] = useState(false);
   const [showReplyMessageModal, setShowReplyMessageModal] = useState(false);
   const [currentComment, setCurrentComment] = useState<ProjectCommentListItem | null>(null);
@@ -323,7 +328,8 @@ export default function PredictionDetailsClient() {
       marketId
     })
     setProjectCommentList(data.rows);
-    setCommentTotal(Math.ceil(data.count / commentPageSize));
+    setCommentTotal(data.count);
+    setCommentTotalPage(Math.ceil(data.count / commentPageSize));
   }
 
   useEffect(() => {
@@ -389,7 +395,7 @@ export default function PredictionDetailsClient() {
             {/* Header */}
             <div className="mt-[24px]">
               <div className="flex">
-                <img src={predictionDetail.imageUrl} alt="" className="w-[100px] h-[100px] rounded-[12px]" />
+                <img src={predictionDetail.imageUrl} alt="" className={isMobile ? 'w-[64px] h-[64px] rounded-[8px]' : 'w-[100px] h-[100px] rounded-[12px]'} />
                 <div className={`${isMobile ? 'ml-[16px]' : 'ml-[24px]'} flex flex-col gap-[12px]`}>
                   <div className={`text-white font-bold line-clamp-3 ${isMobile ? 'leading-[24px] text-[16px]' : 'leading-[28px] text-[24px]'}`}>{predictionDetail.marketName}</div>
                   {!isMobile && (
@@ -512,9 +518,9 @@ export default function PredictionDetailsClient() {
               )}
               {predictionDetail.outcome.map((outcome, index) => (
                 <div key={index} className="h-[96px] flex text-[18px] text-white font-bold">
-                  <div className="flex-1 flex items-center px-[24px]">
-                    <div className="w-[36px] h-[36px] rounded-full" style={{backgroundColor: colors[index]}}></div>
-                    <span className="ml-[12px]">{outcome.name}</span>
+                  <div className="flex-1 flex items-center px-[24px] overflow-hidden">
+                    <div className="w-[36px] h-[36px] rounded-full flex-none" style={{backgroundColor: colors[index]}}></div>
+                    <EllipsisWithTooltip text={outcome.name} className="ml-[12px]" />
                   </div>
                   {predictionDetail.status !== 'Resolved' && predictionDetail.status !== 'Completed' && !isMobile && (
                     <div className="flex-1 flex items-center justify-center px-[24px]">
@@ -531,7 +537,12 @@ export default function PredictionDetailsClient() {
                             To win: {outcome.roi} x
                           </>
                         }
-                        onClick={() => setCurrentOutcome(index)}
+                        onClick={() => {
+                          setCurrentOutcome(index)
+                          if(isMobile) {
+                            setShowTradingModal(true);
+                          }
+                        }}
                         color={colors[index]}
                         isCurrent={currentOutcome === index}
                         className={`group h-[48px] w-[162px] font-bold text-[16px] rounded-[8px]`}
@@ -600,7 +611,7 @@ export default function PredictionDetailsClient() {
                 {tradesList.length > 0 ? (
                   <>
                     {tradesList.map((trades, index) => (
-                      <div key={`${trades.marketId}_${index}`} className="min-w-[536px] flex items-center justify-between">
+                      <div key={`${trades.marketId}_${index}`} className="min-w-[720px] flex items-center justify-between">
                         <div className="flex items-center gap-[12px] text-[16px] text-white">
                           {trades.avatar ? (
                             <Image src={trades.avatar} alt="" width={32} height={32} />
@@ -612,34 +623,42 @@ export default function PredictionDetailsClient() {
                             />
                           )}
                           <div>{trades.nickName || trades.userAddress.slice(-6)}</div>
-                          <div className="opacity-60">{capitalizeFirst(trades.side)}</div>
-                          <div className={`h-[20px] leading-[20px] px-[4px] rounded-[4px] ${trades.side === 'buy' ? 'bg-[rgba(40,192,78,0.5)] text-[#28C04E]' : 'bg-[rgba(249,93,93,0.5)] text-[#F95D5D]'}`}><TooltipAmount shares={trades.deltaShares} decimals={0} precision={2}/> {trades.outcome.name}</div>
-                          <div className="opacity-60">at</div>
+                          <div className="opacity-60">{trades.side === 'buy' ? t('predictions.buy') : t('predictions.sell')}</div>
+                          <div className={`flex gap-2 h-[20px] leading-[20px] px-[4px] rounded-[4px] ${trades.side === 'buy' ? 'bg-[rgba(40,192,78,0.5)] text-[#28C04E]' : 'bg-[rgba(249,93,93,0.5)] text-[#F95D5D]'}`}>
+                            <TooltipAmount shares={trades.deltaShares} decimals={0} precision={2}/>
+                            <EllipsisWithTooltip
+                              text={trades.outcome.name}
+                              className={`flex-1 max-w-[160px] h-[20px] leading-[20px] text-[16px] ${trades.side === 'buy' ? 'text-[#28C04E]' : 'text-[#F95D5D]'}`}
+                            />
+                          </div>
+                          <div className="opacity-60">{t('detail.at')}</div>
                           <div><TooltipAmount shares={trades.entryPrice} decimals={0} precision={2}/></div>
-                          <div className="opacity-60">cost</div>
+                          <div className="opacity-60">{t('detail.cost')}</div>
                           <Image src={tokenIcon} alt="" width={12} height={12} />
                           <div><TooltipAmount shares={trades.amount} decimals={0} precision={2}/></div>
                         </div>
                         <div className="text-white/60 text-[16px]">{timeAgoEn(trades.eventMs)}</div>
                       </div>
                     ))}
+                    {/*分页组件*/}
+                    <Pagination
+                      className="min-w-[536px]"
+                      currentPage={tradesPageNumber}
+                      totalPages={tradesTotalPages}
+                      onPageChange={handlePageChange}
+                      itemsPerPage={tradesPageSize}
+                      onItemsPerPageChange={handleItemsPerPageChange}
+                      itemsPerPageOptions={[10, 20, 50, 100]}
+                    />
                   </>
                 ) : (
                   <div className="mt-[37px]">
-                    <div className="size-[64px] mx-auto text-[64px] text-white/60"><WechatIcon /></div>
+                    <div className="mt-[40px] mx-auto size-[48px]">
+                      <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
+                    </div>
                     <div className="mt-[12px] h-[24px] leading-[24px] text-white/80 text-[16px] text-center">{t('common.nothing')}</div>
                   </div>
                 )}
-                {/*分页组件*/}
-                <Pagination
-                  className="min-w-[536px]"
-                  currentPage={tradesPageNumber}
-                  totalPages={tradesTotalPages}
-                  onPageChange={handlePageChange}
-                  itemsPerPage={tradesPageSize}
-                  onItemsPerPageChange={handleItemsPerPageChange}
-                  itemsPerPageOptions={[10, 20, 50, 100]}
-                />
               </div>
             </div>
 
@@ -650,7 +669,15 @@ export default function PredictionDetailsClient() {
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => {setShowSaySomething(true)}}
               >
-                <div className="size-[32px] bg-[#D9D9D9] rounded-full"></div>
+                {userInfo?.avatar ? (
+                  <Image src={userInfo.avatar} alt="" width={32} height={32} />
+                ) : (
+                  <Avatar
+                    size={32}
+                    name={userInfo?.loginAddress}
+                    variant={'marble'}
+                  />
+                )}
                 <div className="flex-1 h-[24px] leading-[24px] text-[16px] text-white/60 px-[12px]">{t('detail.saySomething')}</div>
                 <Edit1Icon className="text-white/60 text-[24px] hover:text-white" />
               </div>
@@ -699,7 +726,7 @@ export default function PredictionDetailsClient() {
                 <Pagination
                   className="min-w-[536px] mx-[24px]"
                   currentPage={commentPageNum}
-                  totalPages={commentTotal}
+                  totalPages={commentTotalPage}
                   onPageChange={commentPageChange}
                   itemsPerPage={commentPageSize}
                   onItemsPerPageChange={commentPerPageChange}
@@ -713,15 +740,26 @@ export default function PredictionDetailsClient() {
               </div>
             )}
           </div>
-          {!isMobile && predictionDetail && (
-            <div className="w-[368px] sticky top-[80px]" style={{ height: '100%' }}>
-              <TradingForm
-                prediction={predictionDetail}
-                initialOutcome={currentOutcome}
-                outcomeChange={handleOutcomeChange}
-              />
-              <TermsAgreement />
-            </div>
+          {predictionDetail && (
+            <>
+              {isMobile ? (
+                <PredictionTradingModal
+                  isOpen={showTradingModal}
+                  onClose={() => setShowTradingModal(false)}
+                  prediction={predictionDetail}
+                  initialOutcome={currentOutcome}
+                />
+              ) : (
+                <div className="w-[368px] sticky top-[80px]" style={{ height: '100%' }}>
+                  <TradingForm
+                    prediction={predictionDetail}
+                    initialOutcome={currentOutcome}
+                    outcomeChange={handleOutcomeChange}
+                  />
+                  <TermsAgreement />
+                </div>
+              )}
+            </>
           )}
         </main>
 
