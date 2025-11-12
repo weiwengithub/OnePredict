@@ -40,8 +40,26 @@ export default function FullscreenModal({
   const [rotation, setRotation] = useState(0);
   const [showInfo, setShowInfo] = useState(false);
   const [showControls, setShowControls] = useState(true);
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
   const swiperRef = useRef<SwiperType | null>(null);
   const hideControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 动画控制
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+    } else {
+      setIsVisible(false);
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
 
   // 键盘事件处理
   useEffect(() => {
@@ -165,12 +183,14 @@ export default function FullscreenModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   const currentItem = items[currentSlide];
 
   return (
-    <div className="fixed inset-0 z-50 bg-black">
+    <div className={`fixed inset-0 z-50 bg-black transition-opacity duration-300 ${
+      isVisible ? 'opacity-100' : 'opacity-0'
+    }`}>
       {/* 主要轮播区域 */}
       <Swiper
         modules={[Navigation, Pagination, Zoom, Keyboard]}

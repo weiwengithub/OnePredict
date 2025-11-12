@@ -20,8 +20,8 @@
     "search": "搜索",
     "assets": "资产",
     "more": "更多",
-    "signSuccess": "签名成功",
-    "signError": "签名失败",
+    "signSuccess": "登录成功",
+    "signError": "登录失败",
     "logoutSuccess": "退出登录成功",
     "logoutError": "退出登录失败"
   },
@@ -118,7 +118,7 @@
     "outcomes": "结果",
     "amount": "金额",
     "balance": "余额",
-    "toWin": "获胜",
+    "toWin": "赢得",
     "trading": "进行交易即表示您同意",
     "terms": "使用条款",
     "buySuccess": "购买成功",
@@ -249,7 +249,11 @@
     "privateKeyWarning": "警告：切勿泄露私钥。",
     "privateKeyWarningContent": "任何人拥有您的私钥都可以盗取您账户中的任何资产。您可以导出您的私钥并存放在安全的地方作为备份。",
     "showPrivateKey": "显示私钥",
-    "bindSuccess": "绑定成功"
+    "bindWaring": "请输入一个4位字符串",
+    "bindSuccess": "绑定成功",
+    "bindError": "绑定失败",
+    "invitationCodeError": "邀请码不存在！",
+    "boundInvitation": "您已绑定邀请关系，如需修改请联系客服！"
   },
   "leaderboard": {
     "title": "OnePredict 预测平台表现最佳榜",

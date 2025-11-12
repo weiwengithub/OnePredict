@@ -143,7 +143,7 @@ export const apiService = {
 
   // 绑定邀请码
   bindByInviteCode: (params: { inviteCode: string; address: string }) => {
-    return apiClient.post<ResRankList>('/api/ext/member/bindByInviteCode', params);
+    return apiClient.post('/api/ext/member/bindByInviteCode', params);
   },
 
   // 查询商品类别

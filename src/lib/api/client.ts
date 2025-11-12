@@ -6,7 +6,7 @@ export type ApiConfig = Omit<AxiosRequestConfig, "url" | "method" | "data">;
 const API_CONFIG = {
   // 开发环境使用代理路径，生产环境使用完整URL
   baseURL: process.env.NODE_ENV === 'development' ? '/api' : process.env.NEXT_PUBLIC_API_URL || '',
-  timeout: 10000,
+  timeout: 60000,
 };
 
 // 创建axios实例

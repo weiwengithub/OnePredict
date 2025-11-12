@@ -73,15 +73,19 @@ export default function PredictionIntegralModal({
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
   const currentAccount = useCurrentAccount();
   const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
   const { balance: usdhBalance } = useUsdhBalanceFromStore();
   const suiClient = useSuiClient() as any;
   const executeTransaction = useExecuteTransaction();
 
-  // 组件加载时的初始化效果
+  // 组件加载时的初始化效果和动画控制
   useEffect(() => {
     if (isOpen) {
+      setShouldRender(true);
       // 重置表单
       setAmount(0);
       // 重置错误状态
@@ -91,10 +95,22 @@ export default function PredictionIntegralModal({
       // 禁止滚动
       document.body.style.overflow = 'hidden';
 
+      // 延迟一帧，确保DOM已渲染再添加动画类
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+
       // 清理函数：恢复滚动
       return () => {
         document.body.style.overflow = originalOverflow;
       };
+    } else {
+      setIsVisible(false);
+      // 等待动画结束后再卸载组件
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300); // 与动画时长一致
+      return () => clearTimeout(timer);
     }
   }, [isOpen]);
 
@@ -254,20 +270,24 @@ export default function PredictionIntegralModal({
     }
   };
 
-  if (!isOpen) return null;
+  if (!shouldRender) return null;
 
   return (
     <>
       {/* 背景遮罩 */}
       <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] transition-opacity duration-300"
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] transition-opacity duration-300 ${
+          isVisible ? 'opacity-100' : 'opacity-0'
+        }`}
         onClick={onClose}
       />
 
-      {/* 右侧滑出弹窗 */}
-      <div className={`fixed flex flex-col bg-[#051A3D] p-[24px] z-[110] transform transition-transform duration-300
-        ${isOpen ? 'translate-x-0' : 'translate-x-full'} 
-        ${isMobile ? 'left-0 top-[90px] bottom-0 w-full pb-[30px]' : 'right-0 top-0 h-full w-full max-w-[432px]'}`}>
+      {/* 右侧滑出弹窗 - PC端从右侧滑入，移动端从底部滑入 */}
+      <div className={`fixed flex flex-col bg-[#051A3D] p-[24px] z-[110] transition-all duration-300 ease-out
+        ${isMobile
+        ? `left-0 top-[90px] bottom-0 w-full pb-[30px] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`
+        : `right-0 top-0 h-full w-full max-w-[432px] ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`
+      }`}>
         {!!zkLoginData && (
           <div></div>
         )}
@@ -585,7 +605,7 @@ export default function PredictionIntegralModal({
                         className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
                       >
                         <Image src={tokenIcon} alt="" width={32} height={32} />
-                        <div className="ml-[12px] flex-1">
+                        <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
                             <span className="text-white">{t('predictions.deposit')}</span>
                             <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>

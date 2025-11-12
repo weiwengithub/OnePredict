@@ -20,8 +20,8 @@
     "search": "Search",
     "assets": "Assets",
     "more": "More",
-    "signSuccess": "Sign successful",
-    "signError": "Sign failed",
+    "signSuccess": "Login successful",
+    "signError": "Login failed",
     "logoutSuccess": "Logout successful",
     "logoutError": "Logout failed"
   },
@@ -249,7 +249,11 @@
     "privateKeyWarning": "Warning: Never disclose Private key.",
     "privateKeyWarningContent": "Anyone with your private keys can steal any assets held in your account. You can export your private keys and store them in a secure location for backup.",
     "showPrivateKey": "Show Private Key",
-    "bindSuccess": "Binding successful"
+    "bindWaring": "Please enter a 4-character string",
+    "bindSuccess": "Binding successful",
+    "bindError": "Binding failed",
+    "invitationCodeError": "The invitation code does not exist!",
+    "boundInvitation": "You have bound the invitation relationship, if you need to modify please contact customer service!"
   },
   "leaderboard": {
     "title": "Top performers on OnePredict prediction platform",

@@ -235,7 +235,7 @@ export default function ProfileClient() {
                   content={
                     <div className="max-w-[260px] text-sm leading-5">
                       <div
-                        className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] cursor-pointer"
+                        className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] whitespace-nowrap cursor-pointer"
                         onClick={() => onCopyToText(window.location.href)}
                       >
                         <CopyIcon />

@@ -16,7 +16,7 @@ import WarningIcon from "@/assets/icons/warning.svg";
 import Image from "next/image";
 import {useLanguage} from "@/contexts/LanguageContext";
 import {useIsMobile} from "@/contexts/viewport";
-import {MemberInfo} from "@/lib/api/interface";
+import {MemberCenter, MemberInfo} from "@/lib/api/interface";
 import apiService from "@/lib/api/services";
 import { useCurrentAccount } from "@onelabs/dapp-kit";
 import { useSelector } from "react-redux";
@@ -56,6 +56,10 @@ export default function Setting() {
       setUserData(data)
       setNickName(data.nickName);
       setIntroduction(data.introduction)
+
+      if(data.inviteMemberCode) {
+        getInviteMember(data.inviteMemberId.toString());
+      }
     } catch (e: any) {
       if (e.name !== 'CanceledError') {
         console.log(e);
@@ -74,6 +78,23 @@ export default function Setting() {
     getData()
   }, [userAddress]);
 
+  const [inviteMemberData, setInviteMemberData] = useState<MemberCenter | null>(null);
+  const getInviteMember = useCallback(async (memberId: string) => {
+    const controller = new AbortController();
+    try {
+      const {data} = await apiService.getMemberCenter({ memberId, address: userAddress || '' });
+      setInviteMemberData(data);
+    } catch (e: any) {
+      if (e.name !== 'CanceledError') {
+        console.log(e);
+      }
+    }
+    // 卸载时取消请求并阻止 setState
+    return () => {
+      controller.abort();
+    };
+  }, [userAddress]);
+
   const updateMemberInfo = async (override?: Partial<{avatar: string; nickName: string; introduction: string}>) => {
     const res = await apiService.updateMemberInfo({
       avatar,
@@ -87,12 +108,36 @@ export default function Setting() {
   }
 
   const bindByInviteCode = async () => {
-    const res = await apiService.bindByInviteCode({
-      inviteCode: inviteCode,
-      address: userAddress || ''
-    })
-    setInviteCode('')
-    toast.success(t('settings.bindSuccess'));
+    try {
+      if (inviteCode.length !== 4) {
+        toast.warning(t('settings.bindWaring'))
+        return;
+      }
+      const res = await apiService.bindByInviteCode({
+        inviteCode: inviteCode,
+        address: userAddress || ''
+      });
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-expect-error
+      if (res.code === 200) {
+        setInviteCode('')
+        toast.success(t('settings.bindSuccess'));
+      } else {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
+        const msg = res.msg;
+        if (msg === 'The invitation code does not exist!') {
+          toast.error(t('settings.invitationCodeError'));
+        } else if (msg === 'You have bound the invitation relationship, if you need to modify please contact customer service!') {
+          toast.error(t('settings.boundInvitation'));
+        } else {
+          toast.error(t('settings.bindError'));
+        }
+      }
+    } catch (e: any) {
+      console.log(e)
+      toast.error(t('settings.bindError'));
+    }
   }
 
   return (
@@ -200,22 +245,50 @@ export default function Setting() {
           {/*  </div>*/}
           {/*</div>*/}
           <div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">{t('settings.referral')}</div>
-          <div className="h-[24px] leading-[24px] text=[18px] text-white/60">{t('settings.referralTips')}</div>
-          <div>
-            <div className="h-[24px] leading-[24px] text=[18px] text-white/60">{t('settings.inviteCode')}</div>
-            <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
-              <Input
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                className="flex-1 px-[24px] text-white text-[18px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
-                placeholder={t('settings.inviteCodeTips')}
-              />
-              <span
-                className={`text-[14px] text-white mx-[24px] ${inviteCode === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
-                onClick={bindByInviteCode}
-              >{t('common.submit')}</span>
-            </div>
-          </div>
+          {userData?.inviteMemberCode ? (
+            <>
+              {inviteMemberData ? (
+                <div className="flex items-center gap-[16px]">
+                  {inviteMemberData.avatar ? (
+                    <Image src={inviteMemberData.avatar} alt="" width={48} height={48} />
+                  ) : (
+                    <Avatar
+                      size={48}
+                      name={inviteMemberData.loginAddress}
+                      variant={'marble'}
+                    />
+                  )}
+                  <div className="space-y-[8px]">
+                    <Link href={`/profile?memberId=${userData.inviteMemberId}`}>
+                      <div className="h-[16px] leading-[16px] text-[18px] text-white cursor-pointer">{inviteMemberData.nickName}</div>
+                    </Link>
+                    <div className="h-[16px] leading-[16px] text-[16px] text-white/60">{userData.inviteTime}</div>
+                  </div>
+                </div>
+              ) : (
+                ''
+              )}
+            </>
+          ) : (
+            <>
+              <div className="h-[24px] leading-[24px] text=[18px] text-white/60">{t('settings.referralTips')}</div>
+              <div>
+                <div className="h-[24px] leading-[24px] text=[18px] text-white/60">{t('settings.inviteCode')}</div>
+                <div className="mt-[12px] h-[56px] flex items-center bg-[#04122B] rounded-[16px]">
+                  <Input
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    className="flex-1 px-[24px] text-white text-[18px] bg-transparent border-none focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                    placeholder={t('settings.inviteCodeTips')}
+                  />
+                  <span
+                    className={`text-[14px] text-white mx-[24px] ${inviteCode === '' ? 'opacity-50 cursor-no-drop' : 'cursor-pointer'}`}
+                    onClick={bindByInviteCode}
+                  >{t('common.submit')}</span>
+                </div>
+              </div>
+            </>
+          )}
           {/*<div className="h-[24px] leading-[24px] text=[18px] text-white font-bold">{t('settings.privateKey')}</div>*/}
           {/*<div className="bg-[#04122B] rounded-[16px] p-[24px]">*/}
           {/*  <div className="flex">*/}

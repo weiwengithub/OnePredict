@@ -60,7 +60,7 @@ export default function CustomCarousel({
   height = '400px',
 }: CustomCarouselProps) {
   const isMobile = useIsMobile();
-  if(isMobile) {
+  if(isMobile || items.length < 5) {
     slidesPerView = 1;
     const w = document.documentElement.clientWidth;
     height = `${Math.round(400 * (w - 32) / 1020)}px`;
@@ -200,7 +200,7 @@ export default function CustomCarousel({
             spaceBetween: 72,
           },
           1648: {
-            slidesPerView: 1.597, // effectConfig.slidesPerView,
+            slidesPerView: items.length < 5 ? 1 : 1.597,
             spaceBetween: -55,
           },
         } : undefined}
@@ -257,7 +257,7 @@ export default function CustomCarousel({
       <div className="absolute left-0 right-0 bottom-1 z-20">
         <div className="swiper-pagination-custom w-full flex justify-center gap-[8px]"></div>
       </div>
-      {!isMobile && showNavigation && (
+      {!isMobile && showNavigation && items.length > 1 && (
         <>
           <button className="swiper-button-prev-custom w-[42px] h-[42px] absolute left-[36px] top-1/2 -translate-y-1/2 z-20 bg-[#051A3D] border border-white/20 hover:border-white rounded-full text-white/20 hover:text-white hidden group-hover:flex items-center justify-center transition-all duration-300 hover:scale-110">
             <ChevronLeft />

@@ -20,8 +20,8 @@
     "search": "搜尋",
     "assets": "資產",
     "more": "更多",
-    "signSuccess": "簽名成功",
-    "signError": "簽名失敗",
+    "signSuccess": "登入成功",
+    "signError": "登入失敗",
     "logoutSuccess": "登出成功",
     "logoutError": "登出失敗"
   },
@@ -118,7 +118,7 @@
     "outcomes": "結果",
     "amount": "金額",
     "balance": "餘額",
-    "toWin": "獲勝",
+    "toWin": "贏得",
     "trading": "進行交易即表示您同意",
     "terms": "使用條款",
     "buySuccess": "購買成功",
@@ -249,7 +249,11 @@
     "privateKeyWarning": "警告：切勿洩漏私鑰。",
     "privateKeyWarningContent": "任何人擁有您的私鑰都可以竊取您帳戶中的任何資產。您可以匯出私鑰並安全保存作為備份。",
     "showPrivateKey": "顯示私鑰",
-    "bindSuccess": "綁定成功"
+    "bindWaring": "請輸入一個4位字串",
+    "bindSuccess": "綁定成功",
+    "bindError": "綁定失敗",
+    "invitationCodeError": "邀請碼不存在！",
+    "boundInvitation": "您已綁定邀請關係，如需修改請聯絡客服！"
   },
   "leaderboard": {
     "title": "OnePredict 預測平台最佳表現榜",

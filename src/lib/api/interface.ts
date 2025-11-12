@@ -295,20 +295,28 @@ export interface MemberInfo {
   channelName: string;
   createBy: string;
   createTime: string;
+  followBySessionMemberId: boolean;
   followMeCount: number;
   followProjectCount: number;
   id: number;
+  introduction: string;
+  inviteMemberCode: string;
+  inviteMemberId: number;
+  inviteMemberNickName: string;
+  inviteTeamNum: number;
+  inviteTime: string;
+  inviteUserNum: number;
   isDelete: boolean;
   loginAddress: string;
   loginTime: string;
   meFollowCount: number;
   memberCode: string;
   nickName: string;
+  pnlRank: number;
   registerTime: string;
   status: string;
   updateBy: string;
   updateTime: string;
-  introduction: string;
 }
 
 export interface MemberCenter {

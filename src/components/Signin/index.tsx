@@ -65,11 +65,14 @@ const Signin = () => {
   const pathname = usePathname();
   const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
 
+  const signingRef = React.useRef(false);
   const checkSignandSignin = useCallback(async (address: string) => {
+    if (!address) return;
+    if (signingRef.current) return;
+    signingRef.current = true;
+
     try {
-      if(localStorage.getItem('predict-token-'+address)){
-        return
-      }
+      if(localStorage.getItem('predict-token-'+address)) return;
       const result: LoginResponse = await apiService.getLoginNonce({ address: address });
       console.log('result', result)
       const signMessage = result.data as string;
@@ -106,7 +109,7 @@ const Signin = () => {
         console.log('data', data)
         store.dispatch(setMemberId(data.memberId));
         localStorage.setItem('predict-token-'+address, data.token);
-
+        toast.success(t('header.signSuccess'))
         getUserInfo(data.memberId.toString(), address)
 
       } else {
@@ -127,17 +130,18 @@ const Signin = () => {
               });
               store.dispatch(setMemberId(data.memberId));
               localStorage.setItem('predict-token-'+address, data.token);
-
+              toast.success(t('header.signSuccess'))
               getUserInfo(data.memberId.toString(), address)
             }
           });
       }
-      toast.success(t('header.signSuccess'))
     } catch (error) {
       console.error('Failed to check sign and signin:', error);
       toast.error(t('header.signFailure'));
+    } finally {
+      signingRef.current = false;
     }
-  }, [signPersonalMessage]);
+  }, [t, signPersonalMessage]);
 
   const getUserInfo = async (memberId: string, address: string) => {
     try {
@@ -153,13 +157,15 @@ const Signin = () => {
     }
   }
 
-  // Check whitelist when wallet connects
+  const loginAddress = React.useMemo(
+    () => zkLoginData?.zkloginUserAddress || currentAccount?.address || '',
+    [zkLoginData?.zkloginUserAddress, currentAccount?.address]
+  );
+
   useEffect(() => {
-    const zkData = store.getState().zkLoginData as any;
-    if (currentAccount?.address || zkData?.zkloginUserAddress) {
-      checkSignandSignin(currentAccount?.address || zkData?.zkloginUserAddress);
-    }
-  }, [currentAccount?.address, pathname, checkSignandSignin, zkLoginData]);
+    if (!loginAddress) return;
+    checkSignandSignin(loginAddress);
+  }, [loginAddress, checkSignandSignin]);
 
   // 禁止背景滚动
   useEffect(() => {
@@ -221,23 +227,7 @@ const Signin = () => {
         zkLoginData || currentAccount ? (
           <>
             {isMobile ? (
-              <></>
-              // <div className="flex-none flex items-center justify-between gap-[12px]">
-              //   <div className="text-[48px]">
-              //     {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
-              //   </div>
-              //   <div className="flex-1">
-              //     {zkLoginData ? (
-              //       <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
-              //     ) : (
-              //       <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
-              //     ) }
-              //     <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
-              //       <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
-              //       <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
-              //     </div>
-              //   </div>
-              // </div>
+              ''
             ) : (
               <div
                 onMouseEnter={() => {
@@ -325,7 +315,7 @@ const Signin = () => {
       }
 
       <Dialog open={open}>
-        <DialogContent className={`max-w-[400px] w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[16px] shadow-2xl shadow-black/50 ${isMobile ? "left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : ""}`}>
+        <DialogContent className={`w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[16px] shadow-2xl shadow-black/50 ${isMobile ? "left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "max-w-[400px]"}`}>
           <div className="flex items-center justify-between">
             <span className='inline-block h-[16px] leading-[16px] text-[24px] text-white font-bold'>{t('header.signIn')}</span>
             <CloseIcon className="text-[16px] text-white/40 hover:text-white cursor-pointer" onClick={() => dispatch(setSigninOpen(false))} />
