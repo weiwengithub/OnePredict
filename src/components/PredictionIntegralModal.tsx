@@ -1,0 +1,830 @@
+"use client";
+
+import React, { useState, useEffect, useCallback } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import apiService from "@/lib/api/services";
+import CloseIcon from "@/assets/icons/close.svg";
+import CopyIcon from "@/assets/icons/copy_1.svg";
+import UpIcon from "@/assets/icons/up.svg";
+import DownIcon from "@/assets/icons/down.svg";
+import ExportIcon from "@/assets/icons/export.svg";
+import Image from "next/image";
+import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
+import {store} from "@/store";
+import GoogleIcon from "@/assets/icons/google.svg";
+import AppleIcon from "@/assets/icons/apple.svg";
+import WalletIcon from "@/assets/icons/walletIcon.svg";
+import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
+import { ZkLoginData } from "@/lib/interface";
+import {addPoint, getLanguageLabel, onCopyToText, timeAgoEn} from "@/lib/utils";
+import { TabSkeleton } from "@/components/SkeletonScreens";
+import {
+  BalanceChangeItem,
+  MarketPositionOption,
+  MarketTradeOption,
+  TransactionInfo,
+  TransactionOption
+} from "@/lib/api/interface";
+import SaleModal from "@/components/SaleModal";
+import { TooltipAmount } from "@/components/TooltipAmount";
+import {useRouter} from "next/navigation";
+import {useLanguage} from "@/contexts/LanguageContext";
+import { MarketClient } from "@/lib/market";
+import { useExecuteTransaction } from "@/hooks/useExecuteTransaction";
+import {Avatar, AvatarImage} from "@/components/ui/avatar";
+import SharePopover from "@/components/SharePopover";
+import DepositModal from "@/components/DepositModal";
+import WithdrawModal from "@/components/WithdrawModal";
+import {useIsMobile} from "@/contexts/viewport";
+import {formatNumberWithSeparator} from '@/lib/numbers';
+import {tokenIcon} from "@/assets/config";
+import {useGlobalLoading} from "@/hooks/useGlobalLoading";
+import {toast} from "sonner";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
+
+interface PredictionIntegralModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export default function PredictionIntegralModal({
+  isOpen,
+  onClose,
+}: PredictionIntegralModalProps) {
+  const isMobile = useIsMobile();
+  const { language, t } = useLanguage();
+  const router = useRouter();
+  const { show, hide } = useGlobalLoading();
+  const tokenAddress = process.env.NEXT_PUBLIC_USDH_TYPE || ''
+
+  const [amount, setAmount] = useState<number>(0);
+  const [currentTab, setCurrentTab] = useState<'positions' | 'trades' | 'transaction'>('positions');
+  const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
+  const [tradeList, setTradeList] = useState<MarketTradeOption[]>([]);
+  const [transactionList, setTransactionList] = useState<BalanceChangeItem[]>([]);
+
+  const [showDeposit, setShowDeposit] = useState(false);
+  const [showWithdraw, setShowWithdraw] = useState(false);
+  const [showSale, setShowSale] = useState(false);
+  const [salePosition, setSalePosition] = useState<MarketPositionOption | null>(null);
+
+  // 添加加载状态管理
+  const [loading, setLoading] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const [isVisible, setIsVisible] = useState(false);
+  const [shouldRender, setShouldRender] = useState(isOpen);
+
+  const currentAccount = useCurrentAccount();
+  const zkLoginData = store.getState().zkLoginData as ZkLoginData | null;
+  const { balance: usdhBalance } = useUsdhBalanceFromStore();
+  const suiClient = useSuiClient() as any;
+  const executeTransaction = useExecuteTransaction();
+
+  // 组件加载时的初始化效果和动画控制
+  useEffect(() => {
+    if (isOpen) {
+      setShouldRender(true);
+      // 重置表单
+      setAmount(0);
+      // 重置错误状态
+      setError(null);
+      // 保存当前的overflow值
+      const originalOverflow = document.body.style.overflow;
+      // 禁止滚动
+      document.body.style.overflow = 'hidden';
+
+      // 延迟一帧，确保DOM已渲染再添加动画类
+      requestAnimationFrame(() => {
+        setIsVisible(true);
+      });
+
+      // 清理函数：恢复滚动
+      return () => {
+        document.body.style.overflow = originalOverflow;
+      };
+    } else {
+      setIsVisible(false);
+      // 等待动画结束后再卸载组件
+      const timer = setTimeout(() => {
+        setShouldRender(false);
+      }, 300); // 与动画时长一致
+      return () => clearTimeout(timer);
+    }
+  }, [isOpen]);
+
+  const [positionPageNum, setPositionPageNum] = useState(1);
+  const [positionPageSize, setPositionPageSize] = useState(50);
+  const [hasMorePositions, setHasMorePositions] = useState<boolean>(true);
+  const getMarketPosition = useCallback(async (page: number = 1, append: boolean = false) => {
+    const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+    if (!owner) {
+      console.error('No wallet connected');
+      setError('No wallet connected');
+      return;
+    }
+
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      const res = await apiService.getMarketPosition({userAddress: owner, address: owner || '', pageNum: page, pageSize: positionPageSize});
+
+      if (res && res.data) {
+        const rows = res.data.rows.filter(item => {
+          // 不显示持仓数量为0的数据
+          if(item.shares === 0) {
+            return false;
+          }
+          // 不显示已领取收益的数据
+          if (item.status === 'Redeemed') {
+            return false;
+          }
+          // 不显示已完成且竞猜失败的数据
+          if (item.status === 'Completed' && item.winnerId !== item.currentOutcome.outcomeId) {
+            return false;
+          }
+          return true
+        });
+        rows.sort((a, b) => {
+          const createTimeA = new Date(a.createTime).getTime();
+          const createTimeB = new Date(b.createTime).getTime();
+          if (a.status !== b.status) {
+            return a.status === 'Completed' ? -1 : 1;
+          }
+          return createTimeA < createTimeB ? 1 : -1;
+        })
+
+        if (append) {
+          setPositionList(prev => [...prev, ...rows]);
+        } else {
+          setPositionList(rows);
+        }
+        // 判断是否还有更多数据
+        setHasMorePositions(res.data.count > page * positionPageSize);
+      } else {
+        if (!append) {
+          setPositionList([]);
+        }
+        setHasMorePositions(false);
+      }
+    } catch (err) {
+      console.error('Error fetching market position:', err);
+      setError('Failed to fetch market positions');
+      if (!append) {
+        setPositionList([]);
+      }
+      setHasMorePositions(false);
+    } finally {
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [currentAccount?.address, positionPageSize, zkLoginData]);
+
+  const [tradePageNum, setTradePageNum] = useState(1);
+  const [tradePageSize, setTradePageSize] = useState(50);
+  const [hasMoreTrades, setHasMoreTrades] = useState<boolean>(true);
+  const getMarketTradeHistory = useCallback(async (page: number = 1, append: boolean = false) => {
+    const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+    if (!owner) {
+      console.error('No wallet connected');
+      setError('No wallet connected');
+      return;
+    }
+
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      const res = await apiService.getMarketTradeHistory({userAddress: owner, address: owner, pageNum: page, pageSize: tradePageSize});
+      if (res && res.data) {
+        const rows = res.data.rows;
+        rows.sort((a, b) => {
+          const createTimeA = new Date(a.tradeTime).getTime();
+          const createTimeB = new Date(b.tradeTime).getTime();
+          return createTimeA < createTimeB ? 1 : -1;
+        })
+
+        if (append) {
+          setTradeList(prev => [...prev, ...rows]);
+        } else {
+          setTradeList(rows);
+        }
+
+        // 判断是否还有更多数据
+        setHasMoreTrades(res.data.count > page * tradePageSize);
+      } else {
+        if (!append) {
+          setTradeList([]);
+        }
+        setHasMoreTrades(false);
+      }
+    } catch (err) {
+      console.error('Error fetching market trade history:', err);
+      setError('Failed to fetch trade history');
+      if (!append) {
+        setTradeList([]);
+      }
+      setHasMoreTrades(false);
+    } finally {
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [currentAccount?.address, tradePageSize, zkLoginData]);
+
+  // 添加获取交易记录的函数
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMoreTransactions, setHasMoreTransactions] = useState<boolean>(true);
+  const getTransactionHistory = useCallback(async (cursor: string | null = null, append: boolean = false) => {
+    const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
+    if (!owner) {
+      console.error('No wallet connected');
+      setError('No wallet connected');
+      return;
+    }
+
+    try {
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+      const {data} = await apiService.getBalanceChangeList({pageSize: 10, address: owner, cursor});
+
+      const rows = data.list.filter(item => item.coinType === tokenAddress);
+      rows.sort((a, b) => {
+        const createTimeA = new Date(a.tradeTime).getTime();
+        const createTimeB = new Date(b.tradeTime).getTime();
+        return createTimeA < createTimeB ? 1 : -1;
+      })
+
+      if (append) {
+        setTransactionList(prev => [...prev, ...rows]);
+      } else {
+        setTransactionList(rows);
+      }
+
+      // 判断是否还有更多数据
+      if (data.hasNextPage) {
+        setHasMoreTransactions(true);
+        setCursor(data.nextcursor);
+      } else {
+        setHasMoreTransactions(false);
+        setCursor(null);
+      }
+    } catch (err) {
+      console.error('Error fetching transaction history:', err);
+      setError('Failed to fetch transaction history');
+      if (!append) {
+        setTransactionList([]);
+      }
+      setHasMoreTransactions(false);
+    } finally {
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  }, [currentAccount?.address, zkLoginData, tokenAddress]);
+
+  // currentTab变化时调用对应的查询方法
+  useEffect(() => {
+    if (!isOpen || !currentTab) return;
+
+    // 重置分页状态
+    if (currentTab === 'positions') {
+      setPositionPageNum(1);
+      getMarketPosition(1, false);
+    } else if (currentTab === 'trades') {
+      setTradePageNum(1);
+      getMarketTradeHistory(1, false);
+    } else if (currentTab === 'transaction') {
+      setCursor(null);
+      getTransactionHistory(null, false);
+    }
+  }, [currentTab, isOpen, getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
+
+  // 滚动监听和加载更多
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollTop = target.scrollTop;
+    const scrollHeight = target.scrollHeight;
+    const clientHeight = target.clientHeight;
+
+    // 距离底部100px时触发加载
+    if (scrollHeight - scrollTop - clientHeight < 100 && !loadingMore && !loading) {
+      if (currentTab === 'positions' && hasMorePositions) {
+        const nextPage = positionPageNum + 1;
+        setPositionPageNum(nextPage);
+        getMarketPosition(nextPage, true);
+      } else if (currentTab === 'trades' && hasMoreTrades) {
+        const nextPage = tradePageNum + 1;
+        setTradePageNum(nextPage);
+        getMarketTradeHistory(nextPage, true);
+      } else if (currentTab === 'transaction' && hasMoreTransactions) {
+        getTransactionHistory(cursor, true);
+      }
+    }
+  }, [currentTab, loadingMore, loading, hasMorePositions, hasMoreTrades, hasMoreTransactions, positionPageNum, tradePageNum, cursor, getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
+
+  const contractRedeem = async (position: MarketPositionOption) => {
+    try {
+      show(t('rewards.claiming') || 'Claiming...');
+      const marketClient = new MarketClient(suiClient, {
+        packageId: position.packageId,
+        coinType: position.coinType,
+        globalSeqId: position.globalSequencerId || ''
+      });
+      const tx = await marketClient.buildRedeemTx({
+        marketId: position.marketId,
+      });
+      await executeTransaction(tx, false);
+      toast.success(t('rewards.claimSuccess'));
+      setTimeout(() => {
+        setPositionPageNum(1);
+        getMarketPosition(1, false);
+      }, 2000);
+    } catch (e: any) {
+      console.error('redeem error:', e);
+      toast.success(t('rewards.claimError'));
+    } finally {
+      hide()
+    }
+  };
+
+  if (!shouldRender) return null;
+
+  return (
+    <>
+      {/* 背景遮罩 */}
+      <div
+        className={`fixed inset-0 bg-black/50 backdrop-blur-sm z-[100] transition-opacity duration-300 ${
+          isVisible ? 'opacity-100' : 'opacity-0'
+        }`}
+        onClick={onClose}
+      />
+
+      {/* 右侧滑出弹窗 - PC端从右侧滑入，移动端从底部滑入 */}
+      <div className={`fixed flex flex-col bg-[#051A3D] p-[24px] z-[110] transition-all duration-300 ease-out
+        ${isMobile
+        ? `left-0 top-[90px] bottom-0 w-full pb-[30px] ${isVisible ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'}`
+        : `right-0 top-0 h-full w-full max-w-[432px] ${isVisible ? 'translate-x-0 opacity-100' : 'translate-x-full opacity-0'}`
+      }`}>
+        {!!zkLoginData && (
+          <div></div>
+        )}
+        <div className="flex-none flex items-center justify-between gap-[12px]">
+          <div className="text-[48px]">
+            {zkLoginData ? ( (zkLoginData as any)?.provider === 'google' ? <GoogleIcon /> : <AppleIcon />) : <WalletIcon />}
+          </div>
+          <div className="flex-1">
+            {zkLoginData ? (
+              <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
+            ) : (
+              <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
+            )}
+            <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
+              <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
+              <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
+            </div>
+          </div>
+          <CloseIcon className="text-[24px] text-[#D2D1D1] hover:text-white cursor-pointer" onClick={onClose} />
+        </div>
+
+        {/* Balance */}
+        <div className="flex-none mt-[35px] h-[220px] bg-[url(/images/card-bg.png)] bg-no-repeat bg-cover bg-center rounded-[16px] p-[16px]">
+          <div className="leading-[16px] text-[16px] text-white">{t('predictions.balance')}</div>
+          <div className="flex items-end mt-[24px]">
+            <span className="leading-[24px] text-[32px] text-white">{formatNumberWithSeparator(usdhBalance, {style: language === 'zh' ? 'cn' : 'western'})}</span>
+            <span className="ml-[4px] leading-[19px] text-[20px] text-white/60">USDH</span>
+          </div>
+          <div className="mt-[56px] flex gap-[16px]">
+            <div
+              className="flex-1 h-[56px] flex items-center justify-center bg-[#36383A] rounded-[16px] cursor-pointer"
+              onClick={() => setShowDeposit(true)}
+            >
+              <div className="size-[16px] bg-white rounded-full flex items-center justify-center">
+                <DownIcon className="text-[8px] text-black" />
+              </div>
+              <div className="ml-[10px] leading-[24px] text-white text-[16px]">{t('predictions.deposit')}</div>
+            </div>
+            <div
+              className="flex-1 h-[56px] flex items-center justify-center bg-[#FAFAFA] rounded-[16px] cursor-pointer"
+              onClick={() => setShowWithdraw(true)}
+            >
+              <div className="size-[16px] bg-black rounded-full flex items-center justify-center">
+                <UpIcon className="text-[8px] text-white" />
+              </div>
+              <div className="ml-[10px] leading-[24px] text-black text-[16px]">{t('predictions.withdraw')}</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Positions/Trades/Transaction 选项卡 */}
+        <div className="flex-1 overflow-hidden mt-[37px] flex flex-col">
+          <div className="flex gap-[12px]">
+            <span
+              className={`leading-[24px] text-[20px] font-bold ${currentTab === 'positions' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
+              onClick={() => {setCurrentTab('positions');}}
+            >
+              {t('predictions.integralModal.positions')}
+            </span>
+            <span
+              className={`leading-[24px] text-[20px] font-bold ${currentTab === 'trades' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
+              onClick={() => {setCurrentTab('trades');}}
+            >
+              {t('predictions.integralModal.trades')}
+            </span>
+            <span
+              className={`leading-[24px] text-[20px] font-bold ${currentTab === 'transaction' ? 'text-white' : 'text-white/60 hover:text-white'} cursor-pointer`}
+              onClick={() => {setCurrentTab('transaction');}}
+            >
+              {t('predictions.integralModal.transaction')}
+            </span>
+          </div>
+
+          {/* 骨架屏加载状态 */}
+          {loading && <TabSkeleton currentTab={currentTab} />}
+
+          {/* 错误状态显示 */}
+          {error && !loading && (
+            <div className="mt-[24px] p-4 bg-red-500/20 border border-red-500/40 rounded-lg">
+              <div className="text-red-400 text-sm">{error}</div>
+            </div>
+          )}
+          {currentTab === 'positions' && !loading && (
+            <>
+              {positionList.length > 0 ? (
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none" onScroll={handleScroll}>
+                  {positionList.map((position, index) => (
+                    <div
+                      key={`${position.marketId}_${index}`}
+                      className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20 cursor-pointer"
+                      onClick={() => {
+                        router.push(`/details?marketId=${position.marketId}`);
+                      }}
+                    >
+                      <div className="flex items-center">
+                        <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
+                          <AvatarImage src={position.imageUrl} alt="avatar" />
+                        </Avatar>
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          <EllipsisWithTooltip
+                            text={getLanguageLabel(position.marketName, language)}
+                            className="h-[16px] w-full leading-[16px] text-[16px] text-white"
+                          />
+                          <div className="flex gap-2 mt-[4px] h-[20px] leading-[20px] rounded-[4px] text-[#28C04E] text-[16px]">
+                            <TooltipAmount
+                              shares={position.shares}
+                              decimals={0}
+                              precision={2}
+                            />
+                            <EllipsisWithTooltip
+                              text={getLanguageLabel(position.currentOutcome.name, language)}
+                              className="flex-1 h-[20px] leading-[20px] text-[#28C04E] text-[16px]"
+                            />
+                          </div>
+                        </div>
+                        <div className="text-white px-[12px] text-[12px] mx-[20px]">
+                          <SharePopover
+                            trigger={<ExportIcon className="text-white/60 hover:text-white text-[12px]" />}
+                            content={
+                              <div className="max-w-[260px] text-sm leading-5">
+                                <div
+                                  className="flex items-center gap-2 text-white/60 hover:text-white text-[12px] cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onCopyToText(`${window.location.origin}/details?marketId=${position.marketId}`)
+                                  }}
+                                >
+                                  <CopyIcon />
+                                  {t('predictions.copyLink')}
+                                </div>
+                              </div>
+                            }
+                            offset={10}
+                            lockScroll
+                          />
+                        </div>
+                        {(position.status === 'OnGoing' || position.status === 'Resolved') && (
+                          <div
+                            className="h-[32px] leading-[32px] px-[16px] bg-[#F85E5C] rounded-[8px] text-white text-[16px] cursor-pointer"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSalePosition(position)
+                              setShowSale(true)
+                            }}
+                          >{t('predictions.integralModal.sale')}</div>
+                        )}
+                        {(position.status === 'Completed' && position.winnerId === position.currentOutcome.outcomeId) && (
+                          <div
+                            className={`h-[32px] leading-[32px] px-[16px] bg-[#29C04E] rounded-[8px] text-white text-[16px] cursor-pointer ${position.isRedeemed ? 'bg-[#999999]' : ''}`}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!position.isRedeemed) {
+                                contractRedeem(position)
+                              }
+                            }}
+                          >{position.isRedeemed ? t('predictions.integralModal.claimed') : t('predictions.integralModal.claim')}</div>
+                        )}
+                      </div>
+                      <div className="mt-[24px] flex pt-[24px] border-t border-white/10">
+                        <div className="flex-1">
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.entryPrice')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.entryPrice} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.marketPrice')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.currentPrice} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.bet')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.betAmount} decimals={0} precision={2} />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-[16px] flex">
+                        <div className="flex-1">
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.current')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.positionValue} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.pnl')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.pnl} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.toWin')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={position.shares} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.loading') || 'Loading...'}</div>
+                  )}
+                  {!hasMorePositions && !loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  )}
+                </div>
+              ) : (
+                <>
+                  <div className="mt-[40px] mx-auto size-[48px]">
+                    <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
+                  </div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
+                </>
+              )}
+            </>
+          )}
+          {currentTab === 'trades' && !loading && (
+            <>
+              {tradeList.length > 0 ? (
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none" onScroll={handleScroll}>
+                  {tradeList.map((trade, index) => (
+                    <div
+                      key={`${trade.marketId}_${index}`}
+                      className="p-[24px] bg-[#04122B] rounded-[16px] border border-white/20"
+                      onClick={() => {
+                        router.push(`/details?marketId=${trade.marketId}`);
+                      }}
+                    >
+                      <div className="flex">
+                        <Avatar className="w-[40px] h-[40px] rounded-[8px] transition-all">
+                          <AvatarImage src={trade.marketImage} alt="avatar" />
+                        </Avatar>
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          <EllipsisWithTooltip
+                            text={getLanguageLabel(trade.marketName, language)}
+                            className="h-[16px] w-full leading-[16px] text-[16px] text-white"
+                          />
+                          <div className="flex gap-2 mt-[4px] h-[20px] leading-[20px] rounded-[4px] text-[#28C04E] text-[16px]">
+                            <TooltipAmount
+                              shares={trade.amount}
+                              decimals={0}
+                              precision={2}
+                            />
+                            <EllipsisWithTooltip
+                              text={getLanguageLabel(trade.outcome.name, language)}
+                              className="flex-1 h-[20px] leading-[20px] text-[#28C04E] text-[16px]"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-[24px] flex justify-between pt-[24px] border-t border-white/10">
+                        <div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.type')}</div>
+                          {trade.tradeType === 'Bought' && (
+                            <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                              {t('predictions.buy')}
+                            </div>
+                          )}
+                          {trade.tradeType === 'Sold' && (
+                            <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                              {t('predictions.sell')}
+                            </div>
+                          )}
+                          {trade.tradeType === 'Redeemed' && (
+                            <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                              {t('predictions.redeemed')}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.price')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={trade.entryPrice} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.value')}</div>
+                          <div className="mt-[8px] flex gap-1 leading-[16px] text-[16px] text-white">
+                            <Image src={tokenIcon} alt="" width={16} height={16} />
+                            <TooltipAmount shares={trade.amount} decimals={0} precision={2}/>
+                          </div>
+                        </div>
+                        <div>
+                          <div className="leading-[12px] text-[12px] text-white/60">{t('predictions.integralModal.date')}</div>
+                          <div className="mt-[8px] leading-[16px] text-[16px] text-white">
+                            {timeAgoEn(trade.tradeTime)}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  {loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.loading') || 'Loading...'}</div>
+                  )}
+                  {!hasMoreTrades && !loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div className="mt-[40px] mx-auto size-[48px]">
+                    <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
+                  </div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
+                </div>
+              )}
+            </>
+          )}
+          {currentTab === 'transaction' && !loading && (
+            <>
+              {transactionList.length > 0 ? (
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20" onScroll={handleScroll}>
+                  {transactionList.map((transaction, index) => (
+                    transaction.tradeType === 'Deposit' ? (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      >
+                        <Image src={tokenIcon} alt="" width={32} height={32} />
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.deposit')}</span>
+                            <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                          </div>
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <span className="flex-1 text-white/40 truncate">{addPoint(transaction.sendAddress)}</span>
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : transaction.tradeType === 'Withdraw' ? (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      >
+                        <Image src={tokenIcon} alt="" width={32} height={32} />
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.withdraw')}</span>
+                            <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                          </div>
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <span className="flex-1 text-white/40 truncate">{addPoint(transaction.receiveAddress)}</span>
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : transaction.tradeType === 'Reward' ? (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      >
+                        <Image src={tokenIcon} alt="" width={32} height={32} />
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.reward')}</span>
+                            <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                          </div>
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <span className="flex-1 text-white/40 truncate">{addPoint(transaction.receiveAddress)}</span>
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                        onClick={() => {
+                          router.push(`/details?marketId=${transaction.marketId}`);
+                        }}
+                      >
+                        <Image src={transaction.icon} alt="" width={32} height={32} className="size-[32px] flex-none rounded-[8px]" />
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          {transaction.tradeType === 'Sold' && (
+                            <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                              <span className="text-white">{t('predictions.sell')}</span>
+                              <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                            </div>
+                          )}
+                          {transaction.tradeType === 'Bought' && (
+                            <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                              <span className="text-white">{t('predictions.buy')}</span>
+                              <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                            </div>
+                          )}
+                          {transaction.tradeType === 'Redeemed' && (
+                            <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                              <span className="text-white">{t('predictions.redeemed')}</span>
+                              <span className="text-[#28C04E] font-bold">+<TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                            </div>
+                          )}
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <EllipsisWithTooltip
+                              text={getLanguageLabel(transaction.projectName, language)}
+                              className="flex-1 text-white/40"
+                            />
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ))}
+                  {loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.loading') || 'Loading...'}</div>
+                  )}
+                  {!hasMoreTransactions && !loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  )}
+                </div>
+              ) : (
+                <div>
+                  <div className="mt-[40px] mx-auto size-[48px]">
+                    <Image src="/images/empty.png?v=1" alt="" width={48} height={48} />
+                  </div>
+                  <div className="mt-[12px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.nothing')}</div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* Deposit Modal */}
+      <DepositModal open={showDeposit} onOpenChange={setShowDeposit} />
+
+      {/* Withdraw Modal */}
+      <WithdrawModal open={showWithdraw} onOpenChange={setShowWithdraw} />
+
+      {/* Sale Modal */}
+      <SaleModal open={showSale} position={salePosition} onOpenChange={setShowSale}></SaleModal>
+    </>
+  );
+}

@@ -1,0 +1,267 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Dark scrollbar for scrollable containers */
+.scrollbar-dark {
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(255, 255, 255, 0.25) rgba(255, 255, 255, 0.08);
+}
+.scrollbar-dark::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-dark::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+.scrollbar-dark::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 8px;
+}
+.scrollbar-dark:hover::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.4);
+}
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 240 10% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 10% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 10% 3.9%;
+    --primary: 240 5.9% 10%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 240 4.8% 95.9%;
+    --secondary-foreground: 240 5.9% 10%;
+    --muted: 240 4.8% 95.9%;
+    --muted-foreground: 240 3.8% 46.1%;
+    --accent: 240 4.8% 95.9%;
+    --accent-foreground: 240 5.9% 10%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 5.9% 90%;
+    --input: 240 5.9% 90%;
+    --ring: 240 5.9% 10%;
+    --radius: 0.5rem;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+
+    /* OnePredict Light Theme Colors */
+    --op-background: 255 255 255;
+    --op-background-secondary: 248 250 252;
+    --op-surface: 255 255 255;
+    --op-surface-secondary: 241 245 249;
+    --op-border: 226 232 240;
+    --op-text: 15 23 42;
+    --op-text-secondary: 100 116 139;
+    --op-text-muted: 148 163 184;
+    --op-accent: 59 130 246;
+    --op-accent-hover: 37 99 235;
+    --op-success: 34 197 94;
+    --op-error: 239 68 68;
+    --op-warning: 245 158 11;
+  }
+
+  .dark {
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 240 10% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 240 5.9% 10%;
+    --secondary: 240 3.7% 15.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 240 3.7% 15.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 3.7% 15.9%;
+    --input: 240 3.7% 15.9%;
+    --ring: 240 4.9% 83.9%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+
+    /* OnePredict Dark Theme Colors */
+    --op-background: 5 26 61;
+    --op-background-secondary: 4 18 43;
+    --op-surface: 21 34 56;
+    --op-surface-secondary: 15 30 52;
+    --op-border: 255 255 255 / 0.1;
+    --op-text: 255 255 255;
+    --op-text-secondary: 255 255 255 / 0.7;
+    --op-text-muted: 255 255 255 / 0.5;
+    --op-accent: 70 125 255;
+    --op-accent-hover: 59 130 246;
+    --op-success: 34 197 94;
+    --op-error: 239 68 68;
+    --op-warning: 245 158 11;
+  }
+
+  .light {
+    /* OnePredict Light Theme Colors */
+    --op-background: 255 255 255;
+    --op-background-secondary: 248 250 252;
+    --op-surface: 255 255 255;
+    --op-surface-secondary: 241 245 249;
+    --op-border: 226 232 240;
+    --op-text: 15 23 42;
+    --op-text-secondary: 100 116 139;
+    --op-text-muted: 148 163 184;
+    --op-accent: 59 130 246;
+    --op-accent-hover: 37 99 235;
+    --op-success: 34 197 94;
+    --op-error: 239 68 68;
+    --op-warning: 245 158 11;
+  }
+}
+
+/* 主题切换动画 */
+@layer base {
+  .theme-transition,
+  .theme-transition *,
+  .theme-transition *:before,
+  .theme-transition *:after {
+    transition: background-color 300ms ease-in-out,
+                border-color 300ms ease-in-out,
+                color 300ms ease-in-out,
+                fill 300ms ease-in-out,
+                stroke 300ms ease-in-out,
+                opacity 300ms ease-in-out,
+                box-shadow 300ms ease-in-out,
+                transform 300ms ease-in-out;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* OnePredict 自定义主题类 */
+@layer utilities {
+  .bg-op-background {
+    background-color: rgb(var(--op-background));
+  }
+  .bg-op-background-secondary {
+    background-color: rgb(var(--op-background-secondary));
+  }
+  .bg-op-surface {
+    background-color: rgb(var(--op-surface));
+  }
+  .bg-op-surface-secondary {
+    background-color: rgb(var(--op-surface-secondary));
+  }
+  .border-op-border {
+    border-color: rgb(var(--op-border));
+  }
+  .text-op-text {
+    color: rgb(var(--op-text));
+  }
+  .text-op-text-secondary {
+    color: rgb(var(--op-text-secondary));
+  }
+  .text-op-text-muted {
+    color: rgb(var(--op-text-muted));
+  }
+  .bg-op-accent {
+    background-color: rgb(var(--op-accent));
+  }
+  .bg-op-accent-hover {
+    background-color: rgb(var(--op-accent-hover));
+  }
+  .text-op-accent {
+    color: rgb(var(--op-accent));
+  }
+  .bg-op-success {
+    background-color: rgb(var(--op-success));
+  }
+  .bg-op-error {
+    background-color: rgb(var(--op-error));
+  }
+  .bg-op-warning {
+    background-color: rgb(var(--op-warning));
+  }
+  .scrollbar-none {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+  }
+  .scrollbar-none::-webkit-scrollbar {
+    width: 0;
+    height: 0;
+  }
+  .scrollbar-none::-webkit-scrollbar-track,
+  .scrollbar-none::-webkit-scrollbar-thumb {
+    background: transparent;
+    border: none;
+  }
+
+  .scrollbar-custom {
+    scrollbar-width: thin;
+    scrollbar-color: theme(colors.white) transparent;
+  }
+  .scrollbar-custom::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+  }
+  .scrollbar-custom::-webkit-scrollbar-track {
+    background: linear-gradient(180deg, #010A2C 0%, #1E386F 50%, #010A2C 100%);
+  }
+  .scrollbar-track-gradient::-webkit-scrollbar-corner {
+    background: linear-gradient(180deg, #010A2C 0%, #1E386F 50%, #010A2C 100%);
+  }
+  .scrollbar-custom::-webkit-scrollbar-thumb {
+    background-color: theme(colors.white / 60%);
+    border-radius: 9999px;
+    border: 2px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-custom:hover::-webkit-scrollbar-thumb {
+    background-color: theme(colors.white / 80%);
+  }
+
+  /* Hide lightweight-charts watermark/logo inside #container */
+  #tv-attr-logo {
+    display: none !important;
+  }
+  .predict-btn {
+    opacity: 0.6;
+    &:hover {
+       opacity: 1;
+    }
+    &.active {
+      opacity: 1;
+    }
+  }
+
+  /* Chrome, Safari, Edge, Opera */
+  .no-spinner::-webkit-outer-spin-button,
+  .no-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  /* Firefox */
+  .no-spinner {
+    -moz-appearance: textfield;
+  }
+
+  @keyframes shimmer {
+    0% { background-position: -200% 0 }
+    100% { background-position: 200% 0 }
+  }
+  .animate-shimmer { animation: shimmer 1.4s linear infinite }
+}

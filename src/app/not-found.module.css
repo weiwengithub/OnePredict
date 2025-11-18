@@ -1,0 +1,231 @@
+/* 404页面专用样式 */
+
+.container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+}
+
+.darkMode .container {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+}
+
+.card {
+  width: 100%;
+  max-width: 28rem;
+  margin: 0 auto;
+  border-radius: 1rem;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  background: white;
+  overflow: hidden;
+}
+
+.darkMode .card {
+  background: #1e293b;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.2);
+}
+
+.content {
+  padding: 2rem;
+  text-align: center;
+}
+
+.icon {
+  width: 6rem;
+  height: 6rem;
+  color: #9ca3af;
+  margin: 0 auto 1.5rem;
+}
+
+.darkMode .icon {
+  color: #6b7280;
+}
+
+.errorCode {
+  font-size: 4rem;
+  font-weight: 700;
+  color: #111827;
+  margin-bottom: 0.5rem;
+  line-height: 1;
+}
+
+.darkMode .errorCode {
+  color: #f9fafb;
+}
+
+.title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #374151;
+  margin-bottom: 0.75rem;
+}
+
+.darkMode .title {
+  color: #d1d5db;
+}
+
+.description {
+  color: #6b7280;
+  margin-bottom: 2rem;
+  line-height: 1.6;
+}
+
+.darkMode .description {
+  color: #9ca3af;
+}
+
+.buttonGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+@media (min-width: 640px) {
+  .buttonGroup {
+    flex-direction: row;
+  }
+}
+
+.primaryButton {
+  flex: 1;
+  background: #2563eb;
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: none;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.primaryButton:hover {
+  background: #1d4ed8;
+}
+
+.secondaryButton {
+  flex: 1;
+  background: transparent;
+  color: #374151;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  border: 1px solid #d1d5db;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.secondaryButton:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.darkMode .secondaryButton {
+  color: #d1d5db;
+  border-color: #4b5563;
+}
+
+.darkMode .secondaryButton:hover {
+  background: #374151;
+  border-color: #6b7280;
+}
+
+.quickLinks {
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e5e7eb;
+}
+
+.darkMode .quickLinks {
+  border-color: #374151;
+}
+
+.quickLinksTitle {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin-bottom: 1rem;
+}
+
+.darkMode .quickLinksTitle {
+  color: #9ca3af;
+}
+
+.linksList {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem;
+  font-size: 0.875rem;
+}
+
+.link {
+  color: #2563eb;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.link:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+.darkMode .link {
+  color: #60a5fa;
+}
+
+.darkMode .link:hover {
+  color: #93c5fd;
+}
+
+/* 响应式设计 */
+@media (max-width: 640px) {
+  .content {
+    padding: 1.5rem;
+  }
+
+  .errorCode {
+    font-size: 3rem;
+  }
+
+  .title {
+    font-size: 1.25rem;
+  }
+
+  .icon {
+    width: 5rem;
+    height: 5rem;
+  }
+}
+
+/* 动画效果 */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.card {
+  animation: fadeIn 0.5s ease-out;
+}
+
+/* 无障碍访问支持 */
+.primaryButton:focus,
+.secondaryButton:focus,
+.link:focus {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.darkMode .primaryButton:focus,
+.darkMode .secondaryButton:focus,
+.darkMode .link:focus {
+  outline-color: #60a5fa;
+}
