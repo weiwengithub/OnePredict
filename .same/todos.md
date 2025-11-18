@@ -14,7 +14,17 @@
 - 变更文件：7 个文件
 - 新增代码：+1,834 行
 
+## Docker 部署配置
+- [x] 创建 Dockerfile
+- [x] 创建 docker-compose.yml
+- [x] 创建 .dockerignore
+- [x] 修改 next.config.js 添加 standalone 输出
+- [x] 创建 Docker 部署文档
+- [x] 推送到 ssr-deployment 分支
+
+最新提交：7ccb6d6 - feat: 添加 Docker 部署支持
+
 ## 后续步骤
+- [ ] 使用 Docker 构建和测试镜像
 - [ ] 创建 Pull Request 合并到 main 分支
-- [ ] 在 Netlify 配置 SSR 部署
-- [ ] 测试生产环境部署
+- [ ] 配置生产环境部署（Docker 或 Netlify）
