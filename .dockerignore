@@ -1,0 +1,47 @@
+# 依赖
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 构建输出
+.next
+out
+dist
+build
+
+# 环境变量文件
+.env
+.env.local
+.env.development
+.env.test
+.env.production
+
+# 版本控制
+.git
+.gitignore
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+*~
+
+# 测试
+coverage
+.nyc_output
+
+# 其他
+.DS_Store
+*.pem
+.vercel
+.same
+
+# 锁文件（Docker 内会重新生成）
+bun.lock
+pnpm-lock.yaml
+yarn.lock
+
+# 日志
+*.log

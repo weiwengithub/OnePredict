@@ -3,6 +3,9 @@ const nextConfig = {
   // 移除静态导出配置，启用SSR部署
   // SSR模式下不需要 output: 'export' 和 distDir: 'out'
 
+  // Docker 部署配置：生成独立的服务器包
+  output: 'standalone',
+
   // 确保导出的路由以目录形式存在，例如 /waiting -> waiting/index.html
   trailingSlash: true,
   allowedDevOrigins: ["*.preview.same-app.com"],
