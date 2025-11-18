@@ -1,6 +1,6 @@
 "use client";
 
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useMemo} from "react";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import Image from 'next/image';
 import Link from 'next/link';
@@ -41,8 +41,12 @@ export default function Header({ currentPage }: HeaderProps) {
   const currentAccount = useCurrentAccount();
   const zkLoginData = useSelector((state: RootState) => state.zkLoginData);
 
+  const userAddress = useMemo(() => {
+    return currentAccount?.address || zkLoginData?.zkloginUserAddress;
+  }, [currentAccount, zkLoginData])
+
   const { balance: usdhBalance } = useUsdhBalance({
-    // address: userAddress, // 可选：不传则自动解析
+    address: userAddress, // 可选：不传则自动解析
     pollMs: 0, // 可选：例如 5000 开启 5s 轮询
   });
 
@@ -128,7 +132,7 @@ export default function Header({ currentPage }: HeaderProps) {
               <div className="flex items-center mr-[20px] cursor-pointer" onClick={(e) => handleButtonClick(e)}>
                 <Image src={tokenIcon} alt="" width={20} height={20} />
                 <span className="inline-block ml-[8px] h-[24px] leading-[24px] text-[20px] font-bold text-white/60 hover:text-white">
-                  {abbreviateNumber(usdhBalance, {style: language === 'zh' ? 'cn' : 'western', decimals: 2})}
+                  {userAddress ? abbreviateNumber(usdhBalance, {style: language === 'zh' ? 'cn' : 'western', decimals: 2}) : 0}
                 </span>
               </div>
 
@@ -199,19 +203,19 @@ export default function Header({ currentPage }: HeaderProps) {
                         <span>简体中文</span>
                         {language === 'zh' && <CheckedIcon className="text-[12px]" />}
                       </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setLanguage('zhtw');
-                          setShowLanguageDropdown(false);
-                        }}
-                        className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[14px] rounded-[8px] transition-colors ${
-                          language === 'zhtw' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'
-                        }`}
-                      >
-                        <span>繁體中文</span>
-                        {language === 'zhtw' && <CheckedIcon className="text-[12px]" />}
-                      </button>
+                      {/*<button*/}
+                      {/*  onClick={(e) => {*/}
+                      {/*    e.stopPropagation();*/}
+                      {/*    setLanguage('zhtw');*/}
+                      {/*    setShowLanguageDropdown(false);*/}
+                      {/*  }}*/}
+                      {/*  className={`w-full h-[24px] flex items-center justify-between px-[7px] text-[14px] rounded-[8px] transition-colors ${*/}
+                      {/*    language === 'zhtw' ? 'text-white bg-[#01173C]' : 'text-white/50 hover:text-white hover:bg-[#01173C]'*/}
+                      {/*  }`}*/}
+                      {/*>*/}
+                      {/*  <span>繁體中文</span>*/}
+                      {/*  {language === 'zhtw' && <CheckedIcon className="text-[12px]" />}*/}
+                      {/*</button>*/}
                     </div>
                   </div>
                 )}

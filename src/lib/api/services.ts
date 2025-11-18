@@ -25,7 +25,8 @@ import {
   ResProjectCommentList,
   ResProjectCommentReplyList,
   KlineInfo,
-  ResMemberMoneyRecord
+  ResMemberMoneyRecord,
+  QuestionData
 } from "@/lib/api/interface";
 
 // 具体的API接口方法
@@ -54,12 +55,12 @@ export const apiService = {
   },
 
   // 获取用户持仓
-  getMarketPosition: (params: { userAddress?: string; memberId?: string; address: string }) => {
+  getMarketPosition: (params: { userAddress?: string; memberId?: string; address: string; pageNum: number; pageSize: number }) => {
     return apiClient.post<ResMarketPosition>('/api/ext/market/position', params);
   },
 
   // 获取用户历史交易记录
-  getMarketTradeHistory: (params: {userAddress: string; address: string}) => {
+  getMarketTradeHistory: (params: {userAddress: string; address: string; pageNum: number; pageSize: number}) => {
     return apiClient.post<ResMarketTradeHistory>('/api/ext/market/userTrade/history', params);
   },
 
@@ -69,7 +70,7 @@ export const apiService = {
   },
 
   // 钱包余额变化列表
-  getBalanceChangeList: (data: {pageSize: number; address: string}) => {
+  getBalanceChangeList: (data: {pageSize: number; address: string; cursor: string | null}) => {
     return apiClient.post<ResBalanceChange>('/api/ext/balanceChange/list', data);
   },
 
@@ -152,7 +153,7 @@ export const apiService = {
   },
 
   // 文章详情（富文本）
-  getArticleDetail: (data: { type: string }) => {
+  getArticleDetail: (data: { type: string; lang: string }) => {
     return apiClient.post('/api/ext/article/detail', data);
   },
 
@@ -189,6 +190,21 @@ export const apiService = {
   // 查询收益
   claimMemberMoney: (params: { coinType: string; address: string }) => {
     return apiClient.post<ResMemberMoneyRecord>('/api/ext/memberMoney/claim', params);
+  },
+
+  // 查询常见问题标题
+  getQuestionAllTitle: (params: {lang: string}) => {
+    return apiClient.post<QuestionData>('/api/ext/question/queryAllTitle', params);
+  },
+
+  // 查询常见问题内容
+  getQuestionContent: (params: { category: string; title: string; lang: string }) => {
+    return apiClient.post<{content: string, titles: string[]}>('/api/ext/question/queryContent', params);
+  },
+
+  // 根据类型查询标题列表
+  getQuestionTitleByParams: (params: { category: string; lang: string }) => {
+    return apiClient.post<string[]>('/api/ext/question/queryTitleByParams', params);
   },
 };
 

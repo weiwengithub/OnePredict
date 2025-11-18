@@ -81,7 +81,12 @@
     "replyTime": "回复时间",
     "replyUser": "回复用户",
     "replyUserAvatar": "回复用户头像",
-    "buy": "买入"
+    "buy": "买入",
+    "confirm": "确认",
+    "cancel": "取消",
+    "processing": "处理中...",
+    "slippageTips": "当前滑点超过5%，可能导致成交价格偏离预期。请确认是否继续交易？",
+    "confirmation": "交易确认"
   },
   "nav": {
     "home": "首页",
@@ -101,7 +106,7 @@
     "subtitle": "请稍候，我们正在与 {{name}} 建立连接"
   },
   "search": {
-    "placeholder": "搜索市场或合约地址",
+    "placeholder": "搜索市场",
     "trending": "热门搜索",
     "noResults": "未找到相关结果",
     "recentSearches": "最近搜索",
@@ -112,7 +117,8 @@
   "predictions": {
     "buy": "买入",
     "sell": "卖出",
-    "redeemed": "兑换",
+    "redeemed": "领取",
+    "reward": "奖励",
     "deposit": "充值",
     "withdraw": "提现",
     "outcomes": "结果",
@@ -195,7 +201,8 @@
     "replySuccess": "回复成功",
     "replyError": "回复失败",
     "at": "价格",
-    "cost": "总成本"
+    "cost": "总成本",
+    "cashOut": "变现"
   },
   "time": {
     "justNow": "刚刚",
@@ -305,5 +312,23 @@
     "project": "项目",
     "investmentAmount": "投资金额",
     "amountOfBonus": "奖励金额"
+  },
+  "doc": {
+    "viewAll": "查看所有 {{total}} 篇文章",
+    "quickStart": "快速入门",
+    "accountSecurity": "账户与安全",
+    "featuresTutorials": "功能与教程",
+    "frequentlyAskedQuestions": "常见问题"
+  },
+  "errorMessage": {
+    "youHaveCancelled": "您已取消签名。",
+    "walletSignatureFailed": "钱包签名失败，请稍后重试。",
+    "networkError": "网络异常或节点请求失败，请检查网络后重试。",
+    "insufficientBalance": "余额不足，请检查账户余额后重试。",
+    "youHaveAlready": "您已经参与过本次操作，不能重复提交。",
+    "contractExecution": "合约执行失败，请稍后重试或联系客服。",
+    "transactionExecution": "交易执行失败：",
+    "transactionSubmission": "交易提交失败：",
+    "unknownError": "未知错误，请稍后重试。"
   }
 }

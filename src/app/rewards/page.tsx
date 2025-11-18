@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent} from "@/components/ui/card";
 import MobileNavigation from "@/components/MobileNavigation";
-import {addPoint, onCopyToText, timeAgoEn} from "@/lib/utils";
+import {addPoint, getLanguageLabel, onCopyToText, timeAgoEn} from "@/lib/utils";
 import {
   Gift,
   Users,
@@ -41,9 +41,8 @@ import {toast} from "sonner";
 import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 export default function Rewards() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const isMobile = useIsMobile();
-  const [copiedCode, setCopiedCode] = useState(false);
   const [currentTab, setCurrentTab] = useState<string>("invite");
   const [memberCode, setMemberCode] = useState<string>("");
   const { show, hide } = useGlobalLoading();
@@ -73,7 +72,7 @@ export default function Rewards() {
         const { data: inviteData } = await apiService.getMemberInviteList({pageSize: invitePageSize, pageNum: invitePageNumber, address: userAddress})
         setInviteRecords(inviteData.rows)
 
-        getMemberMoneyRecord()
+        getMemberMoneyRecord(1, false)
       } catch (e: any) {
         if (e?.name === 'AbortError' || e?.name === 'CanceledError' || e?.code === 'ERR_CANCELED') return;
         // console.error(e)
@@ -82,29 +81,40 @@ export default function Rewards() {
     return () => { aborted = true; controller.abort(); };
   }, [userAddress]);
 
-  // Calculate total points
-  const totalPoints = 15750;
-  const todayEarned = 125;
-
   const [memberMoneyTotal, setMemberMoneyTotal] = useState({
     avaAmount: 0,
     claimedAmount: 0,
     totalInviteAmount: 0
   });
   const [memberMoneyRecords, setMemberMoneyRecords] = useState<MemberMoneyRecord[]>([]);
-
-  const getMemberMoneyRecord = async () => {
-    const { data } = await apiService.getMemberMoneyRecord({
-      pageNum: 1,
-      pageSize: 10,
-      address: userAddress
-    })
-    setMemberMoneyTotal({
-      avaAmount: data.avaAmount || 0,
-      claimedAmount: data.claimedAmount || 0,
-      totalInviteAmount: data.totalInviteAmount || 0
-    })
-    setMemberMoneyRecords(data.rows)
+  const [memberMoneyPageSize, setMemberMoneyPageSize] = useState(10);
+  const [memberMoneyPageNum, setMemberMoneyPageNum] = useState(1);
+  const [isFetchingMemberMoney, setIsFetchingMemberMoney] = useState(false);
+  const [hasMoreMemberMoney, setHasMoreMemberMoney] = useState<boolean>(true);
+  const getMemberMoneyRecord = async (page: number = 1, append: boolean = false) => {
+    try {
+      setIsFetchingMemberMoney(true);
+      const { data } = await apiService.getMemberMoneyRecord({
+        pageNum: page,
+        pageSize: memberMoneyPageSize,
+        address: userAddress
+      })
+      setMemberMoneyTotal({
+        avaAmount: data.avaAmount || 0,
+        claimedAmount: data.claimedAmount || 0,
+        totalInviteAmount: data.totalInviteAmount || 0
+      })
+      if (append) {
+        setMemberMoneyRecords(prev => [...prev, ...data.rows]);
+      } else {
+        setMemberMoneyRecords(data.rows);
+      }
+      setHasMoreMemberMoney(data.count > page * memberMoneyPageSize)
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setIsFetchingMemberMoney(false);
+    }
   }
 
   const claimMemberMoney = async () => {
@@ -114,7 +124,7 @@ export default function Rewards() {
       console.log(data)
       toast.success(t('rewards.claimSuccess'));
       // 刷新数据
-      await getMemberMoneyRecord()
+      await getMemberMoneyRecord(1, false)
     } catch (error) {
       console.error('Claim failed:', error)
       toast.success(t('rewards.claimError'));
@@ -150,13 +160,13 @@ export default function Rewards() {
           <div className="mt-[12px] leading-[24px] text-white text-[16px]">{t('rewards.onePredictPoints')}</div>
           <div className="mt-[32px] flex gap-[24px]">
             <div
-              className={`h-[24px] leading-[24px] ${isMobile? 'text-[20px]' : 'text-[24px]'} font-bold ${currentTab === 'invite' ? 'text-white' : 'text-white/60'}`}
+              className={`h-[24px] leading-[24px] ${isMobile? 'text-[20px]' : 'text-[24px]'} font-bold ${currentTab === 'invite' ? 'text-white' : 'text-white/60 cursor-pointer'}`}
               onClick={() => {setCurrentTab('invite')}}
             >
               {t('rewards.inviteToEarn')}
             </div>
             <div
-              className={`h-[24px] leading-[24px] ${isMobile? 'text-[20px]' : 'text-[24px]'} font-bold ${currentTab === 'rewards' ? 'text-white' : 'text-white/60'}`}
+              className={`h-[24px] leading-[24px] ${isMobile? 'text-[20px]' : 'text-[24px]'} font-bold ${currentTab === 'rewards' ? 'text-white' : 'text-white/60 cursor-pointer hover:text-white'}`}
               onClick={() => {
                 setCurrentTab('rewards')
               }}
@@ -305,7 +315,7 @@ export default function Rewards() {
                             <div className="flex-1 overflow-hidden">
                               <div className="leading-[16px] text-[16px] text-white font-bold truncate">{record.fromNickName}</div>
                               <EllipsisWithTooltip
-                                text={record.projectName}
+                                text={getLanguageLabel(record.projectName, language)}
                                 className="mt-[8px] leading-[16px] text-[16px] text-white/60"
                               />
                             </div>
@@ -324,7 +334,21 @@ export default function Rewards() {
                             </div>
                           </div>
                         ))}
-                        <div className="mt-[32px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('rewards.allItemsLoaded')}</div>
+                        {hasMoreMemberMoney ? (
+                          <div
+                            className="mt-[15px] flex items-center justify-center bg-[#010A2C] border border-[#26282E] text-center rounded-[16px] py-[9px] cursor-pointer"
+                            onClick={() => {
+                              const pageNumber = memberMoneyPageNum + 1;
+                              setMemberMoneyPageNum(pageNumber);
+                              getMemberMoneyRecord(pageNumber, true);
+                            }}
+                          >
+                            <span className="mr-[4px] text-[14px] text-white/60">{isFetchingMemberMoney ? t('common.loading') || 'Loading...' : t('common.loadMore')}</span>
+                            <Image src="/images/icon/icon-refresh.png?v=1" alt="OnePredict" width={14} height={14} />
+                          </div>
+                        ) : (
+                          <div className="mt-[32px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('rewards.allItemsLoaded')}</div>
+                        )}
                       </div>
                     ) : (
                       <div className="space-y-[24px]">
@@ -339,7 +363,7 @@ export default function Rewards() {
                           <div key={index} className="flex leading-[16px] text-[16px] text-white/60 font-bold pb-[25px] border-b border-white/10">
                             <div className="flex-[2] truncate">{record.fromNickName}</div>
                             <EllipsisWithTooltip
-                              text={record.projectName}
+                              text={getLanguageLabel(record.projectName, language)}
                               className="flex-[3] text-center leading-[16px] text-[16px] text-white/60"
                             />
                             <div className="flex-[3] flex items-center justify-center gap-[8px]">
@@ -348,12 +372,26 @@ export default function Rewards() {
                             </div>
                             <div className="flex-[3] flex items-center justify-center gap-[8px]">
                               <Image src={tokenIcon} alt="" width={16} height={16} />
-                              <TooltipAmount shares={record.feeAmount} decimals={0} precision={2} />
+                              <TooltipAmount shares={record.txnAmount} decimals={0} precision={4} />
                             </div>
                             <div className="flex-[2] text-right">{timeAgoEn(record.createTime)}</div>
                           </div>
                         ))}
-                        <div className="mt-[32px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('rewards.allItemsLoaded')}</div>
+                        {hasMoreMemberMoney ? (
+                          <div
+                            className="mt-[15px] flex items-center justify-center bg-[#010A2C] border border-[#26282E] text-center rounded-[16px] py-[9px] cursor-pointer"
+                            onClick={() => {
+                              const pageNumber = memberMoneyPageNum + 1;
+                              setMemberMoneyPageNum(pageNumber);
+                              getMemberMoneyRecord(pageNumber, true);
+                            }}
+                          >
+                            <span className="mr-[4px] text-[14px] text-white/60">{isFetchingMemberMoney ? t('common.loading') || 'Loading...' : t('common.loadMore')}</span>
+                            <Image src="/images/icon/icon-refresh.png?v=1" alt="OnePredict" width={14} height={14} />
+                          </div>
+                        ) : (
+                          <div className="mt-[32px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('rewards.allItemsLoaded')}</div>
+                        )}
                       </div>
                     )}
                   </>

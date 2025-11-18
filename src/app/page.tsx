@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useMemo } from "react";
+import React, {useState, useRef, useMemo, useEffect} from "react";
 import PredictionCard from "@/components/PredictionCard";
 import MobileNavigation from "@/components/MobileNavigation";
 import CustomCarousel, { EffectType } from '@/components/CustomCarousel';
@@ -18,9 +18,14 @@ import { useCurrentAccount } from "@onelabs/dapp-kit";
 import { useSelector } from "react-redux";
 import { RootState } from "@/lib/interface";
 
+function fillToFive<T>(arr: T[]): T[] {
+  if (arr.length >= 5 || arr.length === 0) return arr;
+  return Array.from({ length: 5 }, (_, i) => arr[i % arr.length]);
+}
+
 export default function Home() {
   const isMobile = useIsMobile();
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const [activeCategory, setActiveCategory] = useState("home");
 
   // 筛选和排序参数
@@ -114,7 +119,18 @@ export default function Home() {
       return data;
     },
   });
-  const bannerList = bannerData?.rows || [];
+  const [bannerList, setBannerList] = React.useState<BannerInfo[]>([]);
+  useEffect(() => {
+    switch (language) {
+      case 'en':
+        setBannerList(fillToFive(bannerData?.rows.filter(item => item.lang === '2') || []))
+        break;
+      case 'zh':
+      case 'zhtw':
+        setBannerList(fillToFive(bannerData?.rows.filter(item => item.lang === '1') || []))
+        break
+    }
+  }, [bannerData?.rows, language])
 
   const { data: dictList } = useQuery({
     queryKey: ['dictList'],

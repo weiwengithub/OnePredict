@@ -81,7 +81,12 @@
     "replyTime": "回復時間",
     "replyUser": "回復用戶",
     "replyUserAvatar": "回復用戶頭像",
-    "buy": "買入"
+    "buy": "買入",
+    "confirm": "確認",
+    "cancel": "取消",
+    "processing": "處理中...",
+    "slippageTips": "當前滑點超過 5%，可能導致成交價格偏離預期。請確認是否繼續交易？",
+    "confirmation": "交易確認"
   },
   "nav": {
     "home": "首頁",
@@ -101,7 +106,7 @@
     "subtitle": "請稍候，我們正在與 {{name}} 建立連線"
   },
   "search": {
-    "placeholder": "搜尋市場或合約地址",
+    "placeholder": "搜尋市場",
     "trending": "熱門搜尋",
     "noResults": "未找到相關結果",
     "recentSearches": "最近搜尋",
@@ -112,7 +117,8 @@
   "predictions": {
     "buy": "買入",
     "sell": "賣出",
-    "redeemed": "兌換",
+    "redeemed": "領取",
+    "reward": "獎勵",
     "deposit": "充值",
     "withdraw": "提現",
     "outcomes": "結果",
@@ -195,7 +201,8 @@
     "replySuccess": "回覆成功",
     "replyError": "回覆失敗",
     "at": "價格",
-    "cost": "總成本"
+    "cost": "總成本",
+    "cashOut": "變現"
   },
   "time": {
     "justNow": "剛剛",
@@ -305,5 +312,23 @@
     "project": "项目",
     "investmentAmount": "投资金额",
     "amountOfBonus": "奖励金额"
+  },
+  "doc": {
+    "viewAll": "查看所有 {{total}} 篇文章",
+    "quickStart": "快速入門",
+    "accountSecurity": "帳戶與安全",
+    "featuresTutorials": "功能與教程",
+    "frequentlyAskedQuestions": "常見問題"
+  },
+  "errorMessage": {
+    "youHaveCancelled": "您已取消簽名。",
+    "walletSignatureFailed": "錢包簽名失敗，請稍後重試。",
+    "networkError": "網路異常或節點請求失敗，請檢查網路後重試。",
+    "insufficientBalance": "餘額不足，請檢查帳戶餘額後重試。",
+    "youHaveAlready": "您已經參與過本次操作，不能重複提交。",
+    "contractExecution": "合約執行失敗，請稍後重試或聯絡客服。",
+    "transactionExecution": "交易執行失敗：",
+    "transactionSubmission": "交易提交失敗：",
+    "unknownError": "未知錯誤，請稍後重試。"
   }
 }

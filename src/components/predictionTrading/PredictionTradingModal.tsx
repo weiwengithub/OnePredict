@@ -7,6 +7,8 @@ import TradingForm from "./TradingForm";
 import TermsAgreement from "./TermsAgreement";
 import { MarketOption } from "@/lib/api/interface";
 import {useIsMobile} from "@/contexts/viewport";
+import {useLanguage} from "@/contexts/LanguageContext";
+import {getLanguageLabel} from "@/lib/utils";
 
 interface PredictionTradingModalProps {
   isOpen: boolean;
@@ -21,6 +23,7 @@ export default function PredictionTradingModal({
   prediction,
   initialOutcome = 0
 }: PredictionTradingModalProps) {
+  const { language } = useLanguage();
   const isMobile = useIsMobile();
   const [isVisible, setIsVisible] = useState(false);
   const [shouldRender, setShouldRender] = useState(isOpen);
@@ -77,7 +80,7 @@ export default function PredictionTradingModal({
               <AvatarImage src={prediction.imageUrl} alt="avatar" />
             </Avatar>
             <h2 className="truncate h-[24px] leading-[24px] text-[20px] font-bold text-white px-[12px]">
-              {prediction.marketName}
+              {getLanguageLabel(prediction.projectName, language)}
             </h2>
           </div>
           <CloseIcon className="text-[24px] text-[#D2D1D1] hover:text-white cursor-pointer" onClick={onClose} />

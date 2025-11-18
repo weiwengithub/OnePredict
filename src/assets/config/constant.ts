@@ -2,8 +2,6 @@
 
 export const CLIENT_ID = process.env.NEXT_PUBLIC_CLIENT_ID || ""
 
-export const REDIRECT_URI = process.env.NEXT_PUBLIC_REDIRECT_URI || "";
-
 export const GET_SALT_URL = process.env.NEXT_PUBLIC_GET_SALT_URL || ""
 
 

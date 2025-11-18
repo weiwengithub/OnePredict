@@ -34,7 +34,7 @@ import {
   ProjectCommentListItem,
   KlineInfo
 } from "@/lib/api/interface";
-import {capitalizeFirst, formatShortDate, onCopyToText, timeAgoEn, formatTimeStr} from "@/lib/utils";
+import {capitalizeFirst, formatShortDate, onCopyToText, timeAgoEn, formatTimeStr, getLanguageLabel} from "@/lib/utils";
 import {useLanguage} from "@/contexts/LanguageContext";
 import BigNumber from "bignumber.js";
 import { HoverTooltipButton } from "@/components/HoverTooltipButton";
@@ -63,7 +63,7 @@ import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 import {PredictionTradingModal} from "@/components/predictionTrading";
 
 export default function PredictionDetailsClient() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const isMobile = useIsMobile();
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
@@ -397,7 +397,7 @@ export default function PredictionDetailsClient() {
               <div className="flex">
                 <img src={predictionDetail.imageUrl} alt="" className={isMobile ? 'w-[64px] h-[64px] rounded-[8px]' : 'w-[100px] h-[100px] rounded-[12px]'} />
                 <div className={`${isMobile ? 'ml-[16px]' : 'ml-[24px]'} flex flex-col gap-[12px]`}>
-                  <div className={`text-white font-bold line-clamp-3 ${isMobile ? 'leading-[24px] text-[16px]' : 'leading-[28px] text-[24px]'}`}>{predictionDetail.marketName}</div>
+                  <div className={`text-white font-bold line-clamp-3 ${isMobile ? 'leading-[24px] text-[16px]' : 'leading-[28px] text-[24px]'}`}>{getLanguageLabel(predictionDetail.marketName, language)}</div>
                   {!isMobile && (
                     <div className="flex items-center gap-2 h-[24px] text-white/60 text-[16px]">
                       <span>{t('detail.volume')}:</span>
@@ -520,7 +520,7 @@ export default function PredictionDetailsClient() {
                 <div key={index} className="h-[96px] flex text-[18px] text-white font-bold">
                   <div className="flex-1 flex items-center px-[24px] overflow-hidden">
                     <div className="w-[36px] h-[36px] rounded-full flex-none" style={{backgroundColor: colors[index]}}></div>
-                    <EllipsisWithTooltip text={outcome.name} className="ml-[12px]" />
+                    <EllipsisWithTooltip text={getLanguageLabel(outcome.name, language)} className="ml-[12px]" />
                   </div>
                   {predictionDetail.status !== 'Resolved' && predictionDetail.status !== 'Completed' && !isMobile && (
                     <div className="flex-1 flex items-center justify-center px-[24px]">
@@ -564,7 +564,7 @@ export default function PredictionDetailsClient() {
               <h3 className="h-[24px] leading-[24px] text-[18px] font-bold text-white mb-[12px]">{t('detail.rules')}</h3>
               <div className="border border-white/40 rounded-[24px] overflow-hidden p-[24px]">
                 <ClampableText
-                  text={predictionDetail.marketDesc}
+                  text={getLanguageLabel(predictionDetail.marketDesc, language)}
                   maxLines={5}
                   className="leading-[24px] text-[16px] text-white whitespace-pre-line"
                   onToggle={(expanded) => console.log("expanded:", expanded)}
@@ -627,13 +627,17 @@ export default function PredictionDetailsClient() {
                           <div className={`flex gap-2 h-[20px] leading-[20px] px-[4px] rounded-[4px] ${trades.side === 'buy' ? 'bg-[rgba(40,192,78,0.5)] text-[#28C04E]' : 'bg-[rgba(249,93,93,0.5)] text-[#F95D5D]'}`}>
                             <TooltipAmount shares={trades.deltaShares} decimals={0} precision={2}/>
                             <EllipsisWithTooltip
-                              text={trades.outcome.name}
+                              text={getLanguageLabel(trades.outcome.name, language)}
                               className={`flex-1 max-w-[160px] h-[20px] leading-[20px] text-[16px] ${trades.side === 'buy' ? 'text-[#28C04E]' : 'text-[#F95D5D]'}`}
                             />
                           </div>
                           <div className="opacity-60">{t('detail.at')}</div>
                           <div><TooltipAmount shares={trades.entryPrice} decimals={0} precision={2}/></div>
-                          <div className="opacity-60">{t('detail.cost')}</div>
+                          {trades.side === 'buy' ? (
+                            <div className="opacity-60">{t('detail.cost')}</div>
+                          ) : (
+                            <div className="opacity-60">{t('detail.cashOut')}</div>
+                          )}
                           <Image src={tokenIcon} alt="" width={12} height={12} />
                           <div><TooltipAmount shares={trades.amount} decimals={0} precision={2}/></div>
                         </div>

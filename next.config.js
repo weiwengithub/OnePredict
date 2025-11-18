@@ -15,7 +15,7 @@ const nextConfig = {
       return [
         {
           source: '/api/:path*',
-          destination: `${process.env.PROXY_TARGET || 'https://poly.deltax.online'}/:path*`,
+          destination: `${process.env.NEXT_PUBLIC_PROXY_TARGET}/:path*`,
         },
       ];
     }

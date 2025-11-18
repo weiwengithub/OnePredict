@@ -1,5 +1,6 @@
 'use client';
 
+import {useMemo, useState} from "react";
 import { Swiper, SwiperSlide } from 'swiper/react';
 import {
   Navigation,
@@ -16,7 +17,6 @@ import ChevronLeft from '@/assets/icons/chevronLeft.svg';
 import ChevronRight from '@/assets/icons/chevronRight.svg';
 import { Maximize } from 'lucide-react';
 import { Swiper as SwiperType } from 'swiper';
-import { useState } from 'react';
 import FullscreenModal from './FullscreenModal';
 import { useIsMobile } from '@/contexts/viewport';
 
@@ -60,11 +60,11 @@ export default function CustomCarousel({
   height = '400px',
 }: CustomCarouselProps) {
   const isMobile = useIsMobile();
-  if(isMobile || items.length < 5) {
-    slidesPerView = 1;
-    const w = document.documentElement.clientWidth;
-    height = `${Math.round(400 * (w - 32) / 1020)}px`;
-  }
+  const computedSlidesPerView = isMobile ? 1 : slidesPerView;
+  const computedHeight = isMobile
+    ? `${Math.round(400 * (document.documentElement.clientWidth - 32) / 1020)}px`
+    : height;
+
   const supportFullscreen = false;
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -150,14 +150,14 @@ export default function CustomCarousel({
             modifier: 1,
             slideShadows: true,
           },
-          slidesPerView: slidesPerView,
+          slidesPerView: computedSlidesPerView,
           spaceBetween: spaceBetween,
         };
 
       default: // slide
         return {
           effect: 'slide' as const,
-          slidesPerView: slidesPerView,
+          slidesPerView: computedSlidesPerView,
           spaceBetween: spaceBetween,
         };
     }
@@ -166,9 +166,15 @@ export default function CustomCarousel({
   const effectConfig = getEffectConfig();
   const showNavigation = !['cube', 'fade', 'flip', 'cards'].includes(effect);
 
+  const swiperKey = useMemo(() => {
+    const sig = items.map(it => `${it.id}-${it.imageUrl}`).join('|');
+    return `${effect}-${loop}-${sig}`;
+  }, [items, effect, loop]);
+
   return (
     <div className={`group relative w-full ${isMobile ? 'my-[16px]' : 'my-[40px]'}`}>
       <Swiper
+        key={swiperKey}
         modules={getAllModules()}
         centeredSlides={centeredSlides}
         loop={loop}
@@ -200,16 +206,16 @@ export default function CustomCarousel({
             spaceBetween: 72,
           },
           1648: {
-            slidesPerView: items.length < 5 ? 1 : 1.597,
+            slidesPerView: 1.597,
             spaceBetween: -55,
           },
         } : undefined}
         className="w-full"
-        style={{ height }}
+        style={{ height: computedHeight }}
         {...effectConfig}
       >
         {items.map((item, index) => (
-          <SwiperSlide key={item.id} className="relative">
+          <SwiperSlide key={`${item.id}_${index}`} className="relative">
             <div className={`relative w-full h-full rounded-2xl overflow-hidden shadow-lg group cursor-pointer ${
               effect === 'cards' ? 'bg-white' : ''
             }`}

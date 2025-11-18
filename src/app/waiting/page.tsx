@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { Ed25519Keypair } from "@onelabs/sui/keypairs/ed25519";
-import { CLIENT_ID, GET_SALT_URL, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, OCT_PROVER_ENDPOINT, RANDOMNESS_SESSION_STORAGE_KEY, REDIRECT_URI, USER_SALT_LOCAL_STORAGE_KEY } from '@/assets/config/constant';
+import { GET_SALT_URL, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, OCT_PROVER_ENDPOINT, RANDOMNESS_SESSION_STORAGE_KEY } from '@/assets/config/constant';
 import { SuiClient } from '@onelabs/sui/client';
 import {
     genAddressSeed,

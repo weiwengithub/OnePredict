@@ -76,10 +76,9 @@ export default async function RootLayout({
               <ClientBody>{children}</ClientBody>
             </TooltipProvider>
           </ThemeProvider>
+          {/* 全局挂载 */}
+          <Toaster />
         </LanguageProvider>
-
-        {/* 全局挂载 */}
-        <Toaster />
       </body>
     </html>
   );

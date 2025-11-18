@@ -12,6 +12,8 @@ import { MarketOption } from "@/lib/api/interface";
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/contexts/viewport";
 import { useQuery } from "@tanstack/react-query";
+import {getLanguageLabel} from "@/lib/utils";
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 interface SearchModalProps {
   open: boolean;
@@ -22,7 +24,7 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
   const isMobile = useIsMobile();
   const [searchQuery, setSearchQuery] = useState("");
   const [copied, setCopied] = useState<string | null>(null);
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const router = useRouter();
 
   const localeRecent = localStorage.getItem("recentSearches");
@@ -144,7 +146,10 @@ export default function SearchModal({ open, onOpenChange }: SearchModalProps) {
                         className="size-full"
                       />
                     </div>
-                    <div className="flex-1 h-[24px] leading-[24px] text-[20px] text-white px-[12px] truncate">{result.marketName}</div>
+                    <EllipsisWithTooltip
+                      text={getLanguageLabel(result.marketName, language)}
+                      className="flex-1 h-[24px] leading-[24px] text-[20px] text-white px-[12px]"
+                    />
                     {(result.status === 'Resolved' || result.status === 'Completed') && (
                       <div className="mr-[12px] h-[18px] leading-[18px] border border-white/20 rounded-[4px] text-[12px] text-white px-[4px]">{t('search.settlement')}</div>
                     )}

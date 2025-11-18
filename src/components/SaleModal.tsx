@@ -14,15 +14,16 @@ import { ZkLoginData } from "@/lib/interface";
 import {store, showLoading, hideLoading, setSigninOpen} from '@/store';
 import SettingsIcon from "@/assets/icons/setting.svg";
 import {ProgressBar} from "@/components/ProgressBar";
-import {MarketClient} from "@/lib/market";
-import {useExecuteTransaction} from "@/hooks/useExecuteTransaction";
+import {calcSellQuote, MarketClient} from "@/lib/market";
+import {getReadableTxError, useExecuteTransaction} from "@/hooks/useExecuteTransaction";
 import { MarketPositionOption } from "@/lib/api/interface";
-import {fix, toDisplayDenomAmount} from "@/lib/numbers";
+import {fix, formatUnits, parseUnits, toDisplayDenomAmount} from "@/lib/numbers";
 import {useDispatch} from "react-redux";
 import {toast} from "sonner";
 import {useIsMobile} from "@/contexts/viewport";
 import {tokenIcon} from "@/assets/config";
 import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
+import {getLanguageLabel} from "@/lib/utils";
 
 interface WelcomeModalProps {
   open: boolean;
@@ -31,7 +32,7 @@ interface WelcomeModalProps {
 }
 
 export default function DepositModal({ open, position, onOpenChange }: WelcomeModalProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const isMobile = useIsMobile();
   const [amount, setAmount] = useState<number | string>('');
   const [progress, setProgress] = useState(0);
@@ -94,25 +95,18 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
         console.error('No wallet connected');
         return;
       }
-      const coins = await suiClient.getCoins({ owner, coinType: position.coinType });
-      const coinObjectId = coins?.data?.[0]?.coinObjectId;
-      if (!coinObjectId) {
-        console.error('No coin object found for type:', position.coinType);
-        return;
-      }
       const tx = await marketClient.buildSellTx({
         marketId: position.marketId,
         outcome: position.currentOutcome.outcomeId,
-        deltaShares: Number(amount) * Math.pow(10, 9),
+        deltaShares: Number(parseUnits(amount, position.coinDecimals)),
         minCoinOut: 0,
       });
-      console.log(tx)
       await executeTransaction(tx, false);
       toast.success(t('predictions.saleSuccess'));
       onOpenChange(false);
       setTimeout(() => refresh(), 2000);
     } catch (error) {
-      toast.error(t('predictions.saleError'));
+      toast.error(getReadableTxError(error));
       console.log(error);
     } finally {
       store.dispatch(hideLoading());
@@ -125,7 +119,23 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
   }, [currentAccount, zkLoginData])
 
   const cashOut = useMemo(() => {
-    return amount ? Number(position?.currentPrice) * Number(amount) : 0
+    if (!position) return 0;
+    let prob = '';
+    for (let i = 0; i < position.outcome.length; i++) {
+      const outcome = position.outcome[i];
+      if (outcome.outcomeId === position.currentOutcome.outcomeId) {
+        prob = outcome.prob;
+        break;
+      }
+    }
+    const quote = calcSellQuote({
+      deltaShares: parseUnits(amount || 0, position.coinDecimals),
+      currentShares: parseUnits(position.shares, position.coinDecimals),
+      b: parseUnits(position.marketParamsB, 0),
+      prob: parseUnits(prob, 12),
+      sellFeeBps: parseUnits(position.sellFee, 0),
+    })
+    return formatUnits(quote.profit.toString(), position.coinDecimals, 2)
   }, [position, amount])
 
   return (
@@ -134,7 +144,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
         <div className="w-full h-full relative rounded-[20px] bg-[#051A3D] p-[20px] overflow-hidden">
           <div className="mt-[20px] flex items-center gap-[20px]">
             <EllipsisWithTooltip
-              text={`${t('predictions.sell')} ${position?.currentOutcome.name}`}
+              text={`${t('predictions.sell')} ${position? getLanguageLabel(position.currentOutcome.name, language) : ''}`}
               className="flex-1 h-[24px] leading-[24px] text-[22px] text-white font-bold"
             />
             <CloseIcon
@@ -155,11 +165,11 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
               {/* 金额输入框 */}
               <div className="relative">
                 <Input
-                  type="tel"
+                  type="number"
                   value={amount}
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountInputChange(e.target.value)}
                   placeholder="0"
-                  className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                  className="no-spinner appearance-none h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                   min={0}
                   step={0.01}
                 />
@@ -226,7 +236,7 @@ export default function DepositModal({ open, position, onOpenChange }: WelcomeMo
               disabled={!amount}
               onClick={handleSale}
             >
-              <span className="truncate">{`${t('predictions.sell')} ${position?.currentOutcome.name}`}</span>
+              <span className="truncate">{`${t('predictions.sell')} ${position? getLanguageLabel(position?.currentOutcome.name, language) : ''}`}</span>
             </Button>
           ) : (
             <Button

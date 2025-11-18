@@ -3,27 +3,36 @@
 import React, {useCallback, useEffect, useMemo, useState} from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import * as Popover from '@radix-ui/react-popover';
 import { ProgressBar } from '@/components/ProgressBar';
 import {MarketOption, MarketPositionOption} from "@/lib/api/interface";
 import Image from "next/image";
 import RefreshIcon from "@/assets/icons/refresh.svg";
-import SettingsIcon from "@/assets/icons/setting.svg";
 import ArrowDownIcon from "@/assets/icons/arrowDown.svg";
 import CheckedIcon from "@/assets/icons/circle-checked.svg";
-import WarningIcon from "@/assets/icons/warning_2.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
 import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
-import { useExecuteTransaction } from '@/hooks/useExecuteTransaction';
+import { useExecuteTransaction, getReadableTxError } from '@/hooks/useExecuteTransaction';
 import { ZkLoginData } from "@/lib/interface";
-import {hideLoading, setSigninOpen, showLoading, store} from "@/store";
-import {MarketClient} from "@/lib/market";
+import { hideLoading, setSigninOpen, showLoading, store } from "@/store";
+import {calcBuyQuote, calcMaxBuyAmountForPriceImpact, calcSellQuote, MarketClient} from "@/lib/market";
 import { useDispatch } from 'react-redux';
-import {useLanguage} from "@/contexts/LanguageContext";
+import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
 import apiService from "@/lib/api/services";
 import {TooltipAmount} from "@/components/TooltipAmount";
-import {abbreviateNumber, fix, formatNumberWithSeparator, toDisplayDenomAmount} from "@/lib/numbers";
+import { Confirm } from "@/components/ConfirmToast";
+import {
+  abbreviateNumber,
+  fix,
+  formatNumberWithSeparator,
+  formatUnits,
+  parseUnits,
+  sum,
+  gte,
+  lt,
+  lte,
+  toDisplayDenomAmount
+} from "@/lib/numbers";
 import Countdown from "@/components/Countdown";
 import {colors, tokenIcon} from "@/assets/config";
 import {hexToRgbTriplet} from "@/lib/color";
@@ -32,7 +41,7 @@ import DisputeWindow from "@/assets/icons/disputeWindow.svg";
 import FinalOutcome from "@/assets/icons/finalOutcome.svg";
 import ResultIcon from "@/assets/icons/succeedResult.svg";
 import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
-import {HoverTooltipButton} from "@/components/HoverTooltipButton";
+import {getLanguageLabel} from "@/lib/utils";
 
 interface TradingFormProps {
   prediction: MarketOption;
@@ -62,7 +71,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
   const [positionList, setPositionList] = useState<MarketPositionOption[]>([]);
   const [showCheckPosition, setShowCheckPosition] = useState(false);
 
-  const startTime = new Date(prediction.startTime).getTime();
+  const startTime = new Date(prediction.startTime + "Z").getTime();
 
   useEffect(() => {
     setBuyOutcome(initialOutcome)
@@ -76,6 +85,17 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
     return currentAccount?.address || zkLoginData?.zkloginUserAddress;
   }, [currentAccount, zkLoginData])
   const { balance: usdhBalance, refresh } = useUsdhBalanceFromStore();
+
+  // 按 5% 计算的最大滑点数
+  const maxBuy = useMemo(() => {
+    const quote = calcMaxBuyAmountForPriceImpact({
+      b: parseUnits(prediction.marketParamsB, 0),
+      prob: parseUnits(prediction.outcome[buyOutcome].prob, 12),
+      buyFeeBps: parseUnits(prediction.buyFee, 0),
+      maxIncreaseBps: 500,
+    })
+    return Number(formatUnits(quote.toString(), prediction.coinDecimals, 2))
+  }, [buyOutcome, prediction.buyFee, prediction.coinDecimals, prediction.marketParamsB, prediction.outcome])
 
   const handleAmountInputChange = (value: string) => {
     const max = Number(usdhBalance);
@@ -124,8 +144,18 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
       console.error('No wallet connected');
       return;
     }
-    store.dispatch(showLoading('Processing transaction...'));
 
+    if (Number(amount) > maxBuy) {
+      const ok = await Confirm(t("common.slippageTips"), {
+        title: t("common.confirmation"),
+      });
+      if(!ok) {
+        setAmount(maxBuy);
+        return;
+      }
+    }
+
+    store.dispatch(showLoading('Processing transaction...'));
     try {
       const marketClient = new MarketClient(suiClient, {
         packageId: prediction.packageId,
@@ -133,12 +163,27 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
         globalSeqId: prediction.globalSequencerId || ''
       });
       const coins = await suiClient.getCoins({ owner:userAddress, coinType: prediction.coinType });
-      const coinObjectId = coins?.data?.[0]?.coinObjectId;
+      const coinObject = coins?.data?.[0]
+      const coinObjectId = coinObject?.coinObjectId;
       if (!coinObjectId) {
         console.error('No coin object found for type:', prediction.coinType);
         return;
       }
       const payAmount = MarketClient.calcTotalFromCost(Number(amount) * Math.pow(10, 9), prediction.buyFee);
+      // 计算是否需要合并 coin
+      let mergedCoinIds: string[] = [];
+      if (lt(coinObject.balance, payAmount.toString())) {
+        let totalAmount = coinObject.balance;
+        const others: string[] = [];
+        for (let i = 1; i < coins.data.length; i++) {
+          totalAmount = sum([totalAmount, coins.data[i].balance])
+          others.push(coins.data[i].coinObjectId)
+          if (gte(totalAmount, payAmount.toString())) {
+            break;
+          }
+        }
+        mergedCoinIds = others;
+      }
       console.log('payAmount', payAmount)
       const tx = await marketClient.buildBuyByAmountTx({
         marketId: prediction.marketId,
@@ -146,10 +191,11 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
         amount: payAmount,
         paymentCoinId: coinObjectId,
         minSharesOut: 0,
+        mergedCoinIds
       });
       tx.setGasBudget(100000000);
       const res = await executeTransaction(tx, false);
-      if (res?.effects.status.status === 'success') {
+      if (res?.data.effects.status.status === 'success') {
         setAmount('')
         toast.success(t('predictions.buySuccess'));
         onClose && onClose();
@@ -158,7 +204,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
         toast.error(t('predictions.buyError'));
       }
     } catch (error) {
-      toast.error(t('predictions.buyError'));
+      toast.error(getReadableTxError(error));
       console.error(error);
     } finally {
       store.dispatch(hideLoading());
@@ -173,7 +219,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
     }
 
     try {
-      const res = await apiService.getMarketPosition({userAddress: owner, address: owner || ''});
+      const res = await apiService.getMarketPosition({userAddress: owner, address: owner || '', pageNum: 1, pageSize: 100});
 
       if (res && res.data) {
         const list = res.data.rows.filter(item => {
@@ -214,9 +260,17 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
   }, [userAddress]);
 
   const toWin = useMemo(() => {
-    const _yield = prediction.outcome?prediction.outcome[buyOutcome].roi:0;
-    return amount ? Number(_yield) * Number(amount) : 0
-  }, [buyOutcome, amount])
+    if(!amount || lte(amount, 0)) return '0'
+    const buyAmount = parseUnits(amount, prediction.coinDecimals);
+    const quote = calcBuyQuote({
+      amount: buyAmount,
+      currentShares: parseUnits(0, 0),
+      b: parseUnits(prediction.marketParamsB, 0),
+      prob: parseUnits(prediction.outcome[buyOutcome].prob, 12),
+      buyFeeBps: parseUnits(prediction.buyFee, 0),
+    })
+    return formatUnits(sum([quote.profit.toString(), buyAmount]), prediction.coinDecimals, 2)
+  }, [prediction, buyOutcome, amount])
 
   const handleSale = async () => {
     const position = positionList[sellOutcome];
@@ -252,7 +306,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
       onClose && onClose();
       setTimeout(() => refresh(), 2000);
     } catch (error) {
-      toast.error(t('predictions.saleError'));
+      toast.error(getReadableTxError(error));
       console.log(error);
     } finally {
       store.dispatch(hideLoading());
@@ -260,7 +314,24 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
   };
 
   const cashOut = useMemo(() => {
-    return sellAmount ? Number(positionList[sellOutcome].currentPrice) * Number(sellAmount) : 0
+    const position = positionList[sellOutcome];
+    if (!position || !sellAmount || lte(sellAmount, 0)) return 0;
+    let prob = '';
+    for (let i = 0; i < position.outcome.length; i++) {
+      const outcome = position.outcome[i];
+      if (outcome.outcomeId === position.currentOutcome.outcomeId) {
+        prob = outcome.prob;
+        break;
+      }
+    }
+    const quote = calcSellQuote({
+      deltaShares: parseUnits(sellAmount, position.coinDecimals),
+      currentShares: parseUnits(position.shares, position.coinDecimals),
+      b: parseUnits(position.marketParamsB, 0),
+      prob: parseUnits(prob, 12),
+      sellFeeBps: parseUnits(position.sellFee, 0),
+    })
+    return formatUnits(quote.profit.toString(), position.coinDecimals, 2)
   }, [positionList, sellOutcome, sellAmount])
 
   return (
@@ -277,7 +348,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               </div>
               <div className={`my-[-3px] ml-[7px] h-[30px] border-l ${prediction.status === 'Resolved' || prediction.status === 'Completed' ? 'border-[#29C041]' : 'border-white/60'}`}>
                 {(prediction.status === 'Resolved' || prediction.status === 'Completed') && (
-                  <span className="ml-[14px] leading-[16px] text-[16px] text-[#29C041]">{prediction.outcome[Number(prediction.winnerId)].name}</span>
+                  <span className="ml-[14px] leading-[16px] text-[16px] text-[#29C041]">{getLanguageLabel(prediction.outcome[Number(prediction.winnerId)].name, language)}</span>
                 )}
               </div>
               <div className="flex items-center h-[24px] leading-[24px] text-white/60 text-[16px]">
@@ -290,7 +361,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                 <span className="inline-block ml-[8px]">{t('detail.finalOutcome')}</span>
               </div>
               {prediction.status === 'Completed' && (
-                <div className="ml-[22px] leading-[16px] text-[16px] text-[#29C041]">{prediction.outcome[Number(prediction.winnerId)].name}</div>
+                <div className="ml-[22px] leading-[16px] text-[16px] text-[#29C041]">{getLanguageLabel(prediction.outcome[Number(prediction.winnerId)].name, language)}</div>
               )}
             </div>
             {prediction.status === 'Resolved' && (
@@ -353,7 +424,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                       return (
                         <div key={index} className="h-[24px] flex gap-[24px]">
                           <EllipsisWithTooltip
-                            text={outcome.name}
+                            text={getLanguageLabel(outcome.name, language)}
                             className="flex-1 h-[24px] leading-[24px] text-white text-[16px] font-bold"
                           />
                           <div className="h-[24px] leading-[24px] text-white/80 text-[16px]">{`${(100 * Number(outcome.prob)).toFixed(2)}%`}</div>
@@ -401,7 +472,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                                 : 'bg-[rgb(var(--btn-rgb)/0.5)] text-[color:var(--btn-hex)] hover:bg-[rgb(var(--btn-rgb))] hover:text-white'
                             }`}
                           >
-                            {item.name||''} {Number(item.prob||0).toFixed(2)}
+                            {getLanguageLabel(item.name, language)} {Number(item.prob||0).toFixed(2)}
                           </button>
                         )
                       })
@@ -450,11 +521,11 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   {/* 金额输入框 */}
                   <div className="relative">
                     <Input
-                      type="tel"
+                      type="number"
                       value={amount}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleAmountInputChange(e.target.value)}
                       placeholder="0"
-                      className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-[178px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                      className="no-spinner appearance-none h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-[178px] focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                       min={0}
                       step={0.01}
                     />
@@ -516,7 +587,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                 </div>
               )}
 
-              {new Date(prediction.endTime).getTime() < Date.now() ? (
+              {new Date(prediction.endTime + "Z").getTime() < Date.now() ? (
                 <div className="mt-[24px] h-[24px] leading-[24px] text-[16px] font-bold flex items-center justify-center gap-[8px]">
                   <span className="inline-block text-white/60">{t('predictions.waitingResolution')}</span>
                 </div>
@@ -525,17 +596,17 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
               {zkLoginData || currentAccount ? (
                 <Button
                   onClick={handleTrade}
-                  disabled={!amount || new Date(prediction.endTime).getTime() < Date.now()}
+                  disabled={!amount || new Date(prediction.endTime + "Z").getTime() < Date.now()}
                   className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="truncate">{`${t('predictions.buy')} ${prediction.outcome?prediction.outcome[buyOutcome].name:''}`}</span>
+                  <span className="truncate">{`${t('predictions.buy')} ${getLanguageLabel(prediction.outcome[buyOutcome].name, language)}`}</span>
                 </Button>
               ) : (
                 <Button
                   onClick={() => dispatch(setSigninOpen(true))}
                   className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign In
+                  {t('header.signIn')}
                 </Button>
               )}
             </>
@@ -555,7 +626,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                       <div className="w-[36px] h-[36px] rounded-full" style={{backgroundColor: colors[positionList[sellOutcome]?.currentOutcome.outcomeId || 0]}}></div>
                       <div className="flex-1 mx-[12px] overflow-hidden">
                         <EllipsisWithTooltip
-                          text={positionList[sellOutcome]?.currentOutcome.name}
+                          text={getLanguageLabel(positionList[sellOutcome]?.currentOutcome.name, language)}
                           className="h-[14px] leading-[14px] text-[14px] text-white"
                         />
                         <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={positionList[sellOutcome]?.shares} decimals={0} precision={2}/>  {t('predictions.shares')}</div>
@@ -578,7 +649,7 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                               <div className="w-[36px] h-[36px] rounded-full" style={{backgroundColor: colors[item.currentOutcome.outcomeId]}}></div>
                               <div className="flex-1 mx-[12px] overflow-hidden">
                                 <EllipsisWithTooltip
-                                  text={item.currentOutcome.name}
+                                  text={getLanguageLabel(item.currentOutcome.name, language)}
                                   className="h-[14px] leading-[14px] text-[14px] text-white"
                                 />
                                 <div className="mt-[8px] h-[12px] leading-[12px] text-[12px] text-white"><TooltipAmount shares={item.shares} decimals={0} precision={2}/>  {t('predictions.shares')}</div>
@@ -605,11 +676,11 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   {/* 金额输入框 */}
                   <div className="relative">
                     <Input
-                      type="tel"
+                      type="number"
                       value={sellAmount}
                       onChange={(e: React.ChangeEvent<HTMLInputElement>) => handleSellAmountInputChange(e.target.value)}
                       placeholder="0"
-                      className="h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
+                      className="no-spinner appearance-none h-[56px] bg-transparent border-white/20 text-white text-[32px] font-bold placeholder:text-white/60 pl-[12px] pr-20 focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none"
                       min={0}
                       step={0.01}
                     />
@@ -683,14 +754,14 @@ export default function TradingForm({prediction, initialOutcome, outcomeChange, 
                   disabled={!sellAmount || new Date(prediction.endTime).getTime() < Date.now()}
                   className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  <span className="truncate">{`${t('predictions.sell')} ${positionList[sellOutcome]?.currentOutcome.name}`}</span>
+                  <span className="truncate">{`${t('predictions.sell')} ${getLanguageLabel(positionList[sellOutcome]?.currentOutcome.name, language)}`}</span>
                 </Button>
               ) : (
                 <Button
                   onClick={() => dispatch(setSigninOpen(true))}
                   className="mt-[24px] mb-[12px] w-full h-[56px] bg-[#E0E2E4] hover:bg-blue-700 text-[#010101] font-bold text-[24px] rounded-[8px] disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Sign In
+                  {t('header.signIn')}
                 </Button>
               )}
             </>

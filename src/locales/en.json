@@ -81,7 +81,12 @@
     "replyTime": "Reply time",
     "replyUser": "Reply user",
     "replyUserAvatar": "Reply user avatar",
-    "buy": "Buy"
+    "buy": "Buy",
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "processing": "Processing...",
+    "slippageTips": "The current slippage exceeds 5%, which may cause the execution price to deviate from expectations. Please confirm whether you want to continue the trade.",
+    "confirmation": "Trade Confirmation"
   },
   "nav": {
     "home": "Home",
@@ -101,7 +106,7 @@
     "subtitle": "Please wait while we connect with {{name}}"
   },
   "search": {
-    "placeholder": "Search Markets,contract address",
+    "placeholder": "Search Markets",
     "trending": "Trending",
     "noResults": "No results found",
     "recentSearches": "Recent Searches",
@@ -113,6 +118,7 @@
     "buy": "Buy",
     "sell": "Sell",
     "redeemed": "Redeemed",
+    "reward": "Reward",
     "deposit": "Deposit",
     "withdraw": "Withdraw",
     "outcomes": "Outcomes",
@@ -195,7 +201,8 @@
     "replySuccess": "Reply successful",
     "replyError": "Reply failed",
     "at": "at",
-    "cost": "cost"
+    "cost": "cost",
+    "cashOut": "cash out"
   },
   "time": {
     "justNow": "just now",
@@ -305,5 +312,23 @@
     "project": "project",
     "investmentAmount": "Investment amount",
     "amountOfBonus": "amount of bonus"
+  },
+  "doc": {
+    "viewAll": "View all {{total}} articles",
+    "quickStart": "Quick Start",
+    "accountSecurity": "Account & Security",
+    "featuresTutorials": "Features & Tutorials",
+    "frequentlyAskedQuestions": "Frequently Asked Questions"
+  },
+  "errorMessage": {
+    "youHaveCancelled": "You have cancelled the signature.",
+    "walletSignatureFailed": "Wallet signature failed. Please try again later.",
+    "networkError": "Network error or node request failed. Please check your connection and try again.",
+    "insufficientBalance": "Insufficient balance. Please check your account balance and try again.",
+    "youHaveAlready": "You have already participated in this action and cannot submit again.",
+    "contractExecution": "Contract execution failed. Please try again later or contact customer support.",
+    "transactionExecution": "Transaction execution failed: ",
+    "transactionSubmission": "Transaction submission failed: ",
+    "unknownError": "Unknown error. Please try again later."
   }
 }

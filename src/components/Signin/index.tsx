@@ -30,7 +30,7 @@ import {
   setSigninOpen,
   setSigninLoading,
   setMemberId,
-  setUsdhBalance,
+  clearUsdhBalance,
   setUserInfo
 } from '@/store';
 import { useDispatch, useSelector } from 'react-redux';
@@ -284,10 +284,7 @@ const Signin = () => {
                                   avatar: '',
                                   loginAddress: ''
                                 }));
-                                store.dispatch(setUsdhBalance({
-                                  balance: '0.00',
-                                  rawBalance: '0',
-                                }));
+                                store.dispatch(clearUsdhBalance());
                                 router.push('/');
                               } catch (error) {
                                 toast.error(t('header.logoutError'))
@@ -315,12 +312,17 @@ const Signin = () => {
       }
 
       <Dialog open={open}>
-        <DialogContent className={`w-full p-[24px] bg-[#051A3D] border-none overflow-hidden rounded-[16px] shadow-2xl shadow-black/50 ${isMobile ? "left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "max-w-[400px]"}`}>
+        <DialogContent className={`
+          w-full p-[24px] bg-[#051A3D] border-none overflow-y-auto
+          rounded-[16px] shadow-2xl shadow-black/50
+          max-h-[calc(100vh-32px)]
+          ${isMobile ? "left-0 top-auto bottom-0 translate-x-0 translate-y-0 rounded-none" : "max-w-[400px]"}
+        `}>
           <div className="flex items-center justify-between">
             <span className='inline-block h-[16px] leading-[16px] text-[24px] text-white font-bold'>{t('header.signIn')}</span>
             <CloseIcon className="text-[16px] text-white/40 hover:text-white cursor-pointer" onClick={() => dispatch(setSigninOpen(false))} />
           </div>
-          <div className="mt-[36px]">
+          <div className="mt-[36px] pb-[env(safe-area-inset-bottom)]">
             <Zklogin onJump={() => {
               dispatch(setSigninOpen(false))
               dispatch(setSigninLoading(true))

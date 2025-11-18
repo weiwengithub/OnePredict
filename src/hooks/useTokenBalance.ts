@@ -5,6 +5,7 @@ import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
 import BigNumber from "bignumber.js";
 import { store } from "@/store";
 import { ZkLoginData } from "@/lib/interface";
+import {formatUnits} from "@/lib/numbers";
 
 export type UseTokenBalanceOptions = {
   /** 手动传入地址；不传则自动从 dapp-kit / zkLogin 读取 */
@@ -74,7 +75,7 @@ export function useTokenBalance(opts: UseTokenBalanceOptions): UseTokenBalanceRe
         coinType,
       });
       setRawBalance(totalBalance);
-      const human = new BigNumber(totalBalance).shiftedBy(-decimals).toFixed(fixed);
+      const human = formatUnits(totalBalance, decimals, fixed);
       setBalance(human);
     } catch (e) {
       setError(e);

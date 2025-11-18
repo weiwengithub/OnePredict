@@ -7,7 +7,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import SemicircleGauge from "./SemicircleGauge";
 import MarketDetailModal from "./MarketDetailModal";
 import { getMiniTrendData } from "@/lib/chartData";
-import {formatShortDate, onCopyToText} from "@/lib/utils";
+import {formatShortDate, getLanguageLabel, onCopyToText} from "@/lib/utils";
 import { MarketOption } from "@/lib/api/interface";
 import { PredictionTradingModal } from "./predictionTrading";
 import Image from 'next/image';
@@ -24,6 +24,7 @@ import CopyIcon from "@/assets/icons/copy_1.svg";
 import ExportIcon from "@/assets/icons/export.svg";
 import {useLanguage} from "@/contexts/LanguageContext";
 import RelativeFutureTime from '@/components/RelativeFutureTime';
+import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 
 interface PredictionCardProps {
   key: number;
@@ -33,7 +34,7 @@ interface PredictionCardProps {
 export default function PredictionCard({
   prediction,
 }: PredictionCardProps) {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const router = useRouter();
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [showTradingModal, setShowTradingModal] = useState(false);
@@ -41,7 +42,7 @@ export default function PredictionCard({
   const [hoverOutcome, setHoverOutcome] = useState<number | null>(null);
 
   const chance = Number((100 * Number(prediction.outcome[0].prob)).toFixed(2));
-  const startTime = new Date(prediction.startTime).getTime();
+  const startTime = new Date(prediction.startTime + "Z").getTime();
 
   const handleCardClick = () => {
     if (prediction.marketId) {
@@ -64,14 +65,15 @@ export default function PredictionCard({
         <CardContent className="p-[24px]">
           {/* Header with avatar and question */}
           <div className="flex items-start space-x-[12px] pb-[20px] overflow-hidden">
-            <Avatar className="w-[48px] h-[48px] rounded-[8px] transition-all">
-              <AvatarImage src={prediction.imageUrl} alt="avatar" />
-            </Avatar>
-            <div
-              className={`flex-1 min-w-0 leading-[24px] text-white text-[16px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-box-orient:vertical] cursor-pointer ${prediction.outcome.length > 2 ? 'h-[48px] [-webkit-line-clamp:2]' : 'h-[96px] [-webkit-line-clamp:4]'}`}
-              onClick={handleCardClick}
-            >
-              {prediction.marketName}
+            <div className="flex-1 flex gap-[12px] overflow-hidden" onClick={handleCardClick}>
+              <Avatar className="w-[48px] h-[48px] rounded-[8px] transition-all">
+                <AvatarImage src={prediction.imageUrl} alt="avatar" />
+              </Avatar>
+              <EllipsisWithTooltip
+                text={getLanguageLabel(prediction.projectName, language)}
+                lines={prediction.outcome.length > 2 ? 2 : 4}
+                className={`flex-1 min-w-0 leading-[24px] text-white text-[16px] font-bold overflow-hidden text-ellipsis [display:-webkit-box] [-webkit-box-orient:vertical] cursor-pointer ${prediction.outcome.length > 2 ? 'h-[48px] [-webkit-line-clamp:2]' : 'h-[96px] [-webkit-line-clamp:4]'}`}
+              />
             </div>
             <div className="h-[48px] w-[100px]">
               <SemicircleGauge
@@ -88,11 +90,11 @@ export default function PredictionCard({
             />
           ) : (
             <>
-              {new Date(prediction.endTime).getTime() < Date.now() ? (
+              {new Date(prediction.endTime + "Z").getTime() < Date.now() ? (
                 <>
                   {prediction.winnerId ? (
                     <div className={`mb-[12px] h-[48px] leading-[48px] text-[#29C04F] text-[16px] font-bold ${prediction.outcome.length > 2 ? 'mt-[48px]' : ''}`}>
-                      {t('predictions.resultsOut', {result: prediction.outcome[Number(prediction.winnerId)].name})}
+                      {t('predictions.resultsOut', {result: getLanguageLabel(prediction.outcome[Number(prediction.winnerId)].name, language)})}
                     </div>
                   ) : (
                     <div className={`mb-[12px] h-[48px] leading-[48px] text-[#29C04F] text-[16px] font-bold ${prediction.outcome.length > 2 ? 'mt-[48px]' : ''}`}>
@@ -118,7 +120,7 @@ export default function PredictionCard({
             </div>
             <div className="flex items-center space-x-[12px]">
               <Image src="/images/icon/icon-calendar.png?v=1" alt="" width={12} height={12} />
-              <RelativeFutureTime target={new Date(prediction.endTime)} />
+              <RelativeFutureTime target={new Date(prediction.endTime + "Z")} />
               <Collecting collecting={prediction.isFollow} followType="Project" followId={prediction.id} />
               <SharePopover
                 trigger={<ExportIcon className="text-white/60 hover:text-white text-[12px]" />}

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react'
 import { Ed25519Keypair } from "@onelabs/sui/keypairs/ed25519";
-import { CLIENT_ID, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, OCT_PROVER_ENDPOINT, RANDOMNESS_SESSION_STORAGE_KEY, REDIRECT_URI, USER_SALT_LOCAL_STORAGE_KEY } from '@/assets/config/constant';
+import { CLIENT_ID, KEY_PAIR_SESSION_STORAGE_KEY, MAX_EPOCH_LOCAL_STORAGE_KEY, RANDOMNESS_SESSION_STORAGE_KEY } from '@/assets/config/constant';
 import { SuiClient } from '@onelabs/sui/client';
 import {
   genAddressSeed,
@@ -81,13 +81,9 @@ const Zklogin = ({onJump}: {onJump: () => void}) => {
   }, [suiClient])
   const handleGoogleLogin = useCallback(() => {
     //插件钱包断开链接
-    console.log(CLIENT_ID)
-    console.log(REDIRECT_URI)
-    console.log(nonce)
-
     const params = new URLSearchParams({
       client_id: CLIENT_ID,
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: `${window.location.origin}/waiting`,
       response_type: "id_token",
       scope: "openid email",
       nonce: nonce,
@@ -103,21 +99,13 @@ const Zklogin = ({onJump}: {onJump: () => void}) => {
     //插件钱包断开链接
     const params = new URLSearchParams({
       client_id: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID || '',
-      // redirect_uri: 'https://rwa.deltax.online/waiting',
-      redirect_uri: REDIRECT_URI,
+      redirect_uri: `${window.location.origin}/waiting`,
       response_type: "code id_token",
       response_mode: "fragment",
       // scope: "email",
       nonce: nonce,
       state: 'apple',
     });
-    // https://appleid.apple.com/auth/authorize?
-    // client_id=$CLIENT_ID
-    // &redirect_uri=$REDIRECT_URL
-    // &scope=email
-    // &response_mode=form_post
-    // &response_type=code%20id_token
-    // &nonce=$NONCE
     const loginURL = `https://appleid.apple.com/auth/authorize?${params}`;
     window.location.href = loginURL
   }, [nonce])

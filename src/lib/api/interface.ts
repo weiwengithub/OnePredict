@@ -76,6 +76,7 @@ export interface MarketOption {
   channelCode: string;
   channelId: number;
   channelName: string;
+  coinDecimals: number;
   coinType: string;
   createBy: string;
   createTime: string;
@@ -91,6 +92,7 @@ export interface MarketOption {
   outcome: MarketOutcome[];
   packageId: string;
   projectId: number;
+  projectName: string;
   sellFee: number;
   startTime: string;
   status: string;
@@ -126,32 +128,43 @@ export interface ResMarketList {
   offset: number;
 }
 
+export interface MarketPositionOutcome {
+  name: string;
+  outcomeId: number;
+  prob: string;
+  roi: string;
+}
+
 export interface MarketPositionOption {
   betAmount: number;
+  buyFee: number;
   channelId: number;
+  coinDecimals: number;
   coinType: string;
   createBy: string;
   createTime: string;
   currentOutcome: {
     name: string;
     outcomeId: number;
-  };
-  name: string;
-  outcomeId: number;
+  }
   currentPrice: number;
   entryPrice: number;
   globalSequencerId: string;
   id: number;
   imageUrl: string;
+  isDelete: boolean;
   isRedeemed: number;
   marketDesc: string;
   marketId: string;
   marketName: string;
+  marketParamsB: string;
   memberId: number;
+  outcome: MarketPositionOutcome[];
   packageId: string;
   pnl: number;
   positionValue: number;
   projectId: number;
+  sellFee: number;
   shares: number;
   status: string;
   tags: string[]
@@ -381,6 +394,7 @@ export interface BannerInfo {
   id: number;
   imageUrl: string;
   isDelete: boolean;
+  lang: string;
   sort: number;
   status: number;
   updateBy: string;
@@ -503,6 +517,7 @@ export interface MemberMoneyRecord {
   projectId: number;
   projectName: string;
   totalAmount: number;
+  txnAmount: number;
   type: string;
 }
 
@@ -513,3 +528,10 @@ export interface ResMemberMoneyRecord {
   rows: MemberMoneyRecord[];
   totalInviteAmount: number;
 }
+
+export interface QuestionSection {
+  total: number;
+  titles: string[];
+}
+
+export type QuestionData = Record<string, QuestionSection>;

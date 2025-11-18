@@ -399,3 +399,13 @@ export async function copyImageFromDataUrl(dataUrl: string) {
   await navigator.clipboard.writeText(dataUrl);
   return false; // 告知是退化复制（仅复制了链接文本）
 }
+
+export function getLanguageLabel(text: string, lang: string) {
+  try {
+    const list = JSON.parse(text);
+    const value = list.filter((item: {lang:string;label:string;}) => item.lang === lang);
+    return value.length > 0 ? value[0].label : '';
+  } catch (e) {
+    console.log(e)
+  }
+}

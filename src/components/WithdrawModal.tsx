@@ -11,7 +11,7 @@ import CloseIcon from "@/assets/icons/close_1.svg";
 import CopyIcon from "@/assets/icons/copy.svg";
 import { useCurrentAccount, useSuiClient } from "@onelabs/dapp-kit";
 import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
-import { useExecuteTransaction } from '@/hooks/useExecuteTransaction';
+import { useExecuteTransaction, getReadableTxError } from '@/hooks/useExecuteTransaction';
 import { ZkLoginData } from "@/lib/interface";
 import { Transaction } from '@onelabs/sui/transactions'
 import {store, showLoading, hideLoading} from '@/store';
@@ -105,14 +105,15 @@ export default function DepositModal({ open, onOpenChange }: WelcomeModalProps) 
         const [split] = tx.splitCoins(primary, [tx.pure.u64(amountAtomic)])
         tx.transferObjects([split], toAddress)
       }
-      const result = await executeTransaction(tx, tokenAddress.toLowerCase() === '0x2::oct::oct')
+      const result = await executeTransaction(tx, false)
       console.log('transfer executed:', result)
       toast.success(t('send.sendSuccess'))
       setAmount('')
       onOpenChange(false);
       setTimeout(() => refresh(), 2000)
     } catch (error) {
-      toast.error(t('send.sendError'));
+      toast.error(getReadableTxError(error));
+      // toast.error(t('send.sendError'));
     } finally {
       store.dispatch(hideLoading());
     }

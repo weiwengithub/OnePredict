@@ -17,7 +17,7 @@ import AppleIcon from "@/assets/icons/apple.svg";
 import WalletIcon from "@/assets/icons/walletIcon.svg";
 import { useUsdhBalanceFromStore } from "@/hooks/useUsdhBalance";
 import { ZkLoginData } from "@/lib/interface";
-import {addPoint, onCopyToText, timeAgoEn} from "@/lib/utils";
+import {addPoint, getLanguageLabel, onCopyToText, timeAgoEn} from "@/lib/utils";
 import { TabSkeleton } from "@/components/SkeletonScreens";
 import {
   BalanceChangeItem,
@@ -71,6 +71,7 @@ export default function PredictionIntegralModal({
 
   // 添加加载状态管理
   const [loading, setLoading] = useState<boolean>(false);
+  const [loadingMore, setLoadingMore] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
   const [isVisible, setIsVisible] = useState(false);
@@ -114,7 +115,10 @@ export default function PredictionIntegralModal({
     }
   }, [isOpen]);
 
-  const getMarketPosition = useCallback(async () => {
+  const [positionPageNum, setPositionPageNum] = useState(1);
+  const [positionPageSize, setPositionPageSize] = useState(50);
+  const [hasMorePositions, setHasMorePositions] = useState<boolean>(true);
+  const getMarketPosition = useCallback(async (page: number = 1, append: boolean = false) => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
       console.error('No wallet connected');
@@ -123,9 +127,13 @@ export default function PredictionIntegralModal({
     }
 
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
-      const res = await apiService.getMarketPosition({userAddress: owner, address: owner || ''});
+      const res = await apiService.getMarketPosition({userAddress: owner, address: owner || '', pageNum: page, pageSize: positionPageSize});
 
       if (res && res.data) {
         const rows = res.data.rows.filter(item => {
@@ -151,20 +159,40 @@ export default function PredictionIntegralModal({
           }
           return createTimeA < createTimeB ? 1 : -1;
         })
-        setPositionList(rows);
+
+        if (append) {
+          setPositionList(prev => [...prev, ...rows]);
+        } else {
+          setPositionList(rows);
+        }
+        // 判断是否还有更多数据
+        setHasMorePositions(res.data.count > page * positionPageSize);
       } else {
-        setPositionList([]);
+        if (!append) {
+          setPositionList([]);
+        }
+        setHasMorePositions(false);
       }
     } catch (err) {
       console.error('Error fetching market position:', err);
       setError('Failed to fetch market positions');
-      setPositionList([]);
+      if (!append) {
+        setPositionList([]);
+      }
+      setHasMorePositions(false);
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [currentAccount?.address, zkLoginData]);
+  }, [currentAccount?.address, positionPageSize, zkLoginData]);
 
-  const getMarketTradeHistory = useCallback(async () => {
+  const [tradePageNum, setTradePageNum] = useState(1);
+  const [tradePageSize, setTradePageSize] = useState(50);
+  const [hasMoreTrades, setHasMoreTrades] = useState<boolean>(true);
+  const getMarketTradeHistory = useCallback(async (page: number = 1, append: boolean = false) => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
       console.error('No wallet connected');
@@ -173,9 +201,13 @@ export default function PredictionIntegralModal({
     }
 
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
-      const res = await apiService.getMarketTradeHistory({userAddress: owner, address: owner});
+      const res = await apiService.getMarketTradeHistory({userAddress: owner, address: owner, pageNum: page, pageSize: tradePageSize});
       if (res && res.data) {
         const rows = res.data.rows;
         rows.sort((a, b) => {
@@ -183,21 +215,41 @@ export default function PredictionIntegralModal({
           const createTimeB = new Date(b.tradeTime).getTime();
           return createTimeA < createTimeB ? 1 : -1;
         })
-        setTradeList(rows);
+
+        if (append) {
+          setTradeList(prev => [...prev, ...rows]);
+        } else {
+          setTradeList(rows);
+        }
+
+        // 判断是否还有更多数据
+        setHasMoreTrades(res.data.count > page * tradePageSize);
       } else {
-        setTradeList([]);
+        if (!append) {
+          setTradeList([]);
+        }
+        setHasMoreTrades(false);
       }
     } catch (err) {
       console.error('Error fetching market trade history:', err);
       setError('Failed to fetch trade history');
-      setTradeList([]);
+      if (!append) {
+        setTradeList([]);
+      }
+      setHasMoreTrades(false);
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [currentAccount?.address, zkLoginData]);
+  }, [currentAccount?.address, tradePageSize, zkLoginData]);
 
   // 添加获取交易记录的函数
-  const getTransactionHistory = useCallback(async () => {
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMoreTransactions, setHasMoreTransactions] = useState<boolean>(true);
+  const getTransactionHistory = useCallback(async (cursor: string | null = null, append: boolean = false) => {
     const owner = currentAccount?.address || (zkLoginData as any)?.zkloginUserAddress;
     if (!owner) {
       console.error('No wallet connected');
@@ -206,10 +258,13 @@ export default function PredictionIntegralModal({
     }
 
     try {
-      setLoading(true);
+      if (append) {
+        setLoadingMore(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
-      // const res = await apiService.getTransactionHistory({projectId: '', address: owner});
-      const {data} = await apiService.getBalanceChangeList({pageSize: 10, address: owner});
+      const {data} = await apiService.getBalanceChangeList({pageSize: 10, address: owner, cursor});
 
       const rows = data.list.filter(item => item.coinType === tokenAddress);
       rows.sort((a, b) => {
@@ -217,34 +272,76 @@ export default function PredictionIntegralModal({
         const createTimeB = new Date(b.tradeTime).getTime();
         return createTimeA < createTimeB ? 1 : -1;
       })
-      setTransactionList(rows);
+
+      if (append) {
+        setTransactionList(prev => [...prev, ...rows]);
+      } else {
+        setTransactionList(rows);
+      }
+
+      // 判断是否还有更多数据
+      if (data.hasNextPage) {
+        setHasMoreTransactions(true);
+        setCursor(data.nextcursor);
+      } else {
+        setHasMoreTransactions(false);
+        setCursor(null);
+      }
     } catch (err) {
       console.error('Error fetching transaction history:', err);
       setError('Failed to fetch transaction history');
-      setTransactionList([]);
+      if (!append) {
+        setTransactionList([]);
+      }
+      setHasMoreTransactions(false);
     } finally {
-      setLoading(false);
+      if (append) {
+        setLoadingMore(false);
+      } else {
+        setLoading(false);
+      }
     }
-  }, [currentAccount?.address, zkLoginData]);
-
+  }, [currentAccount?.address, zkLoginData, tokenAddress]);
 
   // currentTab变化时调用对应的查询方法
   useEffect(() => {
     if (!isOpen || !currentTab) return;
 
-    // 根据当前标签页直接调用对应的查询方法
-    switch (currentTab) {
-      case 'positions':
-        getMarketPosition();
-        break;
-      case 'trades':
-        getMarketTradeHistory();
-        break;
-      case 'transaction':
-        getTransactionHistory();
-        break;
+    // 重置分页状态
+    if (currentTab === 'positions') {
+      setPositionPageNum(1);
+      getMarketPosition(1, false);
+    } else if (currentTab === 'trades') {
+      setTradePageNum(1);
+      getMarketTradeHistory(1, false);
+    } else if (currentTab === 'transaction') {
+      setCursor(null);
+      getTransactionHistory(null, false);
     }
   }, [currentTab, isOpen, getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
+
+  // 滚动监听和加载更多
+  const handleScroll = useCallback((e: React.UIEvent<HTMLDivElement>) => {
+    const target = e.currentTarget;
+    const scrollTop = target.scrollTop;
+    const scrollHeight = target.scrollHeight;
+    const clientHeight = target.clientHeight;
+
+    // 距离底部100px时触发加载
+    if (scrollHeight - scrollTop - clientHeight < 100 && !loadingMore && !loading) {
+      if (currentTab === 'positions' && hasMorePositions) {
+        const nextPage = positionPageNum + 1;
+        setPositionPageNum(nextPage);
+        getMarketPosition(nextPage, true);
+      } else if (currentTab === 'trades' && hasMoreTrades) {
+        const nextPage = tradePageNum + 1;
+        setTradePageNum(nextPage);
+        getMarketTradeHistory(nextPage, true);
+      } else if (currentTab === 'transaction' && hasMoreTransactions) {
+        getTransactionHistory(cursor, true);
+      }
+    }
+  }, [currentTab, loadingMore, loading, hasMorePositions, hasMoreTrades, hasMoreTransactions, positionPageNum, tradePageNum, cursor, getMarketPosition, getMarketTradeHistory, getTransactionHistory]);
 
   const contractRedeem = async (position: MarketPositionOption) => {
     try {
@@ -260,7 +357,8 @@ export default function PredictionIntegralModal({
       await executeTransaction(tx, false);
       toast.success(t('rewards.claimSuccess'));
       setTimeout(() => {
-        getMarketPosition();
+        setPositionPageNum(1);
+        getMarketPosition(1, false);
       }, 2000);
     } catch (e: any) {
       console.error('redeem error:', e);
@@ -300,7 +398,7 @@ export default function PredictionIntegralModal({
               <div className="leading-[20px] text-[18px] text-white font-bold">{(zkLoginData as any)?.provider === 'google' ? zkLoginData.email : ''}</div>
             ) : (
               <div className="leading-[20px] text-[18px] text-white font-bold">Wallet address</div>
-            ) }
+            )}
             <div className="mt-[4px] flex leading-[16px] text-[14px] text-white/60 font-bold">
               <span>{addPoint(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')}</span>
               <CopyIcon className="ml-[4px] cursor-pointer hover:text-white" onClick={() => onCopyToText(zkLoginData ? zkLoginData.zkloginUserAddress : currentAccount?.address || '')} />
@@ -373,7 +471,7 @@ export default function PredictionIntegralModal({
           {currentTab === 'positions' && !loading && (
             <>
               {positionList.length > 0 ? (
-                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none" onScroll={handleScroll}>
                   {positionList.map((position, index) => (
                     <div
                       key={`${position.marketId}_${index}`}
@@ -388,7 +486,7 @@ export default function PredictionIntegralModal({
                         </Avatar>
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <EllipsisWithTooltip
-                            text={position.marketName}
+                            text={getLanguageLabel(position.marketName, language)}
                             className="h-[16px] w-full leading-[16px] text-[16px] text-white"
                           />
                           <div className="flex gap-2 mt-[4px] h-[20px] leading-[20px] rounded-[4px] text-[#28C04E] text-[16px]">
@@ -398,7 +496,7 @@ export default function PredictionIntegralModal({
                               precision={2}
                             />
                             <EllipsisWithTooltip
-                              text={position.currentOutcome.name}
+                              text={getLanguageLabel(position.currentOutcome.name, language)}
                               className="flex-1 h-[20px] leading-[20px] text-[#28C04E] text-[16px]"
                             />
                           </div>
@@ -494,7 +592,12 @@ export default function PredictionIntegralModal({
                       </div>
                     </div>
                   ))}
-                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  {loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.loading') || 'Loading...'}</div>
+                  )}
+                  {!hasMorePositions && !loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  )}
                 </div>
               ) : (
                 <>
@@ -509,7 +612,7 @@ export default function PredictionIntegralModal({
           {currentTab === 'trades' && !loading && (
             <>
               {tradeList.length > 0 ? (
-                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none">
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none" onScroll={handleScroll}>
                   {tradeList.map((trade, index) => (
                     <div
                       key={`${trade.marketId}_${index}`}
@@ -524,7 +627,7 @@ export default function PredictionIntegralModal({
                         </Avatar>
                         <div className="ml-[12px] flex-1 overflow-hidden">
                           <EllipsisWithTooltip
-                            text={trade.marketName}
+                            text={getLanguageLabel(trade.marketName, language)}
                             className="h-[16px] w-full leading-[16px] text-[16px] text-white"
                           />
                           <div className="flex gap-2 mt-[4px] h-[20px] leading-[20px] rounded-[4px] text-[#28C04E] text-[16px]">
@@ -534,7 +637,7 @@ export default function PredictionIntegralModal({
                               precision={2}
                             />
                             <EllipsisWithTooltip
-                              text={trade.outcome.name}
+                              text={getLanguageLabel(trade.outcome.name, language)}
                               className="flex-1 h-[20px] leading-[20px] text-[#28C04E] text-[16px]"
                             />
                           </div>
@@ -582,7 +685,12 @@ export default function PredictionIntegralModal({
                       </div>
                     </div>
                   ))}
-                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  {loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.loading') || 'Loading...'}</div>
+                  )}
+                  {!hasMoreTrades && !loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  )}
                 </div>
               ) : (
                 <div>
@@ -597,7 +705,7 @@ export default function PredictionIntegralModal({
           {currentTab === 'transaction' && !loading && (
             <>
               {transactionList.length > 0 ? (
-                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20">
+                <div className="mt-[24px] flex-1 space-y-[24px] overflow-x-hidden overflow-y-auto scrollbar-none p-[24px] bg-[#04122B] rounded-[16px] border border-white/20" onScroll={handleScroll}>
                   {transactionList.map((transaction, index) => (
                     transaction.tradeType === 'Deposit' ? (
                       <div
@@ -622,9 +730,26 @@ export default function PredictionIntegralModal({
                         className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
                       >
                         <Image src={tokenIcon} alt="" width={32} height={32} />
-                        <div className="ml-[12px] flex-1">
+                        <div className="ml-[12px] flex-1 overflow-hidden">
                           <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
                             <span className="text-white">{t('predictions.withdraw')}</span>
+                            <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
+                          </div>
+                          <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
+                            <span className="flex-1 text-white/40 truncate">{addPoint(transaction.receiveAddress)}</span>
+                            <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ) : transaction.tradeType === 'Reward' ? (
+                      <div
+                        key={index}
+                        className="flex items-center pb-[24px] border-b border-white/10 last:border-none last:pb-0 cursor-pointer"
+                      >
+                        <Image src={tokenIcon} alt="" width={32} height={32} />
+                        <div className="ml-[12px] flex-1 overflow-hidden">
+                          <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
+                            <span className="text-white">{t('predictions.reward')}</span>
                             <span className="text-white font-bold"><TooltipAmount shares={transaction.amount} decimals={0} precision={2}/></span>
                           </div>
                           <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
@@ -642,7 +767,7 @@ export default function PredictionIntegralModal({
                         }}
                       >
                         <Image src={transaction.icon} alt="" width={32} height={32} className="size-[32px] flex-none rounded-[8px]" />
-                        <div className="ml-[12px] flex-1">
+                        <div className="ml-[12px] flex-1 overflow-hidden">
                           {transaction.tradeType === 'Sold' && (
                             <div className="flex items-center justify-between gap-[12px] leading-[16px] text-[16px]">
                               <span className="text-white">{t('predictions.sell')}</span>
@@ -663,7 +788,7 @@ export default function PredictionIntegralModal({
                           )}
                           <div className="mt-[6px] flex items-center gap-[12px] leading-[16px] text-[16px]">
                             <EllipsisWithTooltip
-                              text={transaction.projectName}
+                              text={getLanguageLabel(transaction.projectName, language)}
                               className="flex-1 text-white/40"
                             />
                             <span className="flex-none text-white/60">{timeAgoEn(transaction.tradeTime)}</span>
@@ -672,7 +797,12 @@ export default function PredictionIntegralModal({
                       </div>
                     )
                   ))}
-                  <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  {loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('common.loading') || 'Loading...'}</div>
+                  )}
+                  {!hasMoreTransactions && !loadingMore && (
+                    <div className="mt-[24px] leading-[24px] text-[16px] text-white/60 font-bold text-center">{t('predictions.integralModal.loaded')}</div>
+                  )}
                 </div>
               ) : (
                 <div>

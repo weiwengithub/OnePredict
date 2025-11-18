@@ -26,7 +26,7 @@ import { RootState } from "@/lib/interface";
 import { useCurrentAccount } from "@onelabs/dapp-kit";
 import {TooltipAmount} from "@/components/TooltipAmount";
 import {setSigninOpen, store} from "@/store";
-import {onCopyToText} from "@/lib/utils";
+import {getLanguageLabel, onCopyToText} from "@/lib/utils";
 import {Select, SelectContent, SelectItem, SelectTrigger, SelectValue} from "@/components/ui/select";
 import {tokenIcon} from "@/assets/config";
 import {toast} from "sonner";
@@ -63,7 +63,7 @@ function groupByMarketId(arr: MarketPositionOption[]) {
 }
 
 export default function ProfileClient() {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
   const dispatch = useDispatch();
   const isMobile = useIsMobile();
   const router = useRouter();
@@ -91,7 +91,7 @@ export default function ProfileClient() {
         setUserData(centerData);
         setFollowing(centerData.followBySessionMemberId)
 
-        const {data} = await apiService.getMarketPosition({memberId, address: userAddress || ''});
+        const {data} = await apiService.getMarketPosition({memberId, address: userAddress || '', pageNum: 1, pageSize: 100});
         const list = data.rows.filter(item => {
           // 不显示持仓数量为0的数据
           if(item.shares === 0) {
@@ -320,7 +320,7 @@ export default function ProfileClient() {
                       <div className="flex-1 ml-[8px] overflow-hidden">
                         <div onClick={() => {router.push(`/details?marketId=${item.marketId}`);}}>
                           <EllipsisWithTooltip
-                            text={item.marketName}
+                            text={getLanguageLabel(item.marketName, language)}
                             className="h-[16px] w-full leading-[16px] text-[16px] text-white"
 
                           />
@@ -333,7 +333,7 @@ export default function ProfileClient() {
                                 <div className="w-auto h-[24px] flex items-center gap-1 bg-[rgba(40,192,78,0.5)] rounded-[4px] text-[#28C04E] text-[16px]  px-[8px] py-0">
                                   <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
                                   <EllipsisWithTooltip
-                                    text={item.list[item.current].currentOutcome.name}
+                                    text={getLanguageLabel(item.list[item.current].currentOutcome.name, language)}
                                     className="h-[20px] max-w-[120px] leading-[20px] text-[14px] text-[#28C04E]"
                                   />
                                   <ArrowDownIcon className="text-[12px]" />
@@ -355,7 +355,7 @@ export default function ProfileClient() {
                                         onClick={() => updateMarketList(marketIndex, index)}
                                       >
                                         <EllipsisWithTooltip
-                                          text={market.currentOutcome.name}
+                                          text={getLanguageLabel(market.currentOutcome.name, language)}
                                           className="h-[20px] max-w-[120px] leading-[20px] text-[14px] text-white"
                                         />
                                         <span className="h-[20px] leading-[20px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] text-[14px] rounded-[4px] px-[4px]">{Number(market.shares).toFixed(2)}</span>
@@ -369,7 +369,7 @@ export default function ProfileClient() {
                             <div className="h-[20px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center gap-1 px-[8px] text-[#28C04E] text-[14px]">
                               <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
                               <EllipsisWithTooltip
-                                text={item.list[item.current].currentOutcome.name}
+                                text={getLanguageLabel(item.list[item.current].currentOutcome.name, language)}
                                 className="h-[20px] max-w-[120px] leading-[20px] text-[14px] [#28C04E]"
                               />
                               {item.list.length > 1 && <ArrowDownIcon className="text-[12px]" />}
@@ -395,7 +395,7 @@ export default function ProfileClient() {
                         }}
                       >
                         <EllipsisWithTooltip
-                          text={item.marketName}
+                          text={getLanguageLabel(item.marketName, language)}
                           className="h-[24px] w-full leading-[24px] text-[16px] text-white"
                         />
                         <div className="h-[16px] flex items-end"><UserIcon className="text-white text-[14px]"/><span className="inline-block ml-[7px] h-[16px] leading-[22px] text-[12px] text-white/60">{item.traderCount}</span></div>
@@ -407,7 +407,7 @@ export default function ProfileClient() {
                             <div className="w-auto h-[24px] flex items-center gap-1 bg-[rgba(40,192,78,0.5)] rounded-[4px] text-[#28C04E] text-[16px]  px-[8px] py-0">
                               <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
                               <EllipsisWithTooltip
-                                text={item.list[item.current].currentOutcome.name}
+                                text={getLanguageLabel(item.list[item.current].currentOutcome.name, language)}
                                 className="h-[24px] max-w-[120px] leading-[24px] text-[16px] text-[#28C04E]"
                               />
                               <ArrowDownIcon className="text-[12px]" />
@@ -429,7 +429,7 @@ export default function ProfileClient() {
                                     onClick={() => updateMarketList(marketIndex, index)}
                                   >
                                     <EllipsisWithTooltip
-                                      text={market.currentOutcome.name}
+                                      text={getLanguageLabel(market.currentOutcome.name, language)}
                                       className="h-[24px] max-w-[120px] leading-[24px] text-[16px] text-white"
                                     />
                                     <span className="h-[24px] leading-[24px] bg-[rgba(40,192,78,0.5)] text-[#28C04E] text-[16px] rounded-[4px] px-[4px]">{Number(market.shares).toFixed(2)}</span>
@@ -443,7 +443,7 @@ export default function ProfileClient() {
                         <div className="h-[24px] bg-[rgba(40,192,78,0.5)] rounded-[4px] flex items-center gap-1 px-[8px] text-[#28C04E] text-[16px]">
                           <TooltipAmount shares={item.list[item.current].shares} decimals={0} precision={2}/>
                           <EllipsisWithTooltip
-                            text={item.list[item.current].currentOutcome.name}
+                            text={getLanguageLabel(item.list[item.current].currentOutcome.name, language)}
                             className="h-[24px] max-w-[120px] leading-[24px] text-[16px] [#28C04E]"
                           />
                           {item.list.length > 1 && <ArrowDownIcon className="text-[12px]" />}

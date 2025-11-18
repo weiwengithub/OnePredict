@@ -4,6 +4,7 @@ import { HoverTooltipButton } from "@/components/HoverTooltipButton";
 import EllipsisWithTooltip from "@/components/EllipsisWithTooltip";
 import { colors } from "@/assets/config";
 import {useLanguage} from "@/contexts/LanguageContext";
+import {getLanguageLabel} from "@/lib/utils";
 
 
 interface CustomCarouselProps {
@@ -16,7 +17,7 @@ const Outcomes = ({
   clickFn,
   onHover
 }:CustomCarouselProps) => {
-  const { t } = useLanguage();
+  const { language, t } = useLanguage();
 
   if (prediction.outcome.length === 2) {
     return (
@@ -24,7 +25,7 @@ const Outcomes = ({
         {prediction.outcome.map((outcome, index) => (
           <HoverTooltipButton
             key={index}
-            label={outcome.name}
+            label={getLanguageLabel(outcome.name, language)}
             hoverLabel={`${(100 * Number(outcome.prob)).toFixed(2)}%`}
             tooltip={
               <>
@@ -47,7 +48,7 @@ const Outcomes = ({
       {prediction.outcome.map((outcome, index) => (
         <div key={index} className="h-[24px] flex gap-[24px]">
           <EllipsisWithTooltip
-            text={outcome.name}
+            text={getLanguageLabel(outcome.name, language)}
             className="flex-1 h-[24px] leading-[24px] text-white text-[16px] font-bold"
           />
           <div className="h-[24px] leading-[24px] text-white/80 text-[16px]">{`${(100 * Number(outcome.prob)).toFixed(2)}%`}</div>

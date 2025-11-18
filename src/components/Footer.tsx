@@ -43,7 +43,7 @@ export default function Footer() {
             </Link>
 
             {/* FAQ */}
-            <Link href="/doc/faq" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
+            <Link href="/FAQ" className="block h-[18px] leading-[18px] text-[14px] text-white font-bold transition-colors">
               {t('footer.FAQ')}
             </Link>
           </div>
