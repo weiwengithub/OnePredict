@@ -6,14 +6,22 @@ FROM base AS deps
 RUN apk add --no-cache libc6-compat
 WORKDIR /app
 
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 # 复制 package 文件
-COPY package.json package-lock.json* ./
-# 安装依赖
-RUN npm ci
+COPY package.json pnpm-lock.yaml* ./
+
+# 使用 pnpm 安装依赖
+RUN pnpm install --frozen-lockfile
 
 # 构建阶段
 FROM base AS builder
 WORKDIR /app
+
+# 安装 pnpm
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
@@ -21,8 +29,8 @@ COPY . .
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
 
-# 构建应用
-RUN npm run build
+# 使用 pnpm 构建应用
+RUN pnpm run build
 
 # 运行阶段
 FROM base AS runner
